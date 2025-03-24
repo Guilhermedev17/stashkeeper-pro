@@ -7,11 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
-import { ThemeProvider } from '@/contexts/ThemeContext';
+import { supabase } from '@/lib/supabase';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoginMode, setIsLoginMode] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -22,15 +23,35 @@ const Login = () => {
     setIsLoading(true);
     
     try {
-      await login(email, password);
-      toast({
-        title: 'Login realizado com sucesso',
-        description: 'Bem-vindo ao StashKeeper',
-      });
-      navigate('/dashboard');
+      if (isLoginMode) {
+        // Login flow
+        await login(email, password);
+        toast({
+          title: 'Login realizado com sucesso',
+          description: 'Bem-vindo ao StashKeeper',
+        });
+        navigate('/dashboard');
+      } else {
+        // Register flow
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+        
+        if (error) throw error;
+        
+        toast({
+          title: 'Conta criada com sucesso',
+          description: 'Verifique seu email para confirmar seu cadastro.',
+        });
+        
+        // Switch back to login mode
+        setIsLoginMode(true);
+      }
     } catch (error) {
+      console.error('Auth error:', error);
       toast({
-        title: 'Erro ao fazer login',
+        title: isLoginMode ? 'Erro ao fazer login' : 'Erro ao criar conta',
         description: 'Email ou senha inválidos.',
         variant: 'destructive',
       });
@@ -75,9 +96,11 @@ const Login = () => {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Senha</Label>
-                <Button variant="link" className="h-auto p-0 text-xs">
-                  Esqueceu a senha?
-                </Button>
+                {isLoginMode && (
+                  <Button variant="link" className="h-auto p-0 text-xs">
+                    Esqueceu a senha?
+                  </Button>
+                )}
               </div>
               <Input
                 id="password"
@@ -95,14 +118,27 @@ const Login = () => {
               className="w-full transition-all duration-300"
               disabled={isLoading}
             >
-              {isLoading ? 'Entrando...' : 'Entrar'}
+              {isLoading 
+                ? (isLoginMode ? 'Entrando...' : 'Criando conta...') 
+                : (isLoginMode ? 'Entrar' : 'Criar conta')}
             </Button>
           </form>
           
-          <div className="mt-6 text-center text-sm text-muted-foreground">
-            <p>Dados de teste:</p>
-            <p className="mt-1">Admin: admin@example.com / admin123</p>
-            <p>Usuário: user@example.com / user123</p>
+          <div className="mt-6 text-center">
+            <Button 
+              variant="link" 
+              onClick={() => setIsLoginMode(!isLoginMode)}
+              className="text-sm"
+            >
+              {isLoginMode 
+                ? 'Não tem uma conta? Cadastre-se' 
+                : 'Já tem uma conta? Faça login'}
+            </Button>
+          </div>
+          
+          <div className="mt-4 text-center text-sm text-muted-foreground">
+            <p>Para usar o sistema, crie uma conta ou entre com:</p>
+            <p className="mt-1">E-mail e senha de sua escolha</p>
           </div>
         </div>
       </div>
