@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -182,6 +181,7 @@ const Products = () => {
     });
   };
 
+  // Corrigido o problema que travava a interface
   const handleDeleteProduct = () => {
     if (!selectedProduct) return;
     
@@ -195,7 +195,10 @@ const Products = () => {
       description: `${selectedProduct.name} foi removido com sucesso.`,
     });
     
-    setSelectedProduct(null);
+    // Importante: Definir como null APÓS fechar o diálogo
+    setTimeout(() => {
+      setSelectedProduct(null);
+    }, 100);
   };
 
   const getCategoryName = (categoryId: string) => {
@@ -530,7 +533,18 @@ const Products = () => {
       </Dialog>
 
       {/* Delete Product Dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <Dialog 
+        open={isDeleteDialogOpen} 
+        onOpenChange={(open) => {
+          setIsDeleteDialogOpen(open);
+          if (!open) {
+            // Limpa o produto selecionado quando o diálogo é fechado
+            setTimeout(() => {
+              setSelectedProduct(null);
+            }, 100);
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Excluir Produto</DialogTitle>
