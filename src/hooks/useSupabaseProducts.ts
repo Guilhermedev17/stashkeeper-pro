@@ -14,6 +14,16 @@ interface Product {
   created_at: string;
 }
 
+interface Movement {
+  id?: string;
+  product_id: string;
+  type: 'entrada' | 'saida';
+  quantity: number;
+  user_id?: string;
+  notes?: string;
+  created_at?: string;
+}
+
 export const useSupabaseProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -137,6 +147,60 @@ export const useSupabaseProducts = () => {
     }
   };
 
+  const addMovement = async (movement: Omit<Movement, 'id' | 'created_at'>) => {
+    try {
+      // 1. Inserir o movimento
+      const { data: movementData, error: movementError } = await supabase
+        .from('movements')
+        .insert([movement])
+        .select()
+        .single();
+
+      if (movementError) throw movementError;
+
+      // 2. Atualizar a quantidade do produto
+      const product = products.find(p => p.id === movement.product_id);
+      if (!product) throw new Error('Produto não encontrado');
+
+      const newQuantity = movement.type === 'entrada' 
+        ? product.quantity + movement.quantity 
+        : product.quantity - movement.quantity;
+
+      if (newQuantity < 0) throw new Error('Quantidade insuficiente em estoque');
+
+      const { error: updateError } = await supabase
+        .from('products')
+        .update({ quantity: newQuantity })
+        .match({ id: movement.product_id });
+
+      if (updateError) throw updateError;
+
+      // 3. Atualizar a lista de produtos local
+      setProducts(prevProducts => 
+        prevProducts.map(p => 
+          p.id === movement.product_id 
+            ? { ...p, quantity: newQuantity } 
+            : p
+        )
+      );
+      
+      toast({
+        title: movement.type === 'entrada' ? 'Entrada registrada' : 'Saída registrada',
+        description: `Movimentação registrada com sucesso.`,
+      });
+      
+      return { success: true, data: movementData };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao registrar movimentação';
+      toast({
+        title: 'Erro',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+      return { success: false, error: errorMessage };
+    }
+  };
+
   useEffect(() => {
     fetchProducts();
   }, []);
@@ -149,5 +213,6 @@ export const useSupabaseProducts = () => {
     addProduct,
     updateProduct,
     deleteProduct,
+    addMovement,
   };
 };

@@ -1,7 +1,7 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ArrowDown, ArrowUp, CalendarDays, Clock, Download, FileText, Search, User } from 'lucide-react';
+import { useSupabaseMovements } from '@/hooks/useSupabaseMovements';
 
 interface HistoryItem {
   id: string;
@@ -24,116 +25,36 @@ interface HistoryItem {
   notes?: string;
 }
 
-// Mock data
-const MOCK_HISTORY: HistoryItem[] = [
-  {
-    id: '1',
-    productCode: 'PRD47X29',
-    productName: 'Notebook Dell',
-    type: 'entrada',
-    quantity: 3,
-    user: 'Carlos Silva',
-    date: new Date('2023-07-15T10:30:00'),
-    notes: 'Compra de novos equipamentos',
-  },
-  {
-    id: '2',
-    productCode: 'PRD81Y36',
-    productName: 'Papel A4',
-    type: 'saida',
-    quantity: 5,
-    user: 'Ana Oliveira',
-    date: new Date('2023-07-14T14:45:00'),
-    notes: 'Requisição do departamento de RH',
-  },
-  {
-    id: '3',
-    productCode: 'PRD24Z51',
-    productName: 'Cadeira Ergonômica',
-    type: 'entrada',
-    quantity: 2,
-    user: 'Carlos Silva',
-    date: new Date('2023-07-13T09:15:00'),
-  },
-  {
-    id: '4',
-    productCode: 'PRD63W18',
-    productName: 'Projetor',
-    type: 'saida',
-    quantity: 1,
-    user: 'Mariana Santos',
-    date: new Date('2023-07-12T16:20:00'),
-    notes: 'Requisição para sala de reuniões',
-  },
-  {
-    id: '5',
-    productCode: 'PRD47X29',
-    productName: 'Notebook Dell',
-    type: 'saida',
-    quantity: 1,
-    user: 'João Pereira',
-    date: new Date('2023-07-11T11:00:00'),
-    notes: 'Requisição para novo funcionário',
-  },
-  {
-    id: '6',
-    productCode: 'PRD81Y36',
-    productName: 'Papel A4',
-    type: 'entrada',
-    quantity: 20,
-    user: 'Carlos Silva',
-    date: new Date('2023-07-10T09:30:00'),
-    notes: 'Reposição de estoque',
-  },
-  {
-    id: '7',
-    productCode: 'PRD24Z51',
-    productName: 'Cadeira Ergonômica',
-    type: 'saida',
-    quantity: 1,
-    user: 'Ana Oliveira',
-    date: new Date('2023-07-10T15:45:00'),
-    notes: 'Requisição do departamento de TI',
-  },
-  {
-    id: '8',
-    productCode: 'PRD63W18',
-    productName: 'Projetor',
-    type: 'entrada',
-    quantity: 1,
-    user: 'Carlos Silva',
-    date: new Date('2023-07-09T10:00:00'),
-    notes: 'Devolução do departamento de Marketing',
-  },
-  {
-    id: '9',
-    productCode: 'PRD47X29',
-    productName: 'Notebook Dell',
-    type: 'entrada',
-    quantity: 5,
-    user: 'Carlos Silva',
-    date: new Date('2023-07-08T10:30:00'),
-    notes: 'Compra de novos equipamentos',
-  },
-  {
-    id: '10',
-    productCode: 'PRD81Y36',
-    productName: 'Papel A4',
-    type: 'saida',
-    quantity: 3,
-    user: 'João Pereira',
-    date: new Date('2023-07-07T13:15:00'),
-    notes: 'Requisição do departamento Financeiro',
-  },
-];
-
 const History = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
   
+  const { movements, loading } = useSupabaseMovements();
+  const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
+  
+  // Converter movimentos do Supabase para o formato da interface HistoryItem
+  useEffect(() => {
+    if (movements.length > 0) {
+      const items = movements.map(m => ({
+        id: m.id,
+        productCode: m.product_code || 'N/A',
+        productName: m.product_name || 'Produto Desconhecido',
+        type: m.type,
+        quantity: m.quantity,
+        user: m.user_name || 'Sistema',
+        date: new Date(m.created_at),
+        notes: m.notes || undefined
+      }));
+      setHistoryItems(items);
+    } else {
+      // Usar dados de mock como fallback
+      setHistoryItems(MOCK_HISTORY);
+    }
+  }, [movements]);
+  
   // Filter history based on filters
-  const filteredHistory = MOCK_HISTORY.filter(item => {
+  const filteredHistory = historyItems.filter(item => {
     // Search term filter
     const matchSearch = 
       item.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -237,7 +158,13 @@ const History = () => {
       </div>
       
       <div className="space-y-6">
-        {Object.keys(groupedHistory).length === 0 ? (
+        {loading ? (
+          <Card>
+            <CardContent className="h-24 flex flex-col items-center justify-center text-muted-foreground">
+              <p>Carregando histórico...</p>
+            </CardContent>
+          </Card>
+        ) : Object.keys(groupedHistory).length === 0 ? (
           <Card>
             <CardContent className="h-24 flex flex-col items-center justify-center text-muted-foreground">
               <CalendarDays className="h-8 w-8 mb-2" />
@@ -326,5 +253,108 @@ const History = () => {
     </div>
   );
 };
+
+// Mock data para fallback
+const MOCK_HISTORY: HistoryItem[] = [
+  {
+    id: '1',
+    productCode: 'PRD47X29',
+    productName: 'Notebook Dell',
+    type: 'entrada',
+    quantity: 3,
+    user: 'Carlos Silva',
+    date: new Date('2023-07-15T10:30:00'),
+    notes: 'Compra de novos equipamentos',
+  },
+  {
+    id: '2',
+    productCode: 'PRD81Y36',
+    productName: 'Papel A4',
+    type: 'saida',
+    quantity: 5,
+    user: 'Ana Oliveira',
+    date: new Date('2023-07-14T14:45:00'),
+    notes: 'Requisição do departamento de RH',
+  },
+  {
+    id: '3',
+    productCode: 'PRD24Z51',
+    productName: 'Cadeira Ergonômica',
+    type: 'entrada',
+    quantity: 2,
+    user: 'Carlos Silva',
+    date: new Date('2023-07-13T09:15:00'),
+  },
+  {
+    id: '4',
+    productCode: 'PRD63W18',
+    productName: 'Projetor',
+    type: 'saida',
+    quantity: 1,
+    user: 'Mariana Santos',
+    date: new Date('2023-07-12T16:20:00'),
+    notes: 'Requisição para sala de reuniões',
+  },
+  {
+    id: '5',
+    productCode: 'PRD47X29',
+    productName: 'Notebook Dell',
+    type: 'saida',
+    quantity: 1,
+    user: 'João Pereira',
+    date: new Date('2023-07-11T11:00:00'),
+    notes: 'Requisição para novo funcionário',
+  },
+  {
+    id: '6',
+    productCode: 'PRD81Y36',
+    productName: 'Papel A4',
+    type: 'entrada',
+    quantity: 20,
+    user: 'Carlos Silva',
+    date: new Date('2023-07-10T09:30:00'),
+    notes: 'Reposição de estoque',
+  },
+  {
+    id: '7',
+    productCode: 'PRD24Z51',
+    productName: 'Cadeira Ergonômica',
+    type: 'saida',
+    quantity: 1,
+    user: 'Ana Oliveira',
+    date: new Date('2023-07-10T15:45:00'),
+    notes: 'Requisição do departamento de TI',
+  },
+  {
+    id: '8',
+    productCode: 'PRD63W18',
+    productName: 'Projetor',
+    type: 'entrada',
+    quantity: 1,
+    user: 'Carlos Silva',
+    date: new Date('2023-07-09T10:00:00'),
+    notes: 'Devolução do departamento de Marketing',
+  },
+  {
+    id: '9',
+    productCode: 'PRD47X29',
+    productName: 'Notebook Dell',
+    type: 'entrada',
+    quantity: 5,
+    user: 'Carlos Silva',
+    date: new Date('2023-07-08T10:30:00'),
+    notes: 'Compra de novos equipamentos',
+  },
+  {
+    id: '10',
+    productCode: 'PRD81Y36',
+    productName: 'Papel A4',
+    type: 'saida',
+    quantity: 3,
+    user: 'João Pereira',
+    date: new Date('2023-07-07T13:15:00'),
+    notes: 'Requisição do departamento Financeiro',
+  },
+];
 
 export default History;

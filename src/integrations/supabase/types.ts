@@ -9,7 +9,77 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      movements: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          product_id: string
+          quantity: number
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          product_id: string
+          quantity: number
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          product_id?: string
+          quantity?: number
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          category_id: string | null
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          min_quantity: number
+          name: string
+          quantity: number
+        }
+        Insert: {
+          category_id?: string | null
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          min_quantity?: number
+          name: string
+          quantity?: number
+        }
+        Update: {
+          category_id?: string | null
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          min_quantity?: number
+          name?: string
+          quantity?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

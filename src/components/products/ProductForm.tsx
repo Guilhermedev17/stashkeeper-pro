@@ -104,8 +104,8 @@ const ProductForm: React.FC<ProductFormProps> = ({
             id="quantity"
             type="number"
             min="0"
-            value={product.quantity || 0}
-            onChange={e => onChange('quantity', Number(e.target.value))}
+            value={product.quantity === 0 && isNew ? '' : product.quantity || ''}
+            onChange={e => onChange('quantity', e.target.value === '' ? 0 : Number(e.target.value))}
             placeholder="0"
           />
         </div>
@@ -116,8 +116,8 @@ const ProductForm: React.FC<ProductFormProps> = ({
             id="minQuantity"
             type="number"
             min="0"
-            value={product.minQuantity || 0}
-            onChange={e => onChange('minQuantity', Number(e.target.value))}
+            value={product.minQuantity === 0 && isNew ? '' : product.minQuantity || ''}
+            onChange={e => onChange('minQuantity', e.target.value === '' ? 0 : Number(e.target.value))}
             placeholder="0"
           />
         </div>

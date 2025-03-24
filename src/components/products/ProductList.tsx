@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Package, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+import { Package, MoreHorizontal, Edit, Trash2, ArrowDown, ArrowUp } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { 
@@ -28,13 +28,15 @@ interface ProductListProps {
   getCategoryName: (id: string) => string;
   onEdit: (product: Product) => void;
   onDelete: (product: Product) => void;
+  onMovement: (product: Product, type: 'entrada' | 'saida') => void;
 }
 
 const ProductList: React.FC<ProductListProps> = ({ 
   products, 
   getCategoryName, 
   onEdit, 
-  onDelete 
+  onDelete,
+  onMovement
 }) => {
   return (
     <div className="border rounded-md">
@@ -97,31 +99,53 @@ const ProductList: React.FC<ProductListProps> = ({
                   )}
                 </TableCell>
                 <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Abrir menu</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => onEdit(product)}
-                      >
-                        <Edit className="mr-2 h-4 w-4" />
-                        Editar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-destructive focus:text-destructive"
-                        onClick={() => onDelete(product)}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Excluir
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <div className="flex justify-end items-center space-x-1">
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => onMovement(product, 'entrada')}
+                      title="Registrar entrada"
+                      className="text-green-600 hover:text-green-700 hover:bg-green-100"
+                    >
+                      <ArrowDown className="h-4 w-4" />
+                      <span className="sr-only">Entrada</span>
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => onMovement(product, 'saida')}
+                      title="Registrar saída"
+                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-100"
+                    >
+                      <ArrowUp className="h-4 w-4" />
+                      <span className="sr-only">Saída</span>
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Abrir menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => onEdit(product)}
+                        >
+                          <Edit className="mr-2 h-4 w-4" />
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive"
+                          onClick={() => onDelete(product)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </TableCell>
               </TableRow>
             ))
