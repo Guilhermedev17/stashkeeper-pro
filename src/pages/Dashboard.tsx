@@ -25,13 +25,16 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
 const Dashboard = () => {
   const { user } = useAuth();
+  
+  // Get user's name from metadata, or use email as fallback
+  const userName = user?.user_metadata?.name || user?.email || 'Usuário';
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground">
-          Bem-vindo, {user?.name}. Aqui está um resumo do almoxarifado.
+          Bem-vindo, {userName}. Aqui está um resumo do almoxarifado.
         </p>
       </div>
 

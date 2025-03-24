@@ -81,7 +81,6 @@ const Settings = () => {
   });
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
   
-  // Form states
   const [notifications, setNotifications] = useState({
     email: true,
     criticalStock: true,
@@ -125,7 +124,6 @@ const Settings = () => {
       return;
     }
     
-    // Check if email already exists
     if (users.some(user => user.email === newUser.email)) {
       toast({
         title: 'Erro',
@@ -177,7 +175,6 @@ const Settings = () => {
   };
   
   const handleDeleteUser = (userId: string) => {
-    // Prevent deleting current user
     if (userId === '1' || userId === '2') {
       toast({
         title: 'Erro',
@@ -198,6 +195,10 @@ const Settings = () => {
     }
   };
 
+  const userName = user?.user_metadata?.name || user?.email || '';
+  const userEmail = user?.email || '';
+  const userRole = user?.user_metadata?.role || 'user';
+
   return (
     <div className="space-y-6">
       <div>
@@ -212,12 +213,11 @@ const Settings = () => {
           <TabsTrigger value="profile">Perfil</TabsTrigger>
           <TabsTrigger value="notifications">Notificações</TabsTrigger>
           <TabsTrigger value="app">Aplicativo</TabsTrigger>
-          {user?.role === 'admin' && (
+          {userRole === 'admin' && (
             <TabsTrigger value="users">Usuários</TabsTrigger>
           )}
         </TabsList>
         
-        {/* Profile Tab */}
         <TabsContent value="profile" className="space-y-6">
           <Card>
             <CardHeader>
@@ -229,15 +229,15 @@ const Settings = () => {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="name">Nome</Label>
-                <Input id="name" defaultValue={user?.name} />
+                <Input id="name" defaultValue={userName} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" defaultValue={user?.email} />
+                <Input id="email" type="email" defaultValue={userEmail} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="role">Função</Label>
-                <Input id="role" value={user?.role === 'admin' ? 'Administrador' : 'Usuário'} disabled />
+                <Input id="role" value={userRole === 'admin' ? 'Administrador' : 'Usuário'} disabled />
               </div>
             </CardContent>
             <CardFooter className="flex justify-between">
@@ -274,7 +274,6 @@ const Settings = () => {
           </Card>
         </TabsContent>
         
-        {/* Notifications Tab */}
         <TabsContent value="notifications" className="space-y-6">
           <Card>
             <CardHeader>
@@ -373,7 +372,6 @@ const Settings = () => {
           </Card>
         </TabsContent>
         
-        {/* App Settings Tab */}
         <TabsContent value="app" className="space-y-6">
           <Card>
             <CardHeader>
@@ -452,8 +450,7 @@ const Settings = () => {
           </Card>
         </TabsContent>
         
-        {/* Users Tab (Admin Only) */}
-        {user?.role === 'admin' && (
+        {userRole === 'admin' && (
           <TabsContent value="users" className="space-y-6">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0">

@@ -12,6 +12,7 @@ import { supabase } from '@/lib/supabase';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState(''); // Add name field for signup
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
@@ -32,10 +33,15 @@ const Login = () => {
         });
         navigate('/dashboard');
       } else {
-        // Register flow
+        // Register flow with name metadata
         const { error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            data: {
+              name: name, // Store name in user metadata
+            },
+          },
         });
         
         if (error) throw error;
@@ -78,6 +84,21 @@ const Login = () => {
           </div>
           
           <form onSubmit={handleSubmit} className="space-y-6">
+            {!isLoginMode && (
+              <div className="space-y-2">
+                <Label htmlFor="name">Nome</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="Seu nome"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required={!isLoginMode}
+                  className="bg-background/50 backdrop-blur-xs"
+                />
+              </div>
+            )}
+            
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input

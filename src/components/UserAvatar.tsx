@@ -1,5 +1,5 @@
 
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 
 const UserAvatar = () => {
@@ -7,7 +7,10 @@ const UserAvatar = () => {
   
   if (!user) return null;
   
-  const initials = user.name
+  // Get user's name from metadata, or use email as fallback
+  const userName = user.user_metadata?.name || user.email || '';
+  
+  const initials = userName
     .split(' ')
     .map(part => part[0])
     .join('')
