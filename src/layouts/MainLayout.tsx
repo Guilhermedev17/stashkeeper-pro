@@ -25,7 +25,7 @@ const MainLayout = () => {
   }
   
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background w-full">
       <Navbar setShowMobileSidebar={setShowMobileSidebar} />
       <Sidebar showMobile={showMobileSidebar} setShowMobile={setShowMobileSidebar} />
       
