@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -78,7 +77,7 @@ const Settings = () => {
     name: '',
     email: '',
     password: '',
-    role: 'user' as const,
+    role: 'user' as 'admin' | 'user',
   });
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
   
