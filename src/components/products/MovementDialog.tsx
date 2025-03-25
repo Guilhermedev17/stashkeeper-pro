@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useSupabaseProducts } from '@/hooks/useSupabaseProducts';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/hooks/use-toast';
 
 interface Product {
   id: string;
@@ -42,7 +43,14 @@ const MovementDialog: React.FC<MovementDialogProps> = ({
   const { user } = useAuth();
   
   const handleMovement = async () => {
-    if (!product || !quantity) return;
+    if (!product || !quantity) {
+      toast({
+        title: "Erro",
+        description: "Produto ou quantidade inválidos",
+        variant: "destructive"
+      });
+      return;
+    }
     
     setIsLoading(true);
     
@@ -56,9 +64,20 @@ const MovementDialog: React.FC<MovementDialogProps> = ({
       });
       
       if (result.success) {
+        toast({
+          title: type === 'entrada' ? "Entrada registrada" : "Saída registrada",
+          description: `Movimentação de ${quantity} unidades registrada com sucesso.`
+        });
         resetForm();
         onOpenChange(false);
       }
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível registrar a movimentação",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }

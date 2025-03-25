@@ -4,11 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useSupabaseProducts } from '@/hooks/useSupabaseProducts';
+import { useSupabaseMovements } from '@/hooks/useSupabaseMovements';
 import MovementDialog from '@/components/products/MovementDialog';
-import { Package, ArrowDownUp, PlusCircle, MinusCircle } from 'lucide-react';
+import { Package, ArrowDownUp, PlusCircle, MinusCircle, RefreshCw } from 'lucide-react';
 
 const Movements = () => {
-  const { products, loading } = useSupabaseProducts();
+  const { products, loading, fetchProducts } = useSupabaseProducts();
+  const { movements, loading: loadingMovements, fetchMovements } = useSupabaseMovements();
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [movementType, setMovementType] = useState<'entrada' | 'saida'>('entrada');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -19,13 +21,24 @@ const Movements = () => {
     setIsDialogOpen(true);
   };
 
+  const handleRefresh = () => {
+    fetchProducts();
+    fetchMovements();
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Movimentações</h1>
-        <p className="text-muted-foreground">
-          Registre entradas e saídas de produtos do estoque.
-        </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Movimentações</h1>
+          <p className="text-muted-foreground">
+            Registre entradas e saídas de produtos do estoque.
+          </p>
+        </div>
+        <Button onClick={handleRefresh} variant="outline" className="gap-2">
+          <RefreshCw className="h-4 w-4" />
+          Atualizar
+        </Button>
       </div>
 
       {loading ? (
