@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -32,37 +31,8 @@ interface Category {
   productCount: number;
 }
 
-// Initial mock categories
-const INITIAL_CATEGORIES: Category[] = [
-  {
-    id: '1',
-    name: 'Eletrônicos',
-    description: 'Equipamentos eletrônicos e acessórios',
-    createdAt: new Date('2023-03-15'),
-    productCount: 18,
-  },
-  {
-    id: '2',
-    name: 'Material de Escritório',
-    description: 'Papelaria e materiais para escritório',
-    createdAt: new Date('2023-02-20'),
-    productCount: 42,
-  },
-  {
-    id: '3',
-    name: 'Móveis',
-    description: 'Móveis e equipamentos para escritório',
-    createdAt: new Date('2023-04-08'),
-    productCount: 11,
-  },
-  {
-    id: '4',
-    name: 'Equipamentos',
-    description: 'Equipamentos diversos para o ambiente de trabalho',
-    createdAt: new Date('2023-05-12'),
-    productCount: 24,
-  },
-];
+// Empty initial categories
+const INITIAL_CATEGORIES: Category[] = [];
 
 const Categories = () => {
   const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);

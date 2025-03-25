@@ -14,6 +14,7 @@ import {
   Package,
   Settings,
   Shield,
+  ArrowDownUp,
   X,
 } from 'lucide-react';
 
@@ -65,6 +66,19 @@ const Sidebar = ({ showMobile, setShowMobile }: SidebarProps) => {
           >
             <Package className="mr-2 h-4 w-4" />
             <span>Produtos</span>
+          </NavLink>
+          <NavLink
+            to="/movements"
+            className={({ isActive }) =>
+              cn(
+                'flex items-center rounded-md px-3 py-2 text-sm font-medium text-primary-foreground/70 hover:bg-primary/20 hover:text-primary-foreground transition-colors',
+                isActive && 'bg-primary/30 text-primary-foreground'
+              )
+            }
+            onClick={closeMobileMenu}
+          >
+            <ArrowDownUp className="mr-2 h-4 w-4" />
+            <span>Movimentações</span>
           </NavLink>
           <NavLink
             to="/categories"
@@ -167,6 +181,7 @@ const Sidebar = ({ showMobile, setShowMobile }: SidebarProps) => {
             className="absolute right-4 top-4"
           >
             <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
           </Button>
           <ScrollArea className="h-full py-6">{sidebarContent}</ScrollArea>
         </SheetContent>

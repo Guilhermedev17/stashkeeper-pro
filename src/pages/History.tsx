@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,7 +32,6 @@ const History = () => {
   const { movements, loading } = useSupabaseMovements();
   const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
   
-  // Converter movimentos do Supabase para o formato da interface HistoryItem
   useEffect(() => {
     if (movements.length > 0) {
       const items = movements.map(m => ({
@@ -48,24 +46,19 @@ const History = () => {
       }));
       setHistoryItems(items);
     } else {
-      // Usar dados de mock como fallback
-      setHistoryItems(MOCK_HISTORY);
+      setHistoryItems([]);
     }
   }, [movements]);
   
-  // Filter history based on filters
   const filteredHistory = historyItems.filter(item => {
-    // Search term filter
     const matchSearch = 
       item.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.productCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (item.notes && item.notes.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    // Type filter
     const matchType = typeFilter === 'all' || item.type === typeFilter;
     
-    // Date filter
     let matchDate = true;
     const today = new Date();
     const itemDate = new Date(item.date);
@@ -88,7 +81,6 @@ const History = () => {
     return matchSearch && matchType && matchDate;
   });
   
-  // Group history by date
   const groupedHistory: Record<string, HistoryItem[]> = {};
   
   filteredHistory.forEach(item => {
@@ -174,7 +166,6 @@ const History = () => {
         ) : (
           Object.entries(groupedHistory)
             .sort(([dateA], [dateB]) => {
-              // Sort by date (most recent first)
               const dateAObj = new Date(dateA.split('/').reverse().join('-'));
               const dateBObj = new Date(dateB.split('/').reverse().join('-'));
               return dateBObj.getTime() - dateAObj.getTime();
@@ -201,7 +192,7 @@ const History = () => {
                     </TableHeader>
                     <TableBody>
                       {items
-                        .sort((a, b) => b.date.getTime() - a.date.getTime()) // Sort by time (most recent first)
+                        .sort((a, b) => b.date.getTime() - a.date.getTime())
                         .map(item => (
                           <TableRow key={item.id}>
                             <TableCell className="whitespace-nowrap">
@@ -253,108 +244,5 @@ const History = () => {
     </div>
   );
 };
-
-// Mock data para fallback
-const MOCK_HISTORY: HistoryItem[] = [
-  {
-    id: '1',
-    productCode: 'PRD47X29',
-    productName: 'Notebook Dell',
-    type: 'entrada',
-    quantity: 3,
-    user: 'Carlos Silva',
-    date: new Date('2023-07-15T10:30:00'),
-    notes: 'Compra de novos equipamentos',
-  },
-  {
-    id: '2',
-    productCode: 'PRD81Y36',
-    productName: 'Papel A4',
-    type: 'saida',
-    quantity: 5,
-    user: 'Ana Oliveira',
-    date: new Date('2023-07-14T14:45:00'),
-    notes: 'Requisição do departamento de RH',
-  },
-  {
-    id: '3',
-    productCode: 'PRD24Z51',
-    productName: 'Cadeira Ergonômica',
-    type: 'entrada',
-    quantity: 2,
-    user: 'Carlos Silva',
-    date: new Date('2023-07-13T09:15:00'),
-  },
-  {
-    id: '4',
-    productCode: 'PRD63W18',
-    productName: 'Projetor',
-    type: 'saida',
-    quantity: 1,
-    user: 'Mariana Santos',
-    date: new Date('2023-07-12T16:20:00'),
-    notes: 'Requisição para sala de reuniões',
-  },
-  {
-    id: '5',
-    productCode: 'PRD47X29',
-    productName: 'Notebook Dell',
-    type: 'saida',
-    quantity: 1,
-    user: 'João Pereira',
-    date: new Date('2023-07-11T11:00:00'),
-    notes: 'Requisição para novo funcionário',
-  },
-  {
-    id: '6',
-    productCode: 'PRD81Y36',
-    productName: 'Papel A4',
-    type: 'entrada',
-    quantity: 20,
-    user: 'Carlos Silva',
-    date: new Date('2023-07-10T09:30:00'),
-    notes: 'Reposição de estoque',
-  },
-  {
-    id: '7',
-    productCode: 'PRD24Z51',
-    productName: 'Cadeira Ergonômica',
-    type: 'saida',
-    quantity: 1,
-    user: 'Ana Oliveira',
-    date: new Date('2023-07-10T15:45:00'),
-    notes: 'Requisição do departamento de TI',
-  },
-  {
-    id: '8',
-    productCode: 'PRD63W18',
-    productName: 'Projetor',
-    type: 'entrada',
-    quantity: 1,
-    user: 'Carlos Silva',
-    date: new Date('2023-07-09T10:00:00'),
-    notes: 'Devolução do departamento de Marketing',
-  },
-  {
-    id: '9',
-    productCode: 'PRD47X29',
-    productName: 'Notebook Dell',
-    type: 'entrada',
-    quantity: 5,
-    user: 'Carlos Silva',
-    date: new Date('2023-07-08T10:30:00'),
-    notes: 'Compra de novos equipamentos',
-  },
-  {
-    id: '10',
-    productCode: 'PRD81Y36',
-    productName: 'Papel A4',
-    type: 'saida',
-    quantity: 3,
-    user: 'João Pereira',
-    date: new Date('2023-07-07T13:15:00'),
-    notes: 'Requisição do departamento Financeiro',
-  },
-];
 
 export default History;

@@ -81,7 +81,7 @@ const MovementDialog: React.FC<MovementDialogProps> = ({
       setQuantity('');
     } else {
       const numValue = parseInt(value, 10);
-      if (!isNaN(numValue)) {
+      if (!isNaN(numValue) && numValue > 0) {
         setQuantity(numValue);
       }
     }

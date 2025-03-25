@@ -16,6 +16,7 @@ import Reports from "./pages/Reports";
 import History from "./pages/History";
 import Settings from "./pages/Settings";
 import AdminPage from "./pages/AdminPage";
+import Movements from "./pages/Movements";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
               <Route path="/" element={<MainLayout />}>
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="products" element={<Products />} />
+                <Route path="movements" element={<Movements />} />
                 <Route path="categories" element={<Categories />} />
                 <Route path="reports" element={<Reports />} />
                 <Route path="history" element={<History />} />
