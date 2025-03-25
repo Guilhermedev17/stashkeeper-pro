@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
@@ -13,6 +12,7 @@ interface AuthContextProps {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   setUserAsAdmin: () => Promise<void>;
+  setSpecificUserAsAdmin: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -25,14 +25,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { toast } = useToast();
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log('Auth state changed:', event, session);
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Verificar se o usuário é admin
         if (session?.user) {
           const userRole = session.user.user_metadata?.role;
           setIsAdmin(userRole === 'admin');
@@ -44,12 +42,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       
-      // Verificar se o usuário é admin
       if (session?.user) {
         const userRole = session.user.user_metadata?.role;
         setIsAdmin(userRole === 'admin');
@@ -100,14 +96,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      // Atualizar os metadados do usuário para incluir a função de admin
       const { error } = await supabase.auth.updateUser({
         data: { role: 'admin' }
       });
 
       if (error) throw error;
 
-      // Atualizar o estado local
       setIsAdmin(true);
       
       toast({
@@ -124,6 +118,59 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const setSpecificUserAsAdmin = async (email: string): Promise<void> => {
+    try {
+      const { data: userData, error: userError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .single();
+      
+      if (userError) {
+        const { data, error } = await supabase.rpc('get_user_id_by_email', { 
+          user_email: email 
+        });
+        
+        if (error) throw error;
+        
+        if (!data) {
+          toast({
+            title: "Usuário não encontrado",
+            description: `Não foi possível encontrar um usuário com o email ${email}`,
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        const { error: updateError } = await supabase.auth.admin.updateUserById(
+          data,
+          { user_metadata: { role: 'admin' } }
+        );
+        
+        if (updateError) throw updateError;
+      } else {
+        const { error: updateError } = await supabase.auth.admin.updateUserById(
+          userData.id,
+          { user_metadata: { role: 'admin' } }
+        );
+        
+        if (updateError) throw updateError;
+      }
+      
+      toast({
+        title: "Sucesso!",
+        description: `O usuário ${email} agora é um administrador do sistema.`,
+      });
+    } catch (error) {
+      console.error('Erro ao definir usuário como admin:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível definir o usuário como administrador. Consulte os logs para mais detalhes.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const value = {
     user,
     session,
@@ -133,6 +180,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     login,
     logout,
     setUserAsAdmin,
+    setSpecificUserAsAdmin,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

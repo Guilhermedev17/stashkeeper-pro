@@ -15,6 +15,7 @@ import Categories from "./pages/Categories";
 import Reports from "./pages/Reports";
 import History from "./pages/History";
 import Settings from "./pages/Settings";
+import AdminPage from "./pages/AdminPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ const App = () => (
                 <Route path="reports" element={<Reports />} />
                 <Route path="history" element={<History />} />
                 <Route path="settings" element={<Settings />} />
+                <Route path="admin" element={<AdminPage />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

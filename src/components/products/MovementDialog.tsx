@@ -51,8 +51,8 @@ const MovementDialog: React.FC<MovementDialogProps> = ({
         product_id: product.id,
         type,
         quantity: Number(quantity),
-        user_id: user?.id || undefined,
-        notes: notes.trim() || undefined
+        user_id: user?.id || null,
+        notes: notes.trim() || null
       });
       
       if (result.success) {
@@ -72,6 +72,22 @@ const MovementDialog: React.FC<MovementDialogProps> = ({
   const handleClose = () => {
     resetForm();
     onOpenChange(false);
+  };
+
+  // Corrige o problema do zero persistente no input de quantidade
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    
+    // Se o campo estiver vazio, defina como vazio (string vazia)
+    if (value === '') {
+      setQuantity('');
+    } else {
+      // Caso contrário, converta para número
+      const numValue = parseInt(value, 10);
+      if (!isNaN(numValue)) {
+        setQuantity(numValue);
+      }
+    }
   };
 
   return (
@@ -104,8 +120,8 @@ const MovementDialog: React.FC<MovementDialogProps> = ({
                 type="number"
                 min="1"
                 value={quantity}
-                onChange={e => setQuantity(e.target.value === '' ? '' : Number(e.target.value))}
-                placeholder="1"
+                onChange={handleQuantityChange}
+                placeholder="Quantidade"
               />
             </div>
             
