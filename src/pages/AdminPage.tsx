@@ -31,6 +31,17 @@ const AdminPage = () => {
     try {
       await setSpecificUserAsAdmin(email);
       setEmail('');
+      toast({
+        title: "Sucesso",
+        description: `O usuário ${email} foi definido como administrador`,
+      });
+    } catch (error) {
+      console.error('Error setting admin:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível definir o usuário como administrador",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -40,6 +51,17 @@ const AdminPage = () => {
     setIsLoading(true);
     try {
       await setUserAsAdmin();
+      toast({
+        title: "Sucesso",
+        description: "Você agora é um administrador",
+      });
+    } catch (error) {
+      console.error('Error setting self as admin:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível definir você como administrador",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -126,8 +148,6 @@ const AdminPage = () => {
             </ul>
           </CardFooter>
         </Card>
-        
-        {/* Adicione mais cards para outras funcionalidades administrativas se necessário */}
       </div>
     </div>
   );

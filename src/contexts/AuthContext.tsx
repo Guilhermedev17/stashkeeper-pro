@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
@@ -33,7 +34,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (session?.user) {
           const userRole = session.user.user_metadata?.role;
-          setIsAdmin(userRole === 'admin');
+          // Special case for guissantos50@gmail.com - always admin
+          if (session.user.email === 'guissantos50@gmail.com') {
+            setIsAdmin(true);
+            // If the user doesn't have admin role yet, set it
+            if (userRole !== 'admin') {
+              supabase.auth.updateUser({
+                data: { role: 'admin' }
+              }).then(({ data, error }) => {
+                if (error) {
+                  console.error('Error updating user role:', error);
+                } else {
+                  console.log('User role updated to admin for guissantos50@gmail.com');
+                }
+              });
+            }
+          } else {
+            setIsAdmin(userRole === 'admin');
+          }
         } else {
           setIsAdmin(false);
         }
@@ -48,7 +66,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (session?.user) {
         const userRole = session.user.user_metadata?.role;
-        setIsAdmin(userRole === 'admin');
+        // Special case for guissantos50@gmail.com - always admin
+        if (session.user.email === 'guissantos50@gmail.com') {
+          setIsAdmin(true);
+          // If the user doesn't have admin role yet, set it
+          if (userRole !== 'admin') {
+            supabase.auth.updateUser({
+              data: { role: 'admin' }
+            }).then(({ data, error }) => {
+              if (error) {
+                console.error('Error updating user role:', error);
+              } else {
+                console.log('User role updated to admin for guissantos50@gmail.com');
+              }
+            });
+          }
+        } else {
+          setIsAdmin(userRole === 'admin');
+        }
       }
       
       setIsLoading(false);
