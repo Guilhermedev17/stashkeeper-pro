@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
 import { supabase } from '@/lib/supabase';
+import { Shield } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -15,7 +16,7 @@ const Login = () => {
   const [name, setName] = useState(''); // Add name field for signup
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, setUserAsAdmin } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -64,6 +65,10 @@ const Login = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSetAdmin = async () => {
+    await setUserAsAdmin();
   };
 
   return (
@@ -160,6 +165,20 @@ const Login = () => {
           <div className="mt-4 text-center text-sm text-muted-foreground">
             <p>Para usar o sistema, crie uma conta ou entre com:</p>
             <p className="mt-1">E-mail e senha de sua escolha</p>
+          </div>
+
+          <div className="mt-6 pt-4 border-t border-border">
+            <Button 
+              variant="outline" 
+              onClick={handleSetAdmin}
+              className="w-full flex items-center justify-center gap-2"
+            >
+              <Shield className="h-4 w-4" />
+              Tornar-se Administrador
+            </Button>
+            <p className="mt-2 text-xs text-center text-muted-foreground">
+              Este botão está disponível apenas para demonstração e permite ativar funções administrativas no sistema.
+            </p>
           </div>
         </div>
       </div>
