@@ -39,13 +39,17 @@ export const useSupabaseCategories = () => {
 
   const addCategory = async (category: Omit<Category, 'id' | 'created_at'>) => {
     try {
+      console.log('Adding category:', category);
       const { data, error } = await (supabase
         .from('categories') as any)
         .insert([category])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
       
       setCategories(prevCategories => [...prevCategories, data as Category]);
       
@@ -56,6 +60,7 @@ export const useSupabaseCategories = () => {
       
       return { success: true, data };
     } catch (err) {
+      console.error('Error adding category:', err);
       const errorMessage = err instanceof Error ? err.message : 'Erro ao adicionar categoria';
       toast({
         title: 'Erro',

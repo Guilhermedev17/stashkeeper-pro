@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,12 +18,10 @@ const Dashboard = () => {
   const [criticalStock, setCriticalStock] = useState<any[]>([]);
   const [recentMovements, setRecentMovements] = useState<any[]>([]);
 
-  // Get user's name from metadata, or use email as fallback
   const userName = user?.user_metadata?.name || user?.email || 'Usuário';
 
   useEffect(() => {
     if (movements.length > 0) {
-      // Group movements by month
       const last6Months = Array.from({ length: 6 }, (_, i) => {
         const date = new Date();
         date.setMonth(date.getMonth() - i);
@@ -50,7 +47,6 @@ const Dashboard = () => {
 
       setMonthlyData(groupedData);
 
-      // Get recent movements
       const recent = [...movements]
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
         .slice(0, 4)
@@ -68,7 +64,6 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (products.length > 0 && categories.length > 0) {
-      // Group products by category
       const catCounts: Record<string, number> = {};
       
       products.forEach(product => {
@@ -91,7 +86,6 @@ const Dashboard = () => {
 
       setCategoryData(catData.length > 0 ? catData : [{ name: 'Sem dados', value: 1 }]);
 
-      // Find critical stock items
       const critical = products
         .filter(p => p.quantity <= p.min_quantity)
         .sort((a, b) => a.quantity - b.quantity)
@@ -103,13 +97,13 @@ const Dashboard = () => {
           min: p.min_quantity
         }));
       
+      console.log('Products with critical stock:', critical);
       setCriticalStock(critical);
     }
   }, [products, categories]);
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
-  // Calculate totals
   const totalProducts = products.length;
   const totalEntradas = movements.filter(m => m.type === 'entrada').reduce((acc, m) => acc + m.quantity, 0);
   const totalSaidas = movements.filter(m => m.type === 'saida').reduce((acc, m) => acc + m.quantity, 0);
@@ -260,7 +254,7 @@ const Dashboard = () => {
                 {criticalStock.length > 0 ? criticalStock.map(item => (
                   <div key={item.id} className="grid grid-cols-3 text-sm">
                     <div className="truncate">{item.name}</div>
-                    <div className="text-center">{item.stock}</div>
+                    <div className="text-center font-medium text-red-500">{item.stock}</div>
                     <div className="text-right">{item.min}</div>
                   </div>
                 )) : (
