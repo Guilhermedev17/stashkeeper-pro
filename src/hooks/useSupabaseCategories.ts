@@ -23,9 +23,9 @@ export const useSupabaseCategories = () => {
 
       console.log('Fetching categories...');
       
-      // Use the any type to bypass TypeScript's type checking for Supabase client
-      const { data, error } = await (supabase
-        .from('categories') as any)
+      // Cast to any to bypass TypeScript's type checking for Supabase client
+      const { data, error } = await supabase
+        .from('categories' as any)
         .select('*')
         .order('name', { ascending: true });
 
@@ -49,9 +49,9 @@ export const useSupabaseCategories = () => {
     try {
       console.log('Adding category:', category);
       
-      // Use the any type for the Supabase client
-      const { data, error } = await (supabase
-        .from('categories') as any)
+      // Cast to any for the Supabase client
+      const { data, error } = await supabase
+        .from('categories' as any)
         .insert([category])
         .select();
       
@@ -89,8 +89,8 @@ export const useSupabaseCategories = () => {
     try {
       console.log('Updating category:', id, updates);
       
-      const { data, error } = await (supabase
-        .from('categories') as any)
+      const { data, error } = await supabase
+        .from('categories' as any)
         .update(updates)
         .eq('id', id)
         .select();
@@ -132,8 +132,8 @@ export const useSupabaseCategories = () => {
     try {
       console.log('Deleting category:', id);
       
-      const { error } = await (supabase
-        .from('categories') as any)
+      const { error } = await supabase
+        .from('categories' as any)
         .delete()
         .eq('id', id);
 
