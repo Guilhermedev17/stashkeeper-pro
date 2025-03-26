@@ -151,6 +151,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const setSpecificUserAsAdmin = async (email: string): Promise<void> => {
     try {
+      // The issue is that TypeScript doesn't know what type the RPC function returns
       const { data, error } = await supabase.rpc('get_user_id_by_email', { 
         user_email: email 
       });
@@ -166,8 +167,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
-      // Call the edge function with explicit typing for userId
-      const userId = data as string;
+      // Fix: Explicitly cast the data to string type
+      const userId = data as unknown as string;
+      
+      // Call the edge function with the correctly typed userId
       const { error: updateError } = await supabase.functions.invoke('update-user-role', {
         body: { userId, role: 'admin' }
       });
