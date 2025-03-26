@@ -39,12 +39,14 @@ export const useSupabaseMovements = () => {
 
       if (error) throw error;
       
-      // Formatar os dados para incluir informações do produto
+      // Formatar os dados para incluir informações do produto e garantir o tipo correto
       const formattedData = data?.map(movement => ({
         ...movement,
         product_name: movement.products?.name,
-        product_code: movement.products?.code
-      })) || [];
+        product_code: movement.products?.code,
+        // Garantir que type é sempre 'entrada' ou 'saida'
+        type: movement.type === 'entrada' ? 'entrada' : 'saida'
+      })) as Movement[] || [];
       
       setMovements(formattedData);
     } catch (err) {

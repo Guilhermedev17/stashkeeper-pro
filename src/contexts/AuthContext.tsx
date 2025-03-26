@@ -155,42 +155,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const setSpecificUserAsAdmin = async (email: string): Promise<void> => {
     try {
-      const { data: userData, error: userError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', email)
-        .single();
+      // Use a custom RPC call to get user by email and set as admin
+      const { data, error } = await supabase.rpc('get_user_id_by_email', { 
+        user_email: email 
+      });
       
-      if (userError) {
-        const { data, error } = await supabase.rpc('get_user_id_by_email', { 
-          user_email: email 
+      if (error) throw error;
+      
+      if (!data) {
+        toast({
+          title: "Usuário não encontrado",
+          description: `Não foi possível encontrar um usuário com o email ${email}`,
+          variant: "destructive",
         });
-        
-        if (error) throw error;
-        
-        if (!data) {
-          toast({
-            title: "Usuário não encontrado",
-            description: `Não foi possível encontrar um usuário com o email ${email}`,
-            variant: "destructive",
-          });
-          return;
-        }
-        
-        const { error: updateError } = await supabase.auth.admin.updateUserById(
-          data,
-          { user_metadata: { role: 'admin' } }
-        );
-        
-        if (updateError) throw updateError;
-      } else {
-        const { error: updateError } = await supabase.auth.admin.updateUserById(
-          userData.id,
-          { user_metadata: { role: 'admin' } }
-        );
-        
-        if (updateError) throw updateError;
+        return;
       }
+      
+      // We use a direct call to admin functions instead of trying to query profiles
+      const { error: updateError } = await supabase.auth.admin.updateUserById(
+        data,
+        { user_metadata: { role: 'admin' } }
+      );
+      
+      if (updateError) throw updateError;
       
       toast({
         title: "Sucesso!",
