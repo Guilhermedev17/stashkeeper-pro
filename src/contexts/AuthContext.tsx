@@ -172,8 +172,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       // We use a direct call to admin functions instead of trying to query profiles
+      // Need to cast 'data' to string to fix the type error
       const { error: updateError } = await supabase.auth.admin.updateUserById(
-        data,
+        data as string,
         { user_metadata: { role: 'admin' } }
       );
       
