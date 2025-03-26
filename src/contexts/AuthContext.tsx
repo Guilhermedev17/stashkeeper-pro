@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -165,8 +166,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
+      // Call the edge function with explicit typing for userId
+      const userId = data as string;
       const { error: updateError } = await supabase.functions.invoke('update-user-role', {
-        body: { userId: data, role: 'admin' }
+        body: { userId, role: 'admin' }
       });
       
       if (updateError) throw updateError;
