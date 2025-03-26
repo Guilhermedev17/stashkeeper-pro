@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -35,18 +35,21 @@ import {
   Folder, 
   FolderPlus, 
   MoreHorizontal, 
-  Trash2 
+  Trash2,
+  RefreshCw
 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useSupabaseCategories, Category } from '@/hooks/useSupabaseCategories';
 
 const Categories = () => {
-  const { categories, loading, addCategory, updateCategory, deleteCategory } = useSupabaseCategories();
+  const { categories, loading, error, fetchCategories, addCategory, updateCategory, deleteCategory } = useSupabaseCategories();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [newCategory, setNewCategory] = useState({ name: '', description: '' });
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
 
   const filteredCategories = categories.filter(category => 
     category.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -56,32 +59,38 @@ const Categories = () => {
   const handleAddCategory = async () => {
     if (!newCategory.name.trim()) return;
     
-    await addCategory({
+    const result = await addCategory({
       name: newCategory.name.trim(),
       description: newCategory.description.trim() || null
     });
     
-    setNewCategory({ name: '', description: '' });
-    setIsAddDialogOpen(false);
+    if (result.success) {
+      setNewCategory({ name: '', description: '' });
+      setIsAddDialogOpen(false);
+    }
   };
 
   const handleEditCategory = async () => {
     if (!selectedCategory || !selectedCategory.name.trim()) return;
     
-    await updateCategory(selectedCategory.id, {
+    const result = await updateCategory(selectedCategory.id, {
       name: selectedCategory.name.trim(),
       description: selectedCategory.description?.trim() || null
     });
     
-    setIsEditDialogOpen(false);
+    if (result.success) {
+      setIsEditDialogOpen(false);
+    }
   };
 
   const handleDeleteCategory = async () => {
     if (!selectedCategory) return;
     
-    await deleteCategory(selectedCategory.id);
+    const result = await deleteCategory(selectedCategory.id);
     
-    setIsDeleteDialogOpen(false);
+    if (result.success) {
+      setIsDeleteDialogOpen(false);
+    }
   };
 
   const openEditDialog = (category: Category) => {
@@ -94,6 +103,12 @@ const Categories = () => {
     setIsDeleteDialogOpen(true);
   };
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchCategories();
+    setRefreshing(false);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -104,54 +119,66 @@ const Categories = () => {
           </p>
         </div>
         
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <FolderPlus className="mr-2 h-4 w-4" />
-              Nova Categoria
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Adicionar Categoria</DialogTitle>
-              <DialogDescription>
-                Preencha os detalhes da nova categoria.
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="grid gap-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nome</Label>
-                <Input
-                  id="name"
-                  value={newCategory.name}
-                  onChange={e => setNewCategory({ ...newCategory, name: e.target.value })}
-                  placeholder="Nome da categoria"
-                />
+        <div className="flex space-x-2">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={handleRefresh}
+            disabled={refreshing}
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            <span className="sr-only">Atualizar</span>
+          </Button>
+          
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <FolderPlus className="mr-2 h-4 w-4" />
+                Nova Categoria
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Adicionar Categoria</DialogTitle>
+                <DialogDescription>
+                  Preencha os detalhes da nova categoria.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nome</Label>
+                  <Input
+                    id="name"
+                    value={newCategory.name}
+                    onChange={e => setNewCategory({ ...newCategory, name: e.target.value })}
+                    placeholder="Nome da categoria"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="description">Descrição</Label>
+                  <Textarea
+                    id="description"
+                    value={newCategory.description}
+                    onChange={e => setNewCategory({ ...newCategory, description: e.target.value })}
+                    placeholder="Descrição da categoria"
+                    rows={3}
+                  />
+                </div>
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="description">Descrição</Label>
-                <Textarea
-                  id="description"
-                  value={newCategory.description}
-                  onChange={e => setNewCategory({ ...newCategory, description: e.target.value })}
-                  placeholder="Descrição da categoria"
-                  rows={3}
-                />
-              </div>
-            </div>
-            
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleAddCategory}>
-                Adicionar
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleAddCategory}>
+                  Adicionar
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="flex items-center space-x-2">
@@ -162,6 +189,14 @@ const Categories = () => {
           className="max-w-sm"
         />
       </div>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>
+            {error}
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Card>
         <CardHeader>

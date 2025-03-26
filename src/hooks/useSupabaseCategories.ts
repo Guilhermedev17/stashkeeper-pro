@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 export interface Category {
@@ -19,14 +19,22 @@ export const useSupabaseCategories = () => {
   const fetchCategories = async () => {
     try {
       setLoading(true);
+      setError(null);
+
+      console.log('Fetching categories...');
+      
       // Use the any type to bypass TypeScript's type checking for Supabase client
       const { data, error } = await (supabase
         .from('categories') as any)
         .select('*')
         .order('name', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
       
+      console.log('Categories fetched:', data);
       setCategories(data || []);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar categorias';
@@ -40,18 +48,24 @@ export const useSupabaseCategories = () => {
   const addCategory = async (category: Omit<Category, 'id' | 'created_at'>) => {
     try {
       console.log('Adding category:', category);
+      
+      // Use the any type for the Supabase client
       const { data, error } = await (supabase
         .from('categories') as any)
         .insert([category])
-        .select()
-        .single();
-
+        .select();
+      
       if (error) {
         console.error('Supabase error:', error);
         throw error;
       }
       
-      setCategories(prevCategories => [...prevCategories, data as Category]);
+      console.log('Category added successfully:', data);
+      
+      // Immediately update the categories state with the new data
+      if (data && data.length > 0) {
+        setCategories(prevCategories => [...prevCategories, data[0] as Category]);
+      }
       
       toast({
         title: 'Categoria adicionada',
@@ -73,20 +87,29 @@ export const useSupabaseCategories = () => {
 
   const updateCategory = async (id: string, updates: Partial<Omit<Category, 'id' | 'created_at'>>) => {
     try {
+      console.log('Updating category:', id, updates);
+      
       const { data, error } = await (supabase
         .from('categories') as any)
         .update(updates)
-        .match({ id })
-        .select()
-        .single();
+        .eq('id', id)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
       
-      setCategories(prevCategories => 
-        prevCategories.map(category => 
-          category.id === id ? { ...category, ...data } as Category : category
-        )
-      );
+      console.log('Category updated successfully:', data);
+      
+      // Immediately update the categories state with the updated data
+      if (data && data.length > 0) {
+        setCategories(prevCategories => 
+          prevCategories.map(category => 
+            category.id === id ? (data[0] as Category) : category
+          )
+        );
+      }
       
       toast({
         title: 'Categoria atualizada',
@@ -107,13 +130,19 @@ export const useSupabaseCategories = () => {
 
   const deleteCategory = async (id: string) => {
     try {
+      console.log('Deleting category:', id);
+      
       const { error } = await (supabase
         .from('categories') as any)
         .delete()
-        .match({ id });
+        .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
       
+      // Immediately update the categories state by removing the deleted category
       setCategories(prevCategories => 
         prevCategories.filter(category => category.id !== id)
       );
