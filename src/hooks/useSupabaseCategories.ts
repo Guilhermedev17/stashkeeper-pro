@@ -35,7 +35,8 @@ export const useSupabaseCategories = () => {
       }
       
       console.log('Categories fetched:', data);
-      setCategories(data || []);
+      // Use explicit type casting to Category[]
+      setCategories(data as Category[] || []);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar categorias';
       setError(errorMessage);
@@ -64,6 +65,7 @@ export const useSupabaseCategories = () => {
       
       // Immediately update the categories state with the new data
       if (data && data.length > 0) {
+        // Use explicit type casting to Category
         setCategories(prevCategories => [...prevCategories, data[0] as Category]);
       }
       
