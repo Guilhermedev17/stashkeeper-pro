@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -28,49 +28,183 @@ import {
   YAxis 
 } from 'recharts';
 import { ArrowDown, ArrowUp, CalendarRange, Download, FileText } from 'lucide-react';
-
-// Mock Data
-const stockMovementData = [
-  { month: 'Jan', entradas: 24, saidas: 18, total: 120 },
-  { month: 'Fev', entradas: 30, saidas: 22, total: 128 },
-  { month: 'Mar', entradas: 28, saidas: 25, total: 131 },
-  { month: 'Abr', entradas: 35, saidas: 30, total: 136 },
-  { month: 'Mai', entradas: 32, saidas: 28, total: 140 },
-  { month: 'Jun', entradas: 40, saidas: 32, total: 148 },
-];
-
-const categoryData = [
-  { name: 'Eletrônicos', value: 35 },
-  { name: 'Material de Escritório', value: 50 },
-  { name: 'Móveis', value: 15 },
-  { name: 'Equipamentos', value: 30 },
-];
-
-const productUsageData = [
-  { name: 'Papel A4', quantidade: 120 },
-  { name: 'Canetas', quantidade: 85 },
-  { name: 'Lápis', quantidade: 60 },
-  { name: 'Notebooks', quantidade: 30 },
-  { name: 'Toners', quantidade: 45 },
-  { name: 'Mouses', quantidade: 25 },
-  { name: 'Teclados', quantidade: 20 },
-  { name: 'Monitores', quantidade: 15 },
-];
-
-const monthlyValueData = [
-  { name: 'Jan', value: 12500 },
-  { name: 'Fev', value: 13200 },
-  { name: 'Mar', value: 12800 },
-  { name: 'Abr', value: 15000 },
-  { name: 'Mai', value: 14800 },
-  { name: 'Jun', value: 16500 },
-];
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+import { useSupabaseProducts } from '@/hooks/useSupabaseProducts';
+import { useSupabaseMovements } from '@/hooks/useSupabaseMovements';
+import { useSupabaseCategories } from '@/hooks/useSupabaseCategories';
 
 const Reports = () => {
   const [period, setPeriod] = useState('6months');
   const [category, setCategory] = useState('all');
+  const { products } = useSupabaseProducts();
+  const { movements } = useSupabaseMovements();
+  const { categories } = useSupabaseCategories();
+  
+  const [stockMovementData, setStockMovementData] = useState<any[]>([]);
+  const [categoryData, setCategoryData] = useState<any[]>([]);
+  const [productUsageData, setProductUsageData] = useState<any[]>([]);
+  const [monthlyValueData, setMonthlyValueData] = useState<any[]>([]);
+  const [totalEntradas, setTotalEntradas] = useState(0);
+  const [totalSaidas, setTotalSaidas] = useState(0);
+
+  // Colors for charts
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+
+  useEffect(() => {
+    if (movements.length > 0) {
+      // Filter movements by period
+      let filteredMovements = [...movements];
+      const today = new Date();
+      
+      if (period === '30days') {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(today.getDate() - 30);
+        filteredMovements = movements.filter(m => new Date(m.created_at) >= thirtyDaysAgo);
+      } else if (period === '3months') {
+        const threeMonthsAgo = new Date();
+        threeMonthsAgo.setMonth(today.getMonth() - 3);
+        filteredMovements = movements.filter(m => new Date(m.created_at) >= threeMonthsAgo);
+      } else if (period === '6months') {
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(today.getMonth() - 6);
+        filteredMovements = movements.filter(m => new Date(m.created_at) >= sixMonthsAgo);
+      } else if (period === '1year') {
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(today.getFullYear() - 1);
+        filteredMovements = movements.filter(m => new Date(m.created_at) >= oneYearAgo);
+      }
+
+      // Calculate totals
+      const entradas = filteredMovements.filter(m => m.type === 'entrada').reduce((acc, m) => acc + m.quantity, 0);
+      const saidas = filteredMovements.filter(m => m.type === 'saida').reduce((acc, m) => acc + m.quantity, 0);
+      
+      setTotalEntradas(entradas);
+      setTotalSaidas(saidas);
+
+      // Create monthly data for charts
+      const months = Array.from({ length: 6 }, (_, i) => {
+        const date = new Date();
+        if (period === '30days') {
+          date.setDate(today.getDate() - (5 - i) * 5);
+          return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        } else {
+          date.setMonth(today.getMonth() - (5 - i));
+          return date.toLocaleString('pt-BR', { month: 'short' });
+        }
+      });
+
+      const monthlyData = months.map(month => {
+        const monthMovements = filteredMovements.filter(m => {
+          const movementDate = new Date(m.created_at);
+          if (period === '30days') {
+            const movementDateStr = movementDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+            // For 30 days, group by 5-day periods
+            return movementDateStr === month;
+          } else {
+            const monthStr = movementDate.toLocaleString('pt-BR', { month: 'short' });
+            return monthStr === month;
+          }
+        });
+
+        const entradas = monthMovements.filter(m => m.type === 'entrada').reduce((acc, m) => acc + m.quantity, 0);
+        const saidas = monthMovements.filter(m => m.type === 'saida').reduce((acc, m) => acc + m.quantity, 0);
+        const total = (i: number) => {
+          // Calculate running total
+          let runningTotal = products.reduce((acc, p) => acc + p.quantity, 0) - entradas + saidas;
+          for (let j = 0; j <= i; j++) {
+            if (j < i) {
+              const prevMonth = months[j];
+              const prevMonthMovements = filteredMovements.filter(m => {
+                const movementDate = new Date(m.created_at);
+                if (period === '30days') {
+                  return movementDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) === prevMonth;
+                } else {
+                  return movementDate.toLocaleString('pt-BR', { month: 'short' }) === prevMonth;
+                }
+              });
+              
+              const prevEntradas = prevMonthMovements.filter(m => m.type === 'entrada').reduce((acc, m) => acc + m.quantity, 0);
+              const prevSaidas = prevMonthMovements.filter(m => m.type === 'saida').reduce((acc, m) => acc + m.quantity, 0);
+              
+              runningTotal += prevEntradas - prevSaidas;
+            }
+          }
+          return runningTotal;
+        };
+
+        return {
+          month,
+          entradas,
+          saidas,
+          total: total(months.indexOf(month))
+        };
+      });
+
+      setStockMovementData(monthlyData);
+
+      // Create monthly value data (simplified for now)
+      setMonthlyValueData(monthlyData.map(m => ({
+        name: m.month,
+        value: m.total * 100 // Simplified value calculation
+      })));
+
+      // Create product usage data
+      const productUsage: Record<string, number> = {};
+      filteredMovements.filter(m => m.type === 'saida').forEach(m => {
+        const productId = m.product_id;
+        if (productUsage[productId]) {
+          productUsage[productId] += m.quantity;
+        } else {
+          productUsage[productId] = m.quantity;
+        }
+      });
+
+      const productUsageArray = Object.entries(productUsage)
+        .map(([id, quantidade]) => {
+          const product = products.find(p => p.id === id);
+          return {
+            name: product ? product.name : 'Produto Desconhecido',
+            quantidade
+          };
+        })
+        .sort((a, b) => b.quantidade - a.quantidade)
+        .slice(0, 8);
+
+      setProductUsageData(productUsageArray);
+    }
+  }, [movements, products, period]);
+
+  useEffect(() => {
+    if (products.length > 0 && categories.length > 0) {
+      // Filter products by category if specified
+      let filteredProducts = [...products];
+      if (category !== 'all') {
+        filteredProducts = products.filter(p => p.category_id === category);
+      }
+
+      // Group products by category
+      const catCounts: Record<string, number> = {};
+      
+      filteredProducts.forEach(product => {
+        if (product.category_id) {
+          if (catCounts[product.category_id]) {
+            catCounts[product.category_id] += product.quantity;
+          } else {
+            catCounts[product.category_id] = product.quantity;
+          }
+        }
+      });
+
+      const catData = Object.entries(catCounts).map(([id, value]) => {
+        const cat = categories.find(c => c.id === id);
+        return {
+          name: cat ? cat.name : 'Sem categoria',
+          value
+        };
+      }).sort((a, b) => b.value - a.value);
+
+      setCategoryData(catData.length > 0 ? catData : [{ name: 'Sem dados', value: 1 }]);
+    }
+  }, [products, categories, category]);
 
   return (
     <div className="space-y-6">
@@ -129,10 +263,9 @@ const Reports = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas as categorias</SelectItem>
-                <SelectItem value="electronics">Eletrônicos</SelectItem>
-                <SelectItem value="office">Material de Escritório</SelectItem>
-                <SelectItem value="furniture">Móveis</SelectItem>
-                <SelectItem value="equipment">Equipamentos</SelectItem>
+                {categories.map(cat => (
+                  <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </CardContent>
@@ -147,10 +280,10 @@ const Reports = () => {
           <CardContent>
             <div className="flex items-center">
               <ArrowDown className="mr-2 h-4 w-4 text-green-500" />
-              <div className="text-2xl font-bold">189</div>
+              <div className="text-2xl font-bold">{totalEntradas}</div>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Nos últimos 6 meses
+              No período selecionado
             </p>
           </CardContent>
         </Card>
@@ -164,10 +297,10 @@ const Reports = () => {
           <CardContent>
             <div className="flex items-center">
               <ArrowUp className="mr-2 h-4 w-4 text-blue-500" />
-              <div className="text-2xl font-bold">155</div>
+              <div className="text-2xl font-bold">{totalSaidas}</div>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Nos últimos 6 meses
+              No período selecionado
             </p>
           </CardContent>
         </Card>
@@ -245,7 +378,7 @@ const Reports = () => {
                     <CardTitle className="text-sm text-muted-foreground">Total de Produtos</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">148</div>
+                    <div className="text-2xl font-bold">{products.reduce((acc, p) => acc + p.quantity, 0)}</div>
                   </CardContent>
                 </Card>
                 <Card>
@@ -253,7 +386,11 @@ const Reports = () => {
                     <CardTitle className="text-sm text-muted-foreground">Crescimento</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-green-500">+23%</div>
+                    <div className="text-2xl font-bold text-green-500">
+                      {totalEntradas > totalSaidas ? 
+                        `+${Math.round((totalEntradas - totalSaidas) / (totalSaidas || 1) * 100)}%` : 
+                        `${Math.round((totalEntradas - totalSaidas) / (totalSaidas || 1) * 100)}%`}
+                    </div>
                   </CardContent>
                 </Card>
                 <Card>
@@ -261,7 +398,9 @@ const Reports = () => {
                     <CardTitle className="text-sm text-muted-foreground">Taxa de Rotatividade</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">32%</div>
+                    <div className="text-2xl font-bold">
+                      {Math.round(totalSaidas / (products.reduce((acc, p) => acc + p.quantity, 0) || 1) * 100)}%
+                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -311,7 +450,7 @@ const Reports = () => {
               </div>
               
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
-                {categoryData.map((category, index) => (
+                {categoryData.slice(0, 4).map((category, index) => (
                   <Card key={category.name}>
                     <CardHeader className="py-2">
                       <CardTitle className="text-sm text-muted-foreground">{category.name}</CardTitle>
@@ -374,8 +513,12 @@ const Reports = () => {
                     <CardTitle className="text-sm text-muted-foreground">Produto Mais Utilizado</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-xl font-bold">Papel A4</div>
-                    <div className="text-sm text-muted-foreground">120 unidades</div>
+                    <div className="text-xl font-bold">
+                      {productUsageData.length > 0 ? productUsageData[0].name : "Sem dados"}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {productUsageData.length > 0 ? `${productUsageData[0].quantidade} unidades` : "0 unidades"}
+                    </div>
                   </CardContent>
                 </Card>
                 <Card>
@@ -383,7 +526,7 @@ const Reports = () => {
                     <CardTitle className="text-sm text-muted-foreground">Total de Saídas no Período</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-xl font-bold">400 unidades</div>
+                    <div className="text-xl font-bold">{totalSaidas} unidades</div>
                   </CardContent>
                 </Card>
               </div>
@@ -442,7 +585,9 @@ const Reports = () => {
                     <CardTitle className="text-sm text-muted-foreground">Valor Atual</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-xl font-bold">R$ 16.500,00</div>
+                    <div className="text-xl font-bold">
+                      R$ {(products.reduce((acc, p) => acc + p.quantity, 0) * 100).toLocaleString('pt-BR')}
+                    </div>
                   </CardContent>
                 </Card>
                 <Card>
@@ -450,16 +595,24 @@ const Reports = () => {
                     <CardTitle className="text-sm text-muted-foreground">Crescimento</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-xl font-bold text-green-500">+32%</div>
-                    <div className="text-sm text-muted-foreground">Nos últimos 6 meses</div>
+                    <div className="text-xl font-bold text-green-500">
+                      {totalEntradas > totalSaidas ? 
+                        `+${Math.round((totalEntradas - totalSaidas) / (totalSaidas || 1) * 100)}%` : 
+                        `${Math.round((totalEntradas - totalSaidas) / (totalSaidas || 1) * 100)}%`}
+                    </div>
+                    <div className="text-sm text-muted-foreground">No período selecionado</div>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardHeader className="py-2">
-                    <CardTitle className="text-sm text-muted-foreground">Média Mensal</CardTitle>
+                    <CardTitle className="text-sm text-muted-foreground">Média por Produto</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-xl font-bold">R$ 14.133,33</div>
+                    <div className="text-xl font-bold">
+                      R$ {products.length > 0 ? 
+                        ((products.reduce((acc, p) => acc + p.quantity, 0) * 100) / products.length).toLocaleString('pt-BR', {maximumFractionDigits: 2}) : 
+                        "0"}
+                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -470,7 +623,7 @@ const Reports = () => {
 
       <div className="flex items-center justify-center gap-1 pt-4 text-sm text-muted-foreground">
         <CalendarRange className="h-4 w-4" />
-        <span>Dados atualizados em 15/07/2023</span>
+        <span>Dados atualizados em {new Date().toLocaleDateString('pt-BR')}</span>
       </div>
     </div>
   );

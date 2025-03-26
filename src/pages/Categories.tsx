@@ -1,9 +1,10 @@
-import { useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
+
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   Dialog, 
   DialogContent, 
@@ -14,6 +15,14 @@ import {
   DialogTrigger 
 } from '@/components/ui/dialog';
 import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+import { 
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
@@ -21,97 +30,68 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { Edit, MoreHorizontal, Plus, Tags, Trash2 } from 'lucide-react';
-
-interface Category {
-  id: string;
-  name: string;
-  description: string;
-  createdAt: Date;
-  productCount: number;
-}
-
-// Empty initial categories
-const INITIAL_CATEGORIES: Category[] = [];
+import { 
+  Edit, 
+  Folder, 
+  FolderPlus, 
+  MoreHorizontal, 
+  Trash2 
+} from 'lucide-react';
+import { useSupabaseCategories, Category } from '@/hooks/useSupabaseCategories';
 
 const Categories = () => {
-  const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
+  const { categories, loading, addCategory, updateCategory, deleteCategory } = useSupabaseCategories();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [newCategory, setNewCategory] = useState({ name: '', description: '' });
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-  
-  const [newCategory, setNewCategory] = useState({
-    name: '',
-    description: '',
-  });
-  
-  const { toast } = useToast();
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const handleAddCategory = () => {
-    const category: Category = {
-      id: Date.now().toString(),
-      name: newCategory.name,
-      description: newCategory.description,
-      createdAt: new Date(),
-      productCount: 0,
-    };
+  const filteredCategories = categories.filter(category => 
+    category.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    (category.description && category.description.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  const handleAddCategory = async () => {
+    if (!newCategory.name.trim()) return;
     
-    setCategories([...categories, category]);
+    await addCategory({
+      name: newCategory.name.trim(),
+      description: newCategory.description.trim() || null
+    });
+    
+    setNewCategory({ name: '', description: '' });
     setIsAddDialogOpen(false);
-    setNewCategory({
-      name: '',
-      description: '',
-    });
-    
-    toast({
-      title: 'Categoria adicionada',
-      description: `${category.name} foi adicionada com sucesso.`,
-    });
   };
 
-  const handleEditCategory = () => {
-    if (!selectedCategory) return;
+  const handleEditCategory = async () => {
+    if (!selectedCategory || !selectedCategory.name.trim()) return;
     
-    const updatedCategories = categories.map(category => 
-      category.id === selectedCategory.id ? selectedCategory : category
-    );
+    await updateCategory(selectedCategory.id, {
+      name: selectedCategory.name.trim(),
+      description: selectedCategory.description?.trim() || null
+    });
     
-    setCategories(updatedCategories);
     setIsEditDialogOpen(false);
-    setSelectedCategory(null);
-    
-    toast({
-      title: 'Categoria atualizada',
-      description: `${selectedCategory.name} foi atualizada com sucesso.`,
-    });
   };
 
-  const handleDeleteCategory = () => {
+  const handleDeleteCategory = async () => {
     if (!selectedCategory) return;
     
-    // Check if category has products
-    if (selectedCategory.productCount > 0) {
-      toast({
-        title: 'Não é possível excluir',
-        description: `Esta categoria contém ${selectedCategory.productCount} produtos associados.`,
-        variant: 'destructive',
-      });
-      setIsDeleteDialogOpen(false);
-      return;
-    }
+    await deleteCategory(selectedCategory.id);
     
-    const updatedCategories = categories.filter(category => category.id !== selectedCategory.id);
-    
-    setCategories(updatedCategories);
     setIsDeleteDialogOpen(false);
-    
-    toast({
-      title: 'Categoria removida',
-      description: `${selectedCategory.name} foi removida com sucesso.`,
-    });
-    
-    setSelectedCategory(null);
+  };
+
+  const openEditDialog = (category: Category) => {
+    setSelectedCategory(category);
+    setIsEditDialogOpen(true);
+  };
+
+  const openDeleteDialog = (category: Category) => {
+    setSelectedCategory(category);
+    setIsDeleteDialogOpen(true);
   };
 
   return (
@@ -127,7 +107,7 @@ const Categories = () => {
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button>
-              <Plus className="mr-2 h-4 w-4" />
+              <FolderPlus className="mr-2 h-4 w-4" />
               Nova Categoria
             </Button>
           </DialogTrigger>
@@ -145,18 +125,19 @@ const Categories = () => {
                 <Input
                   id="name"
                   value={newCategory.name}
-                  onChange={e => setNewCategory({...newCategory, name: e.target.value})}
+                  onChange={e => setNewCategory({ ...newCategory, name: e.target.value })}
                   placeholder="Nome da categoria"
                 />
               </div>
               
               <div className="space-y-2">
                 <Label htmlFor="description">Descrição</Label>
-                <Input
+                <Textarea
                   id="description"
                   value={newCategory.description}
-                  onChange={e => setNewCategory({...newCategory, description: e.target.value})}
+                  onChange={e => setNewCategory({ ...newCategory, description: e.target.value })}
                   placeholder="Descrição da categoria"
+                  rows={3}
                 />
               </div>
             </div>
@@ -165,7 +146,7 @@ const Categories = () => {
               <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                 Cancelar
               </Button>
-              <Button type="submit" onClick={handleAddCategory}>
+              <Button onClick={handleAddCategory}>
                 Adicionar
               </Button>
             </DialogFooter>
@@ -173,85 +154,79 @@ const Categories = () => {
         </Dialog>
       </div>
 
-      <div className="border rounded-md">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Descrição</TableHead>
-              <TableHead className="text-center">Produtos</TableHead>
-              <TableHead>Data de Criação</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {categories.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
-                  <div className="flex flex-col items-center justify-center text-muted-foreground">
-                    <Tags className="h-8 w-8 mb-2" />
-                    <p>Nenhuma categoria encontrada</p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              categories.map(category => (
-                <TableRow key={category.id}>
-                  <TableCell className="font-medium">
-                    {category.name}
-                  </TableCell>
-                  <TableCell>
-                    {category.description}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <span className="px-2 py-1 rounded-full text-xs bg-secondary text-secondary-foreground">
-                      {category.productCount}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    {category.createdAt.toLocaleDateString('pt-BR')}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Abrir menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setSelectedCategory(category);
-                            setIsEditDialogOpen(true);
-                          }}
-                        >
-                          <Edit className="mr-2 h-4 w-4" />
-                          Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-destructive focus:text-destructive"
-                          onClick={() => {
-                            setSelectedCategory(category);
-                            setIsDeleteDialogOpen(true);
-                          }}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Excluir
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+      <div className="flex items-center space-x-2">
+        <Input
+          placeholder="Buscar categorias..."
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+          className="max-w-sm"
+        />
       </div>
 
-      {/* Edit Category Dialog */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Folder className="h-5 w-5" />
+            Categorias
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="text-center py-4">Carregando categorias...</div>
+          ) : filteredCategories.length === 0 ? (
+            <div className="text-center py-4 text-muted-foreground">
+              {searchTerm ? 'Nenhuma categoria encontrada.' : 'Nenhuma categoria cadastrada.'}
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Descrição</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredCategories.map(category => (
+                  <TableRow key={category.id}>
+                    <TableCell className="font-medium">{category.name}</TableCell>
+                    <TableCell>{category.description || '-'}</TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Abrir menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => openEditDialog(category)}
+                          >
+                            <Edit className="mr-2 h-4 w-4" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => openDeleteDialog(category)}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -268,16 +243,17 @@ const Categories = () => {
                 <Input
                   id="edit-name"
                   value={selectedCategory.name}
-                  onChange={e => setSelectedCategory({...selectedCategory, name: e.target.value})}
+                  onChange={e => setSelectedCategory({ ...selectedCategory, name: e.target.value })}
                 />
               </div>
               
               <div className="space-y-2">
                 <Label htmlFor="edit-description">Descrição</Label>
-                <Input
+                <Textarea
                   id="edit-description"
-                  value={selectedCategory.description}
-                  onChange={e => setSelectedCategory({...selectedCategory, description: e.target.value})}
+                  value={selectedCategory.description || ''}
+                  onChange={e => setSelectedCategory({ ...selectedCategory, description: e.target.value })}
+                  rows={3}
                 />
               </div>
             </div>
@@ -294,7 +270,7 @@ const Categories = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Category Dialog */}
+      {/* Delete Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -306,16 +282,10 @@ const Categories = () => {
           
           {selectedCategory && (
             <div className="py-4">
-              <p className="font-medium">
-                {selectedCategory.name}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {selectedCategory.description}
-              </p>
-              
-              {selectedCategory.productCount > 0 && (
-                <p className="mt-4 text-sm text-destructive">
-                  Esta categoria contém {selectedCategory.productCount} produtos associados e não pode ser excluída.
+              <p className="font-medium">{selectedCategory.name}</p>
+              {selectedCategory.description && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  {selectedCategory.description}
                 </p>
               )}
             </div>
@@ -325,11 +295,7 @@ const Categories = () => {
             <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button 
-              variant="destructive" 
-              onClick={handleDeleteCategory}
-              disabled={selectedCategory?.productCount ? selectedCategory.productCount > 0 : false}
-            >
+            <Button variant="destructive" onClick={handleDeleteCategory}>
               Excluir
             </Button>
           </DialogFooter>

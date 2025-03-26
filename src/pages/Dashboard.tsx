@@ -1,33 +1,119 @@
 
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { BarChart, LineChart, PieChart, ResponsiveContainer, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend, Line, Pie, Cell } from 'recharts';
 import { ArchiveRestore, ArrowDown, ArrowUp, CircleDollarSign, ClipboardList, PackageOpen, Percent } from 'lucide-react';
-
-// Mock data for the charts
-const monthlyData = [
-  { name: 'Jan', entradas: 45, saidas: 30 },
-  { name: 'Fev', entradas: 52, saidas: 38 },
-  { name: 'Mar', entradas: 48, saidas: 41 },
-  { name: 'Abr', entradas: 61, saidas: 50 },
-  { name: 'Mai', entradas: 55, saidas: 45 },
-  { name: 'Jun', entradas: 67, saidas: 52 },
-];
-
-const categoryData = [
-  { name: 'Eletrônicos', value: 35 },
-  { name: 'Material de Escritório', value: 25 },
-  { name: 'Móveis', value: 15 },
-  { name: 'Equipamentos', value: 25 },
-];
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+import { useSupabaseProducts } from '@/hooks/useSupabaseProducts';
+import { useSupabaseMovements } from '@/hooks/useSupabaseMovements';
+import { useSupabaseCategories } from '@/hooks/useSupabaseCategories';
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { products } = useSupabaseProducts();
+  const { movements } = useSupabaseMovements();
+  const { categories } = useSupabaseCategories();
   
+  const [monthlyData, setMonthlyData] = useState<any[]>([]);
+  const [categoryData, setCategoryData] = useState<any[]>([]);
+  const [criticalStock, setCriticalStock] = useState<any[]>([]);
+  const [recentMovements, setRecentMovements] = useState<any[]>([]);
+
   // Get user's name from metadata, or use email as fallback
   const userName = user?.user_metadata?.name || user?.email || 'Usuário';
+
+  useEffect(() => {
+    if (movements.length > 0) {
+      // Group movements by month
+      const last6Months = Array.from({ length: 6 }, (_, i) => {
+        const date = new Date();
+        date.setMonth(date.getMonth() - i);
+        return date.toLocaleString('pt-BR', { month: 'short' });
+      }).reverse();
+
+      const groupedData = last6Months.map(month => {
+        const monthMovements = movements.filter(m => {
+          const movementDate = new Date(m.created_at);
+          const monthStr = movementDate.toLocaleString('pt-BR', { month: 'short' });
+          return monthStr === month;
+        });
+
+        const entradas = monthMovements.filter(m => m.type === 'entrada').reduce((acc, m) => acc + m.quantity, 0);
+        const saidas = monthMovements.filter(m => m.type === 'saida').reduce((acc, m) => acc + m.quantity, 0);
+
+        return {
+          name: month,
+          entradas,
+          saidas
+        };
+      });
+
+      setMonthlyData(groupedData);
+
+      // Get recent movements
+      const recent = [...movements]
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 4)
+        .map(m => ({
+          id: m.id,
+          type: m.type,
+          name: m.product_name || 'Produto',
+          qty: m.quantity,
+          date: new Date(m.created_at).toLocaleDateString('pt-BR')
+        }));
+      
+      setRecentMovements(recent);
+    }
+  }, [movements]);
+
+  useEffect(() => {
+    if (products.length > 0 && categories.length > 0) {
+      // Group products by category
+      const catCounts: Record<string, number> = {};
+      
+      products.forEach(product => {
+        if (product.category_id) {
+          if (catCounts[product.category_id]) {
+            catCounts[product.category_id]++;
+          } else {
+            catCounts[product.category_id] = 1;
+          }
+        }
+      });
+
+      const catData = Object.entries(catCounts).map(([id, value]) => {
+        const cat = categories.find(c => c.id === id);
+        return {
+          name: cat ? cat.name : 'Sem categoria',
+          value
+        };
+      });
+
+      setCategoryData(catData.length > 0 ? catData : [{ name: 'Sem dados', value: 1 }]);
+
+      // Find critical stock items
+      const critical = products
+        .filter(p => p.quantity <= p.min_quantity)
+        .sort((a, b) => a.quantity - b.quantity)
+        .slice(0, 4)
+        .map(p => ({
+          id: p.id,
+          name: p.name,
+          stock: p.quantity,
+          min: p.min_quantity
+        }));
+      
+      setCriticalStock(critical);
+    }
+  }, [products, categories]);
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+
+  // Calculate totals
+  const totalProducts = products.length;
+  const totalEntradas = movements.filter(m => m.type === 'entrada').reduce((acc, m) => acc + m.quantity, 0);
+  const totalSaidas = movements.filter(m => m.type === 'saida').reduce((acc, m) => acc + m.quantity, 0);
+  const criticalCount = products.filter(p => p.quantity <= p.min_quantity).length;
 
   return (
     <div className="space-y-6">
@@ -45,35 +131,35 @@ const Dashboard = () => {
             <PackageOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">248</div>
+            <div className="text-2xl font-bold">{totalProducts}</div>
             <p className="text-xs text-muted-foreground">
-              +12% do mês anterior
+              Produtos cadastrados
             </p>
           </CardContent>
         </Card>
         
         <Card className="hover:shadow-md transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Entradas do Mês</CardTitle>
+            <CardTitle className="text-sm font-medium">Total de Entradas</CardTitle>
             <ArrowDown className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">67</div>
+            <div className="text-2xl font-bold">{totalEntradas}</div>
             <p className="text-xs text-muted-foreground">
-              +22% do mês anterior
+              Unidades recebidas
             </p>
           </CardContent>
         </Card>
         
         <Card className="hover:shadow-md transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Saídas do Mês</CardTitle>
+            <CardTitle className="text-sm font-medium">Total de Saídas</CardTitle>
             <ArrowUp className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">52</div>
+            <div className="text-2xl font-bold">{totalSaidas}</div>
             <p className="text-xs text-muted-foreground">
-              +15% do mês anterior
+              Unidades distribuídas
             </p>
           </CardContent>
         </Card>
@@ -84,9 +170,9 @@ const Dashboard = () => {
             <Percent className="h-4 w-4 text-amber-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">8</div>
+            <div className="text-2xl font-bold">{criticalCount}</div>
             <p className="text-xs text-muted-foreground">
-              -3 do mês anterior
+              Produtos abaixo do mínimo
             </p>
           </CardContent>
         </Card>
@@ -171,18 +257,17 @@ const Dashboard = () => {
                 <div className="font-medium text-right">Mínimo</div>
               </div>
               <div className="space-y-2">
-                {[
-                  { id: 1, name: 'Papel A4', stock: 2, min: 5 },
-                  { id: 2, name: 'Toner', stock: 1, min: 3 },
-                  { id: 3, name: 'Mouse USB', stock: 4, min: 10 },
-                  { id: 4, name: 'Caderno', stock: 3, min: 8 },
-                ].map(item => (
+                {criticalStock.length > 0 ? criticalStock.map(item => (
                   <div key={item.id} className="grid grid-cols-3 text-sm">
                     <div className="truncate">{item.name}</div>
                     <div className="text-center">{item.stock}</div>
                     <div className="text-right">{item.min}</div>
                   </div>
-                ))}
+                )) : (
+                  <div className="text-center text-muted-foreground py-2">
+                    Nenhum produto em estado crítico
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
@@ -198,12 +283,7 @@ const Dashboard = () => {
           <CardContent>
             <div className="space-y-4">
               <div className="space-y-2">
-                {[
-                  { id: 1, type: 'entrada', name: 'Papel A4', qty: 10, date: '12/07/2023' },
-                  { id: 2, type: 'saida', name: 'Toner', qty: 2, date: '10/07/2023' },
-                  { id: 3, type: 'entrada', name: 'Mouse USB', qty: 15, date: '09/07/2023' },
-                  { id: 4, type: 'saida', name: 'Caderno', qty: 8, date: '07/07/2023' },
-                ].map(item => (
+                {recentMovements.length > 0 ? recentMovements.map(item => (
                   <div key={item.id} className="flex items-center gap-2 text-sm">
                     {item.type === 'entrada' ? (
                       <ArrowDown className="h-3 w-3 text-green-500" />
@@ -214,7 +294,11 @@ const Dashboard = () => {
                     <div className="text-xs text-muted-foreground">{item.qty} un.</div>
                     <div className="text-xs text-muted-foreground">{item.date}</div>
                   </div>
-                ))}
+                )) : (
+                  <div className="text-center text-muted-foreground py-2">
+                    Nenhuma movimentação recente
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
@@ -223,37 +307,42 @@ const Dashboard = () => {
         <Card className="hover:shadow-md transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">
-              Valor do Estoque
+              Resumo de Estoque
             </CardTitle>
             <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">R$ 42.580,00</div>
+            <div className="text-2xl font-bold">Itens Totais: {products.reduce((sum, p) => sum + p.quantity, 0)}</div>
             <div className="h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
-                  data={[
-                    { month: 'Jan', value: 35000 },
-                    { month: 'Fev', value: 37500 },
-                    { month: 'Mar', value: 36800 },
-                    { month: 'Abr', value: 38200 },
-                    { month: 'Mai', value: 40100 },
-                    { month: 'Jun', value: 42580 },
-                  ]}
+                  data={monthlyData}
+                  margin={{
+                    top: 20, 
+                    right: 30, 
+                    bottom: 10, 
+                    left: 20
+                  }}
                 >
                   <XAxis 
-                    dataKey="month" 
+                    dataKey="name" 
                     fontSize={12}
                     axisLine={false}
                     tickLine={false}
                   />
-                  <Tooltip 
-                    formatter={(value: number) => [`R$ ${value.toLocaleString('pt-BR')}`, 'Valor']}
+                  <Tooltip />
+                  <Line
+                    type="monotone"
+                    dataKey="entradas"
+                    stroke="#0088FE"
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                    activeDot={{ r: 5 }}
                   />
                   <Line
                     type="monotone"
-                    dataKey="value"
-                    stroke="#0088FE"
+                    dataKey="saidas"
+                    stroke="#FF8042"
                     strokeWidth={2}
                     dot={{ r: 3 }}
                     activeDot={{ r: 5 }}

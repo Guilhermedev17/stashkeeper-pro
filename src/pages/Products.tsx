@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useSupabaseProducts } from '@/hooks/useSupabaseProducts';
+import { useSupabaseCategories } from '@/hooks/useSupabaseCategories';
 import ProductList from '@/components/products/ProductList';
 import ProductFilters from '@/components/products/ProductFilters';
 import AddProductDialog from '@/components/products/AddProductDialog';
@@ -9,14 +10,6 @@ import EditProductDialog from '@/components/products/EditProductDialog';
 import DeleteProductDialog from '@/components/products/DeleteProductDialog';
 import MovementDialog from '@/components/products/MovementDialog';
 import { useAuth } from '@/contexts/AuthContext';
-
-// Mock data
-const MOCK_CATEGORIES = [
-  { id: '1', name: 'Eletrônicos' },
-  { id: '2', name: 'Material de Escritório' },
-  { id: '3', name: 'Móveis' },
-  { id: '4', name: 'Equipamentos' },
-];
 
 interface Product {
   id: string;
@@ -68,6 +61,8 @@ const Products = () => {
     updateProduct,
     deleteProduct
   } = useSupabaseProducts();
+
+  const { categories } = useSupabaseCategories();
 
   // Load products from Supabase
   useEffect(() => {
@@ -182,7 +177,7 @@ const Products = () => {
   };
 
   const getCategoryName = (categoryId: string) => {
-    const category = MOCK_CATEGORIES.find(cat => cat.id === categoryId);
+    const category = categories.find(cat => cat.id === categoryId);
     return category ? category.name : 'Sem categoria';
   };
 
@@ -199,7 +194,7 @@ const Products = () => {
         <AddProductDialog
           open={isAddDialogOpen}
           onOpenChange={setIsAddDialogOpen}
-          categories={MOCK_CATEGORIES}
+          categories={categories}
           newProduct={newProduct}
           onChange={handleNewProductChange}
           onSubmit={handleAddProduct}
@@ -209,7 +204,7 @@ const Products = () => {
       <ProductFilters
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
-        categories={MOCK_CATEGORIES}
+        categories={categories}
       />
 
       <ProductList
@@ -224,7 +219,7 @@ const Products = () => {
         product={selectedProduct}
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
-        categories={MOCK_CATEGORIES}
+        categories={categories}
         onUpdate={handleEditProduct}
         onChange={handleSelectedProductChange}
       />
