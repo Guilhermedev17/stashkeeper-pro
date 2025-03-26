@@ -23,9 +23,8 @@ export const useSupabaseCategories = () => {
 
       console.log('Fetching categories...');
       
-      // Cast to any to bypass TypeScript's type checking for Supabase client
       const { data, error } = await supabase
-        .from('categories' as any)
+        .from('categories')
         .select('*')
         .order('name', { ascending: true });
 
@@ -35,8 +34,7 @@ export const useSupabaseCategories = () => {
       }
       
       console.log('Categories fetched:', data);
-      // Double cast to properly convert to Category[]
-      setCategories((data as unknown) as Category[] || []);
+      setCategories(data || []);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar categorias';
       setError(errorMessage);
@@ -50,9 +48,8 @@ export const useSupabaseCategories = () => {
     try {
       console.log('Adding category:', category);
       
-      // Cast to any for the Supabase client
       const { data, error } = await supabase
-        .from('categories' as any)
+        .from('categories')
         .insert([category])
         .select();
       
@@ -65,8 +62,7 @@ export const useSupabaseCategories = () => {
       
       // Immediately update the categories state with the new data
       if (data && data.length > 0) {
-        // Double cast to properly convert to Category
-        setCategories(prevCategories => [...prevCategories, (data[0] as unknown) as Category]);
+        setCategories(prevCategories => [...prevCategories, data[0]]);
       }
       
       toast({
@@ -92,7 +88,7 @@ export const useSupabaseCategories = () => {
       console.log('Updating category:', id, updates);
       
       const { data, error } = await supabase
-        .from('categories' as any)
+        .from('categories')
         .update(updates)
         .eq('id', id)
         .select();
@@ -108,7 +104,7 @@ export const useSupabaseCategories = () => {
       if (data && data.length > 0) {
         setCategories(prevCategories => 
           prevCategories.map(category => 
-            category.id === id ? ((data[0] as unknown) as Category) : category
+            category.id === id ? data[0] : category
           )
         );
       }
@@ -135,7 +131,7 @@ export const useSupabaseCategories = () => {
       console.log('Deleting category:', id);
       
       const { error } = await supabase
-        .from('categories' as any)
+        .from('categories')
         .delete()
         .eq('id', id);
 
