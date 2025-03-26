@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,10 +33,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (session?.user) {
           const userRole = session.user.user_metadata?.role;
-          // Special case for guissantos50@gmail.com - always admin
           if (session.user.email === 'guissantos50@gmail.com') {
             setIsAdmin(true);
-            // If the user doesn't have admin role yet, set it
             if (userRole !== 'admin') {
               supabase.auth.updateUser({
                 data: { role: 'admin' }
@@ -66,10 +63,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (session?.user) {
         const userRole = session.user.user_metadata?.role;
-        // Special case for guissantos50@gmail.com - always admin
         if (session.user.email === 'guissantos50@gmail.com') {
           setIsAdmin(true);
-          // If the user doesn't have admin role yet, set it
           if (userRole !== 'admin') {
             supabase.auth.updateUser({
               data: { role: 'admin' }
@@ -155,7 +150,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const setSpecificUserAsAdmin = async (email: string): Promise<void> => {
     try {
-      // Use a custom RPC call to get user by email and set as admin
       const { data, error } = await supabase.rpc('get_user_id_by_email', { 
         user_email: email 
       });
@@ -171,12 +165,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
-      // We use a direct call to admin functions instead of trying to query profiles
-      // Need to cast 'data' to string to fix the type error
-      const { error: updateError } = await supabase.auth.admin.updateUserById(
-        data as string,
-        { user_metadata: { role: 'admin' } }
-      );
+      const { error: updateError } = await supabase.functions.invoke('update-user-role', {
+        body: { userId: data, role: 'admin' }
+      });
       
       if (updateError) throw updateError;
       
