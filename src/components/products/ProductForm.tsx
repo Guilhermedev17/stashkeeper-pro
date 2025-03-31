@@ -46,17 +46,16 @@ const ProductForm: React.FC<ProductFormProps> = ({
 }) => {
   return (
     <div className="grid gap-4 py-4">
-      {!isNew && (
-        <div className="space-y-2">
-          <Label htmlFor="code">Código</Label>
-          <Input
-            id="code"
-            value={product.code}
-            readOnly
-            disabled
-          />
-        </div>
-      )}
+      <div className="space-y-2">
+        <Label htmlFor="code">Código</Label>
+        <Input
+          id="code"
+          value={product.code || ''}
+          onChange={e => onChange('code', e.target.value)}
+          placeholder="Código do produto"
+          disabled={!isNew}
+        />
+      </div>
       
       <div className="space-y-2">
         <Label htmlFor="name">Nome</Label>

@@ -54,7 +54,7 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({
         <DialogHeader>
           <DialogTitle>Adicionar Produto</DialogTitle>
           <DialogDescription>
-            Preencha os detalhes do novo produto. O código será gerado automaticamente.
+            Preencha os detalhes do novo produto, incluindo o código.
           </DialogDescription>
         </DialogHeader>
         

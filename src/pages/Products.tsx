@@ -22,16 +22,10 @@ interface Product {
   createdAt: Date;
 }
 
-const generateProductCode = () => {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let code = '';
-  for (let i = 0; i < 8; i++) {
-    code += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-  return code;
-};
+
 
 const Products = () => {
+  
   const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
@@ -43,6 +37,7 @@ const Products = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   
   const [newProduct, setNewProduct] = useState({
+    code: '',
     name: '',
     description: '',
     categoryId: '',
@@ -95,10 +90,8 @@ const Products = () => {
   }, [searchTerm, products]);
 
   const handleAddProduct = async () => {
-    const productCode = generateProductCode();
-    
     const result = await addProduct({
-      code: productCode,
+      code: newProduct.code,
       name: newProduct.name,
       description: newProduct.description,
       category_id: newProduct.categoryId,
@@ -109,6 +102,7 @@ const Products = () => {
     if (result.success) {
       setIsAddDialogOpen(false);
       setNewProduct({
+        code: '',
         name: '',
         description: '',
         categoryId: '',

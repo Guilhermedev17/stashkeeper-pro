@@ -139,8 +139,8 @@ const Sidebar = ({ showMobile, setShowMobile }: SidebarProps) => {
               to="/admin"
               className={({ isActive }) =>
                 cn(
-                  'flex items-center rounded-md px-3 py-2 text-sm font-medium text-primary-foreground/70 hover:bg-primary/20 hover:text-primary-foreground transition-colors',
-                  isActive && 'bg-primary/30 text-primary-foreground'
+                  'group flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground',
+                  isActive ? 'bg-accent' : 'transparent'
                 )
               }
               onClick={closeMobileMenu}

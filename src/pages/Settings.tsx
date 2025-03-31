@@ -7,79 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Bell, Check, EyeOff, MoreVertical, Plus, ShieldCheck, Trash2, User, X } from 'lucide-react';
+import { Bell, Check, EyeOff } from 'lucide-react';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
-
-interface UserData {
-  id: string;
-  name: string;
-  email: string;
-  role: 'admin' | 'user';
-  status: 'active' | 'inactive';
-  lastLogin?: Date;
-}
-
-const MOCK_USERS: UserData[] = [
-  {
-    id: '1',
-    name: 'Admin User',
-    email: 'admin@example.com',
-    role: 'admin',
-    status: 'active',
-    lastLogin: new Date('2023-07-15T10:30:00'),
-  },
-  {
-    id: '2',
-    name: 'Regular User',
-    email: 'user@example.com',
-    role: 'user',
-    status: 'active',
-    lastLogin: new Date('2023-07-14T14:45:00'),
-  },
-  {
-    id: '3',
-    name: 'João Silva',
-    email: 'joao@example.com',
-    role: 'user',
-    status: 'active',
-    lastLogin: new Date('2023-07-10T09:15:00'),
-  },
-  {
-    id: '4',
-    name: 'Maria Oliveira',
-    email: 'maria@example.com',
-    role: 'user',
-    status: 'inactive',
-  },
-];
 
 const Settings = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [users, setUsers] = useState<UserData[]>(MOCK_USERS);
-  const [newUser, setNewUser] = useState({
-    name: '',
-    email: '',
-    password: '',
-    role: 'user' as 'admin' | 'user',
-  });
-  const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
   
   const [notifications, setNotifications] = useState({
     email: true,
@@ -113,87 +46,6 @@ const Settings = () => {
       description: 'As configurações do aplicativo foram atualizadas.',
     });
   };
-  
-  const handleAddUser = () => {
-    if (!newUser.name || !newUser.email || !newUser.password) {
-      toast({
-        title: 'Erro',
-        description: 'Preencha todos os campos obrigatórios.',
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    if (users.some(user => user.email === newUser.email)) {
-      toast({
-        title: 'Erro',
-        description: 'Este email já está cadastrado.',
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    const newUserData: UserData = {
-      id: Date.now().toString(),
-      name: newUser.name,
-      email: newUser.email,
-      role: newUser.role,
-      status: 'active',
-    };
-    
-    setUsers([...users, newUserData]);
-    setIsAddUserDialogOpen(false);
-    setNewUser({
-      name: '',
-      email: '',
-      password: '',
-      role: 'user',
-    });
-    
-    toast({
-      title: 'Usuário adicionado',
-      description: `${newUserData.name} foi adicionado com sucesso.`,
-    });
-  };
-  
-  const handleToggleUserStatus = (userId: string) => {
-    setUsers(prevUsers =>
-      prevUsers.map(user =>
-        user.id === userId
-          ? { ...user, status: user.status === 'active' ? 'inactive' : 'active' }
-          : user
-      )
-    );
-    
-    const user = users.find(u => u.id === userId);
-    if (user) {
-      toast({
-        title: `Usuário ${user.status === 'active' ? 'desativado' : 'ativado'}`,
-        description: `${user.name} foi ${user.status === 'active' ? 'desativado' : 'ativado'} com sucesso.`,
-      });
-    }
-  };
-  
-  const handleDeleteUser = (userId: string) => {
-    if (userId === '1' || userId === '2') {
-      toast({
-        title: 'Erro',
-        description: 'Não é possível excluir este usuário de demonstração.',
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    const user = users.find(u => u.id === userId);
-    setUsers(users.filter(u => u.id !== userId));
-    
-    if (user) {
-      toast({
-        title: 'Usuário removido',
-        description: `${user.name} foi removido com sucesso.`,
-      });
-    }
-  };
 
   const userName = user?.user_metadata?.name || user?.email || '';
   const userEmail = user?.email || '';
@@ -209,13 +61,10 @@ const Settings = () => {
       </div>
       
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid grid-cols-4 max-w-md">
+        <TabsList className="grid grid-cols-3 max-w-md">
           <TabsTrigger value="profile">Perfil</TabsTrigger>
           <TabsTrigger value="notifications">Notificações</TabsTrigger>
           <TabsTrigger value="app">Aplicativo</TabsTrigger>
-          {userRole === 'admin' && (
-            <TabsTrigger value="users">Usuários</TabsTrigger>
-          )}
         </TabsList>
         
         <TabsContent value="profile" className="space-y-6">
@@ -449,188 +298,6 @@ const Settings = () => {
             </CardContent>
           </Card>
         </TabsContent>
-        
-        {userRole === 'admin' && (
-          <TabsContent value="users" className="space-y-6">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                <div>
-                  <CardTitle>Gerenciamento de Usuários</CardTitle>
-                  <CardDescription>
-                    Gerencie os usuários que têm acesso ao sistema.
-                  </CardDescription>
-                </div>
-                
-                <Dialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button size="sm">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Novo Usuário
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Adicionar Novo Usuário</DialogTitle>
-                      <DialogDescription>
-                        Preencha os detalhes para adicionar um novo usuário ao sistema.
-                      </DialogDescription>
-                    </DialogHeader>
-                    
-                    <div className="grid gap-4 py-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="new-name">Nome</Label>
-                        <Input
-                          id="new-name"
-                          value={newUser.name}
-                          onChange={(e) => setNewUser({...newUser, name: e.target.value})}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="new-email">Email</Label>
-                        <Input
-                          id="new-email"
-                          type="email"
-                          value={newUser.email}
-                          onChange={(e) => setNewUser({...newUser, email: e.target.value})}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="new-password">Senha</Label>
-                        <Input
-                          id="new-password"
-                          type="password"
-                          value={newUser.password}
-                          onChange={(e) => setNewUser({...newUser, password: e.target.value})}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Função</Label>
-                        <div className="flex items-center space-x-4">
-                          <div className="flex items-center space-x-2">
-                            <input
-                              type="radio"
-                              id="role-user"
-                              name="role"
-                              value="user"
-                              checked={newUser.role === 'user'}
-                              onChange={() => setNewUser({...newUser, role: 'user'})}
-                              className="form-radio h-4 w-4 text-primary"
-                            />
-                            <Label htmlFor="role-user" className="cursor-pointer">Usuário</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <input
-                              type="radio"
-                              id="role-admin"
-                              name="role"
-                              value="admin"
-                              checked={newUser.role === 'admin'}
-                              onChange={() => setNewUser({...newUser, role: 'admin'})}
-                              className="form-radio h-4 w-4 text-primary"
-                            />
-                            <Label htmlFor="role-admin" className="cursor-pointer">Administrador</Label>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <DialogFooter>
-                      <Button type="button" variant="outline" onClick={() => setIsAddUserDialogOpen(false)}>
-                        Cancelar
-                      </Button>
-                      <Button type="button" onClick={handleAddUser}>
-                        Adicionar Usuário
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Função</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Último Acesso</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {users.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4 text-muted-foreground" />
-                            {user.name}
-                          </div>
-                        </TableCell>
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell>
-                          {user.role === 'admin' ? (
-                            <div className="flex items-center gap-1">
-                              <ShieldCheck className="h-4 w-4 text-primary" />
-                              <span>Administrador</span>
-                            </div>
-                          ) : (
-                            'Usuário'
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {user.status === 'active' ? (
-                            <span className="flex items-center gap-1 text-green-600 dark:text-green-500">
-                              <Check className="h-4 w-4" />
-                              Ativo
-                            </span>
-                          ) : (
-                            <span className="flex items-center gap-1 text-muted-foreground">
-                              <X className="h-4 w-4" />
-                              Inativo
-                            </span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {user.lastLogin ? (
-                            <span className="text-sm text-muted-foreground">
-                              {user.lastLogin.toLocaleDateString('pt-BR')} às {user.lastLogin.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          ) : (
-                            <span className="text-sm text-muted-foreground">Nunca</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreVertical className="h-4 w-4" />
-                                <span className="sr-only">Ações</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => handleToggleUserStatus(user.id)}
-                              >
-                                {user.status === 'active' ? 'Desativar' : 'Ativar'}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="text-destructive focus:text-destructive"
-                                onClick={() => handleDeleteUser(user.id)}
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Excluir
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        )}
       </Tabs>
     </div>
   );

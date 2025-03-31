@@ -56,6 +56,17 @@ export const useSupabaseProducts = () => {
 
   const addProduct = async (product: Omit<Product, 'id' | 'created_at'>) => {
     try {
+      // Verificar se código já existe
+      const { data: existing } = await supabase
+        .from('products')
+        .select('code')
+        .eq('code', product.code)
+        .single();
+
+      if (existing) {
+        throw new Error('Código já está em uso');
+      }
+
       const { data, error } = await supabase
         .from('products')
         .insert([product])
@@ -73,7 +84,10 @@ export const useSupabaseProducts = () => {
       
       return { success: true, data };
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao adicionar produto';
+      let errorMessage = err instanceof Error ? err.message : 'Erro ao adicionar produto';
+      if (errorMessage.includes('duplicate key value')) {
+        errorMessage = 'Código já está em uso';
+      }
       toast({
         title: 'Erro',
         description: errorMessage,
@@ -147,6 +161,8 @@ export const useSupabaseProducts = () => {
     }
   };
 
+  // Remover chamada automática de addMovement
+  // que estava gerando registros indesejados
   const addMovement = async (movement: Omit<Movement, 'id' | 'created_at'>) => {
     try {
       // 1. Inserir o movimento
