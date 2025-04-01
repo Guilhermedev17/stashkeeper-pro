@@ -19,12 +19,20 @@ interface ProductFiltersProps {
   searchTerm: string;
   onSearchChange: (value: string) => void;
   categories: Category[];
+  selectedCategory: string;
+  onCategoryChange: (value: string) => void;
+  selectedStatus: string;
+  onStatusChange: (value: string) => void;
 }
 
 const ProductFilters: React.FC<ProductFiltersProps> = ({ 
   searchTerm, 
   onSearchChange,
-  categories 
+  categories,
+  selectedCategory,
+  onCategoryChange,
+  selectedStatus,
+  onStatusChange
 }) => {
   return (
     <div className="flex items-center gap-4">
@@ -39,7 +47,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
         />
       </div>
       
-      <Select defaultValue="all">
+      <Select value={selectedCategory} onValueChange={onCategoryChange}>
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Filtrar por Categoria" />
         </SelectTrigger>
@@ -50,6 +58,18 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
               {category.name}
             </SelectItem>
           ))}
+        </SelectContent>
+      </Select>
+
+      <Select value={selectedStatus} onValueChange={onStatusChange}>
+        <SelectTrigger className="w-[180px]">
+          <SelectValue placeholder="Filtrar por Status" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Todos Status</SelectItem>
+          <SelectItem value="normal">Normal</SelectItem>
+          <SelectItem value="baixo">Baixo</SelectItem>
+          <SelectItem value="critico">Crítico</SelectItem>
         </SelectContent>
       </Select>
     </div>

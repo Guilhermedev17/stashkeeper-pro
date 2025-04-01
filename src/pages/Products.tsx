@@ -29,6 +29,8 @@ const Products = () => {
   
   const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState('all');
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -79,18 +81,32 @@ const Products = () => {
     }
   }, [supabaseProducts]);
 
-  // Filter products when search term changes
+  // Filter products when search term or category changes
   useEffect(() => {
     const lowercasedFilter = searchTerm.toLowerCase();
     const filtered = products.filter(product => {
-      return (
+      const matchesSearch = 
         product.name.toLowerCase().includes(lowercasedFilter) ||
         product.code.toLowerCase().includes(lowercasedFilter) ||
-        product.description?.toLowerCase().includes(lowercasedFilter)
-      );
+        product.description?.toLowerCase().includes(lowercasedFilter);
+      
+      const matchesCategory = selectedCategory === 'all' || product.categoryId === selectedCategory;
+
+      let matchesStatus = true;
+      if (selectedStatus !== 'all') {
+        if (selectedStatus === 'critico') {
+          matchesStatus = product.quantity <= product.minQuantity;
+        } else if (selectedStatus === 'baixo') {
+          matchesStatus = product.quantity > product.minQuantity && product.quantity <= product.minQuantity * 1.5;
+        } else if (selectedStatus === 'normal') {
+          matchesStatus = product.quantity > product.minQuantity * 1.5;
+        }
+      }
+      
+      return matchesSearch && matchesCategory && matchesStatus;
     });
     setFilteredProducts(filtered);
-  }, [searchTerm, products]);
+  }, [searchTerm, selectedCategory, selectedStatus, products]);
 
   const handleAddProduct = async () => {
     const result = await addProduct({
@@ -205,6 +221,10 @@ const Products = () => {
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         categories={categories}
+        selectedCategory={selectedCategory}
+        onCategoryChange={setSelectedCategory}
+        selectedStatus={selectedStatus}
+        onStatusChange={setSelectedStatus}
       />
 
       <ProductList
