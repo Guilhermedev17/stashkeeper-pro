@@ -19,6 +19,7 @@ interface Product {
   categoryId: string;
   quantity: number;
   minQuantity: number;
+  unit: string;
   createdAt: Date;
 }
 
@@ -43,6 +44,7 @@ const Products = () => {
     categoryId: '',
     quantity: 0,
     minQuantity: 0,
+    unit: 'unidade',
   });
   
   const { toast } = useToast();
@@ -70,6 +72,7 @@ const Products = () => {
         categoryId: p.category_id,
         quantity: p.quantity,
         minQuantity: p.min_quantity,
+        unit: p.unit,
         createdAt: new Date(p.created_at)
       }));
       setProducts(formattedProducts);
@@ -96,7 +99,8 @@ const Products = () => {
       description: newProduct.description,
       category_id: newProduct.categoryId,
       quantity: newProduct.quantity,
-      min_quantity: newProduct.minQuantity
+      min_quantity: newProduct.minQuantity,
+      unit: newProduct.unit
     });
     
     if (result.success) {
@@ -108,6 +112,7 @@ const Products = () => {
         categoryId: '',
         quantity: 0,
         minQuantity: 0,
+        unit: 'unidade',
       });
     }
   };
@@ -120,7 +125,8 @@ const Products = () => {
       description: selectedProduct.description,
       category_id: selectedProduct.categoryId,
       quantity: selectedProduct.quantity,
-      min_quantity: selectedProduct.minQuantity
+      min_quantity: selectedProduct.minQuantity,
+      unit: selectedProduct.unit
     });
     
     if (result.success) {

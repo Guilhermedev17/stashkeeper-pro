@@ -21,6 +21,7 @@ interface Product {
   code: string;
   name: string;
   description: string;
+  unit: string;
 }
 
 interface MovementDialogProps {
@@ -66,7 +67,7 @@ const MovementDialog: React.FC<MovementDialogProps> = ({
       if (result.success) {
         toast({
           title: type === 'entrada' ? "Entrada registrada" : "Saída registrada",
-          description: `Movimentação de ${quantity} unidades registrada com sucesso.`
+          description: `Movimentação de ${quantity} ${product.unit || 'unidade'} registrada com sucesso.`
         });
         resetForm();
         onOpenChange(false);

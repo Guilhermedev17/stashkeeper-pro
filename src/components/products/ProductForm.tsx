@@ -24,6 +24,7 @@ interface Product {
   categoryId: string;
   quantity: number;
   minQuantity: number;
+  unit: string;
   createdAt: Date;
 }
 
@@ -96,7 +97,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
         </Select>
       </div>
       
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         <div className="space-y-2">
           <Label htmlFor="quantity">Quantidade</Label>
           <Input
@@ -119,6 +120,27 @@ const ProductForm: React.FC<ProductFormProps> = ({
             onChange={e => onChange('minQuantity', e.target.value === '' ? 0 : Number(e.target.value))}
             placeholder="0"
           />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="unit">Unidade</Label>
+          <Select
+            value={product.unit || 'unidade'}
+            onValueChange={value => onChange('unit', value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione uma unidade" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="unidade">Unidade</SelectItem>
+              <SelectItem value="caixa">Caixa</SelectItem>
+              <SelectItem value="pacote">Pacote</SelectItem>
+              <SelectItem value="rolo">Rolo</SelectItem>
+              <SelectItem value="metros">Metros</SelectItem>
+              <SelectItem value="L">Litro (L)</SelectItem>
+              <SelectItem value="kg">Quilograma (kg)</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
       

@@ -20,6 +20,7 @@ interface Product {
   categoryId: string;
   quantity: number;
   minQuantity: number;
+  unit: string;
   createdAt: Date;
 }
 
@@ -78,10 +79,24 @@ const ProductList: React.FC<ProductListProps> = ({
                   {getCategoryName(product.categoryId)}
                 </TableCell>
                 <TableCell className="text-center">
-                  {product.quantity}
+                  {product.quantity} {product.unit === 'unidade' ? 'UN' :
+                    product.unit === 'L' ? 'L' :
+                    product.unit === 'kg' ? 'KG' :
+                    product.unit === 'caixa' ? 'CX' :
+                    product.unit === 'pacote' ? 'PCT' :
+                    product.unit === 'rolo' ? 'RL' :
+                    product.unit === 'metros' ? 'MT' :
+                    product.unit || 'UN'}
                 </TableCell>
                 <TableCell className="text-center">
-                  {product.minQuantity}
+                  {product.minQuantity} {product.unit === 'unidade' ? 'UN' :
+                    product.unit === 'L' ? 'L' :
+                    product.unit === 'kg' ? 'KG' :
+                    product.unit === 'caixa' ? 'CX' :
+                    product.unit === 'pacote' ? 'PCT' :
+                    product.unit === 'rolo' ? 'RL' :
+                    product.unit === 'metros' ? 'MT' :
+                    product.unit || 'UN'}
                 </TableCell>
                 <TableCell className="text-center">
                   {product.quantity <= product.minQuantity ? (

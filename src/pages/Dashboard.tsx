@@ -15,6 +15,7 @@ const Dashboard = () => {
   
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
   const [categoryData, setCategoryData] = useState<any[]>([]);
+  const [unitData, setUnitData] = useState<any[]>([]);
   const [criticalStock, setCriticalStock] = useState<any[]>([]);
   const [recentMovements, setRecentMovements] = useState<any[]>([]);
 
@@ -63,10 +64,21 @@ const Dashboard = () => {
   }, [movements]);
 
   useEffect(() => {
-    if (products.length > 0 && categories.length > 0) {
+    if (products.length > 0) {
+      // Agrupar produtos por unidade
+      const unitCounts: Record<string, { count: number, total: number }> = {};
       const catCounts: Record<string, number> = {};
       
       products.forEach(product => {
+        // Contagem por unidade
+        const unit = product.unit || 'unidade';
+        if (!unitCounts[unit]) {
+          unitCounts[unit] = { count: 0, total: 0 };
+        }
+        unitCounts[unit].count++;
+        unitCounts[unit].total += product.quantity;
+
+        // Contagem por categoria
         if (product.category_id) {
           if (catCounts[product.category_id]) {
             catCounts[product.category_id]++;
@@ -76,6 +88,15 @@ const Dashboard = () => {
         }
       });
 
+      // Formatar dados de unidade para o gráfico
+      const unitDataArray = Object.entries(unitCounts).map(([unit, data]) => ({
+        name: unit,
+        quantidade: data.count,
+        total: data.total
+      }));
+      setUnitData(unitDataArray);
+
+      // Formatar dados de categoria para o gráfico
       const catData = Object.entries(catCounts).map(([id, value]) => {
         const cat = categories.find(c => c.id === id);
         return {
@@ -83,9 +104,9 @@ const Dashboard = () => {
           value
         };
       });
-
       setCategoryData(catData.length > 0 ? catData : [{ name: 'Sem dados', value: 1 }]);
 
+      // Produtos com estoque crítico
       const critical = products
         .filter(p => p.quantity <= p.min_quantity)
         .sort((a, b) => a.quantity - b.quantity)
@@ -94,15 +115,15 @@ const Dashboard = () => {
           id: p.id,
           name: p.name,
           stock: p.quantity,
-          min: p.min_quantity
+          min: p.min_quantity,
+          unit: p.unit || 'unidade'
         }));
       
-      console.log('Products with critical stock:', critical);
       setCriticalStock(critical);
     }
   }, [products, categories]);
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
   const totalProducts = products.length;
   const totalEntradas = movements.filter(m => m.type === 'entrada').reduce((acc, m) => acc + m.quantity, 0);
@@ -140,7 +161,7 @@ const Dashboard = () => {
           <CardContent>
             <div className="text-2xl font-bold">{totalEntradas}</div>
             <p className="text-xs text-muted-foreground">
-              Unidades recebidas
+              Itens recebidos
             </p>
           </CardContent>
         </Card>
@@ -153,7 +174,7 @@ const Dashboard = () => {
           <CardContent>
             <div className="text-2xl font-bold">{totalSaidas}</div>
             <p className="text-xs text-muted-foreground">
-              Unidades distribuídas
+              Itens distribuídos
             </p>
           </CardContent>
         </Card>
@@ -173,67 +194,38 @@ const Dashboard = () => {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="md:col-span-4 hover:shadow-md transition-all duration-300">
+        <Card className="md:col-span-3 hover:shadow-md transition-all duration-300">
           <CardHeader>
-            <CardTitle>Movimentação Mensal</CardTitle>
+            <CardTitle>Produtos por Unidade</CardTitle>
             <CardDescription>
-              Comparativo de entradas e saídas nos últimos meses
+              Distribuição dos produtos por tipo de unidade
             </CardDescription>
           </CardHeader>
-          <CardContent className="pl-2">
+          <CardContent className="flex justify-center">
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart
-                data={monthlyData}
-                margin={{
-                  top: 5,
-                  right: 30,
-                  left: 0,
-                  bottom: 5,
-                }}
-                barGap={8}
-                barSize={20}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#525252" opacity={0.4} />
-                <XAxis dataKey="name" tick={{ fill: '#888888' }} />
-                <YAxis tick={{ fill: '#888888' }} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'rgba(17, 17, 17, 0.8)',
-                    border: 'none',
-                    borderRadius: '6px',
-                    padding: '12px'
-                  }}
-                  cursor={{ fill: 'rgba(255, 255, 255, 0.1)' }}
-                  formatter={(value: number) => [`${value} unidades`, '']}
-                  labelStyle={{ color: '#888888' }}
-                />
-                <Legend
-                  wrapperStyle={{ paddingTop: '20px' }}
-                  onClick={(e) => {
-                    // Legend click is handled by Recharts internally
-                  }}
-                />
-                <Bar
-                  dataKey="entradas"
-                  fill="#22c55e"
-                  name="Entradas"
-                  radius={[4, 4, 0, 0]}
+              <PieChart>
+                <Pie
+                  data={unitData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  paddingAngle={5}
+                  dataKey="quantidade"
+                  label={({name, percent}) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                  labelLine={{ stroke: '#888888', strokeWidth: 1 }}
                 >
-                  <animate attributeName="fill" values="#22c55e;#86efac;#22c55e" dur="2s" repeatCount="indefinite" />
-                </Bar>
-                <Bar
-                  dataKey="saidas"
-                  fill="#3b82f6"
-                  name="Saídas"
-                  radius={[4, 4, 0, 0]}
-                >
-                  <animate attributeName="fill" values="#3b82f6;#93c5fd;#3b82f6" dur="2s" repeatCount="indefinite" />
-                </Bar>
-              </BarChart>
+                  {unitData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
-        
+
         <Card className="md:col-span-3 hover:shadow-md transition-all duration-300">
           <CardHeader>
             <CardTitle>Distribuição por Categoria</CardTitle>
@@ -268,116 +260,130 @@ const Dashboard = () => {
             </ResponsiveContainer>
           </CardContent>
         </Card>
+
+        <Card className="md:col-span-3 hover:shadow-md transition-all duration-300">
+          <CardHeader>
+            <CardTitle>Movimentação Mensal</CardTitle>
+            <CardDescription>
+              Comparativo de entradas e saídas nos últimos meses
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pl-2">
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart
+                data={monthlyData}
+                margin={{
+                  top: 5,
+                  right: 30,
+                  left: 0,
+                  bottom: 5,
+                }}
+                barGap={8}
+                barSize={20}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#525252" opacity={0.4} />
+                <XAxis dataKey="name" tick={{ fill: '#888888' }} />
+                <YAxis tick={{ fill: '#888888' }} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#1a1a1a',
+                    border: '1px solid #333333',
+                    borderRadius: '6px',
+                  }}
+                  itemStyle={{ color: '#888888' }}
+                />
+                <Legend wrapperStyle={{ color: '#888888' }} />
+                <Bar dataKey="entradas" name="Entradas" fill="#22c55e" />
+                <Bar dataKey="saidas" name="Saídas" fill="#3b82f6" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card className="md:col-span-3 hover:shadow-md transition-all duration-300">
+          <CardHeader>
+            <CardTitle>Estoque por Unidade</CardTitle>
+            <CardDescription>
+              Quantidade total em estoque por unidade
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pl-2">
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart
+                data={unitData}
+                margin={{
+                  top: 5,
+                  right: 30,
+                  left: 0,
+                  bottom: 5,
+                }}
+                barSize={20}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#525252" opacity={0.4} />
+                <XAxis dataKey="name" tick={{ fill: '#888888' }} />
+                <YAxis tick={{ fill: '#888888' }} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#1a1a1a',
+                    border: '1px solid #333333',
+                    borderRadius: '6px',
+                  }}
+                  itemStyle={{ color: '#888888' }}
+                />
+                <Bar dataKey="total" name="Quantidade" fill="#8884d8" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2">
         <Card className="hover:shadow-md transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">
-              Produtos com Estoque Crítico
-            </CardTitle>
-            <ClipboardList className="h-4 w-4 text-muted-foreground" />
+          <CardHeader>
+            <CardTitle>Produtos com Estoque Crítico</CardTitle>
+            <CardDescription>
+              Produtos abaixo do estoque mínimo
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="grid grid-cols-3 text-sm">
-                <div className="font-medium">Produto</div>
-                <div className="font-medium text-center">Estoque</div>
-                <div className="font-medium text-right">Mínimo</div>
-              </div>
-              <div className="space-y-2">
-                {criticalStock.length > 0 ? criticalStock.map(item => (
-                  <div key={item.id} className="grid grid-cols-3 text-sm">
-                    <div className="truncate">{item.name}</div>
-                    <div className="text-center font-medium text-red-500">{item.stock}</div>
-                    <div className="text-right">{item.min}</div>
+              {criticalStock.map(item => (
+                <div key={item.id} className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium leading-none">{item.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Mínimo: {item.min} {item.unit}
+                    </p>
                   </div>
-                )) : (
-                  <div className="text-center text-muted-foreground py-2">
-                    Nenhum produto em estado crítico
+                  <div className="text-sm font-medium">
+                    {item.stock} {item.unit}
                   </div>
-                )}
-              </div>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="hover:shadow-md transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">
-              Últimas Movimentações
-            </CardTitle>
-            <ArchiveRestore className="h-4 w-4 text-muted-foreground" />
+          <CardHeader>
+            <CardTitle>Movimentações Recentes</CardTitle>
+            <CardDescription>
+              Últimas movimentações realizadas
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="space-y-2">
-                {recentMovements.length > 0 ? recentMovements.map(item => (
-                  <div key={item.id} className="flex items-center gap-2 text-sm">
-                    {item.type === 'entrada' ? (
-                      <ArrowDown className="h-3 w-3 text-green-500" />
-                    ) : (
-                      <ArrowUp className="h-3 w-3 text-blue-500" />
-                    )}
-                    <div className="flex-1 truncate">{item.name}</div>
-                    <div className="text-xs text-muted-foreground">{item.qty} un.</div>
-                    <div className="text-xs text-muted-foreground">{item.date}</div>
+              {recentMovements.map(item => (
+                <div key={item.id} className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium leading-none">{item.name}</p>
+                    <p className="text-sm text-muted-foreground">{item.date}</p>
                   </div>
-                )) : (
-                  <div className="text-center text-muted-foreground py-2">
-                    Nenhuma movimentação recente
+                  <div className={`text-sm font-medium ${item.type === 'entrada' ? 'text-green-500' : 'text-blue-500'}`}>
+                    {item.type === 'entrada' ? '+' : '-'}{item.qty}
                   </div>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="hover:shadow-md transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">
-              Resumo de Estoque
-            </CardTitle>
-            <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">Itens Totais: {products.reduce((sum, p) => sum + p.quantity, 0)}</div>
-            <div className="h-[200px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={monthlyData}
-                  margin={{
-                    top: 20, 
-                    right: 30, 
-                    bottom: 10, 
-                    left: 20
-                  }}
-                >
-                  <XAxis 
-                    dataKey="name" 
-                    fontSize={12}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <Tooltip />
-                  <Line
-                    type="monotone"
-                    dataKey="entradas"
-                    stroke="#0088FE"
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
-                    activeDot={{ r: 5 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="saidas"
-                    stroke="#FF8042"
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
-                    activeDot={{ r: 5 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>

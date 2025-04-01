@@ -11,6 +11,7 @@ interface Product {
   category_id: string;
   quantity: number;
   min_quantity: number;
+  unit: string;
   created_at: string;
 }
 
@@ -40,7 +41,17 @@ export const useSupabaseProducts = () => {
 
       if (error) throw error;
       
-      setProducts(data || []);
+      setProducts((data || []).map(item => ({
+        id: item.id,
+        code: item.code,
+        name: item.name,
+        description: item.description,
+        category_id: item.category_id,
+        quantity: item.quantity,
+        min_quantity: item.min_quantity,
+        unit: item.unit,
+        created_at: item.created_at
+      })));
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar produtos';
       setError(errorMessage);
