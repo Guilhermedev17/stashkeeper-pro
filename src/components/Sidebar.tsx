@@ -35,9 +35,6 @@ const Sidebar = ({ showMobile, setShowMobile }: SidebarProps) => {
   const sidebarContent = (
     <>
       <div className="px-3 py-4">
-        <h2 className="mb-4 px-4 text-lg font-semibold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-          StashKeeper
-        </h2>
         <div className="space-y-1">
           <NavLink
             to="/dashboard"
