@@ -1,6 +1,6 @@
 
 import { useAuth } from '@/contexts/AuthContext';
-import { Bell, HelpCircle, LogOut, Menu } from 'lucide-react';
+import { Bell, HelpCircle, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
 import ThemeSwitcher from './ThemeSwitcher';
 import UserAvatar from './UserAvatar';
@@ -12,30 +12,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
-import { SidebarTrigger } from './ui/sidebar';
 
-interface NavbarProps {
-  setShowMobileSidebar: (show: boolean) => void;
-}
-
-const Navbar = ({ setShowMobileSidebar }: NavbarProps) => {
+const Navbar = () => {
   const { user, logout } = useAuth();
 
   return (
     <header className="h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 fixed top-0 left-0 right-0 z-30 flex items-center">
       <div className="container mx-auto px-4 md:px-6 flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <SidebarTrigger className="hidden md:flex" />
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Open Menu"
-            className="md:hidden"
-            onClick={() => setShowMobileSidebar(true)}
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
-          <h1 className="text-xl font-semibold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+        <div className="flex items-center">
+          <h1 className="text-xl md:text-2xl font-semibold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent transition-all">
             StashKeeper
           </h1>
         </div>

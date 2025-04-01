@@ -1,15 +1,14 @@
 
-import { useState } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
 import { Toaster } from '@/components/ui/toaster';
+import { useState } from 'react';
 
 const MainLayout = () => {
   const { isAuthenticated, isLoading } = useAuth();
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
-  
   // Show loading state
   if (isLoading) {
     return (
@@ -26,10 +25,10 @@ const MainLayout = () => {
   
   return (
     <div className="min-h-screen bg-background w-full">
-      <Navbar setShowMobileSidebar={setShowMobileSidebar} />
+      <Navbar />
       <Sidebar showMobile={showMobileSidebar} setShowMobile={setShowMobileSidebar} />
       
-      <main className="pt-16 md:pl-64 min-h-screen">
+      <main className="pt-16 md:pl-64 min-h-screen transition-all duration-300">
         <div className="container mx-auto p-4 md:p-6 animate-fade-in">
           <Outlet />
         </div>

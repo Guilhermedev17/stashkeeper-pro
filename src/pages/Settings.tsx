@@ -9,28 +9,77 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Bell, Check, EyeOff } from 'lucide-react';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
+import { supabase } from '@/integrations/supabase/client';
 
 const Settings = () => {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const { toast } = useToast();
-  
+  const [name, setName] = useState(user?.user_metadata?.name || '');
   const [notifications, setNotifications] = useState({
     email: true,
     criticalStock: true,
     newEntries: true,
   });
   
-  const [appSettings, setAppSettings] = useState({
-    autoLogout: false,
-    darkMode: false,
-    showProductCode: true,
-  });
-  
-  const handleSaveProfile = () => {
-    toast({
-      title: 'Perfil atualizado',
-      description: 'Suas informações foram atualizadas com sucesso.',
-    });
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const handleSaveProfile = async () => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: { name: name }
+      });
+
+      if (error) throw error;
+
+      await refreshUser();
+      
+      toast({
+        title: 'Perfil atualizado',
+        description: 'Suas informações foram atualizadas com sucesso.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Erro ao atualizar perfil',
+        description: 'Ocorreu um erro ao atualizar suas informações.',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleUpdatePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: 'Erro ao atualizar senha',
+        description: 'A nova senha e a confirmação não coincidem.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Senha atualizada',
+        description: 'Sua senha foi atualizada com sucesso.',
+      });
+
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error) {
+      toast({
+        title: 'Erro ao atualizar senha',
+        description: 'Ocorreu um erro ao atualizar sua senha.',
+        variant: 'destructive'
+      });
+    }
   };
   
   const handleSaveNotifications = () => {
@@ -40,13 +89,6 @@ const Settings = () => {
     });
   };
   
-  const handleSaveAppSettings = () => {
-    toast({
-      title: 'Configurações salvas',
-      description: 'As configurações do aplicativo foram atualizadas.',
-    });
-  };
-
   const userName = user?.user_metadata?.name || user?.email || '';
   const userEmail = user?.email || '';
 
@@ -60,10 +102,9 @@ const Settings = () => {
       </div>
       
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid grid-cols-3 max-w-md">
+        <TabsList className="grid grid-cols-2 max-w-md">
           <TabsTrigger value="profile">Perfil</TabsTrigger>
           <TabsTrigger value="notifications">Notificações</TabsTrigger>
-          <TabsTrigger value="app">Aplicativo</TabsTrigger>
         </TabsList>
         
         <TabsContent value="profile" className="space-y-6">
@@ -77,11 +118,26 @@ const Settings = () => {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="name">Nome</Label>
-                <Input id="name" defaultValue={userName} />
+                <Input 
+                  id="name" 
+                  value={name} 
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Seu nome"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input id="email" type="email" defaultValue={userEmail} />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="theme">Tema</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Alterne entre tema claro e escuro
+                  </p>
+                </div>
+                <ThemeSwitcher />
               </div>
 
             </CardContent>
@@ -101,20 +157,49 @@ const Settings = () => {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="current-password">Senha Atual</Label>
-                <Input id="current-password" type="password" />
+                <Input 
+                  id="current-password" 
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="new-password">Nova Senha</Label>
-                <Input id="new-password" type="password" />
+                <Input 
+                  id="new-password" 
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirm-password">Confirmar Nova Senha</Label>
-                <Input id="confirm-password" type="password" />
+                <Input 
+                  id="confirm-password" 
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
               </div>
             </CardContent>
             <CardFooter className="flex justify-between">
-              <Button variant="outline">Cancelar</Button>
-              <Button>Atualizar Senha</Button>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setCurrentPassword('');
+                  setNewPassword('');
+                  setConfirmPassword('');
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleUpdatePassword}
+                disabled={!currentPassword || !newPassword || !confirmPassword}
+              >
+                Atualizar Senha
+              </Button>
             </CardFooter>
           </Card>
         </TabsContent>
@@ -175,124 +260,7 @@ const Settings = () => {
             </CardFooter>
           </Card>
           
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <div className="space-y-1">
-                <CardTitle>Alertas Ativos</CardTitle>
-                <CardDescription>
-                  Alertas configurados atualmente
-                </CardDescription>
-              </div>
-              <Bell className="h-5 w-5 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-medium">Estoque Crítico</p>
-                    <p className="text-sm text-muted-foreground">
-                      Notificar quando o estoque estiver abaixo de 10%
-                    </p>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    <EyeOff className="h-4 w-4 mr-2" />
-                    Silenciar
-                  </Button>
-                </div>
-                
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-medium">Requisições Pendentes</p>
-                    <p className="text-sm text-muted-foreground">
-                      Notificar sobre requisições que precisam de aprovação
-                    </p>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    <EyeOff className="h-4 w-4 mr-2" />
-                    Silenciar
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="app" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Configurações do Aplicativo</CardTitle>
-              <CardDescription>
-                Personalize a experiência do aplicativo.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="theme">Tema</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Alterne entre tema claro e escuro
-                  </p>
-                </div>
-                <ThemeSwitcher />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="auto-logout">Logout Automático</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Logout após 30 minutos de inatividade
-                  </p>
-                </div>
-                <Switch
-                  id="auto-logout"
-                  checked={appSettings.autoLogout}
-                  onCheckedChange={(checked) => setAppSettings({...appSettings, autoLogout: checked})}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="show-product-code">Mostrar Código do Produto</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Exibir o código do produto nas listagens
-                  </p>
-                </div>
-                <Switch
-                  id="show-product-code"
-                  checked={appSettings.showProductCode}
-                  onCheckedChange={(checked) => setAppSettings({...appSettings, showProductCode: checked})}
-                />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={handleSaveAppSettings} className="ml-auto">Salvar Configurações</Button>
-            </CardFooter>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Exportação de Dados</CardTitle>
-              <CardDescription>
-                Exporte seus dados para outros formatos.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <p className="font-medium">Relatórios</p>
-                <p className="text-sm text-muted-foreground">
-                  Exporte relatórios em formato CSV ou PDF
-                </p>
-              </div>
-              <div className="flex space-x-2">
-                <Button variant="outline" size="sm">
-                  Exportar como CSV
-                </Button>
-                <Button variant="outline" size="sm">
-                  Exportar como PDF
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+
         </TabsContent>
       </Tabs>
     </div>

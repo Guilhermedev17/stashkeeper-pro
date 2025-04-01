@@ -48,6 +48,11 @@ const Reports = () => {
 
   // Colors for charts
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+  const CHART_COLORS = {
+    entrada: '#22c55e',
+    saida: '#3b82f6',
+    total: '#8884d8'
+  };
 
   useEffect(() => {
     if (movements.length > 0) {
@@ -330,37 +335,41 @@ const Reports = () => {
                       bottom: 0,
                     }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip 
-                      contentStyle={{ 
-                        borderRadius: '0.5rem',
-                        borderColor: 'rgba(0,0,0,0.1)',
-                        fontSize: '0.875rem',
-                      }} 
+                    <CartesianGrid strokeDasharray="3 3" stroke="#525252" opacity={0.4} />
+                    <XAxis dataKey="month" tick={{ fill: '#888888' }} />
+                    <YAxis tick={{ fill: '#888888' }} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'rgba(17, 17, 17, 0.8)',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '12px'
+                      }}
+                      cursor={{ fill: 'rgba(255, 255, 255, 0.1)' }}
+                      formatter={(value: number) => [`${value} unidades`, '']}
+                      labelStyle={{ color: '#888888' }}
                     />
-                    <Legend />
+                    <Legend wrapperStyle={{ paddingTop: '20px' }} />
                     <Area 
                       type="monotone" 
                       dataKey="total" 
                       stackId="1" 
-                      stroke="#8884d8" 
-                      fill="#8884d8" 
+                      stroke={CHART_COLORS.total}
+                      fill={CHART_COLORS.total}
                       name="Estoque Total"
                     />
                     <Area 
                       type="monotone" 
                       dataKey="entradas" 
-                      stroke="#82ca9d" 
-                      fill="#82ca9d" 
+                      stroke={CHART_COLORS.entrada}
+                      fill={CHART_COLORS.entrada}
                       name="Entradas"
                     />
                     <Area 
                       type="monotone" 
                       dataKey="saidas" 
-                      stroke="#ffc658" 
-                      fill="#ffc658" 
+                      stroke={CHART_COLORS.saida}
+                      fill={CHART_COLORS.saida}
                       name="Saídas"
                     />
                   </AreaChart>
@@ -433,12 +442,13 @@ const Reports = () => {
                       ))}
                     </Pie>
                     <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'rgba(17, 17, 17, 0.8)',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '12px'
+                      }}
                       formatter={(value) => [`${value} produtos`, 'Quantidade']}
-                      contentStyle={{ 
-                        borderRadius: '0.5rem',
-                        borderColor: 'rgba(0,0,0,0.1)',
-                        fontSize: '0.875rem',
-                      }} 
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -485,19 +495,29 @@ const Reports = () => {
                       bottom: 5,
                     }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} opacity={0.2} />
-                    <XAxis type="number" />
-                    <YAxis type="category" dataKey="name" />
+                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#525252" opacity={0.4} />
+                    <XAxis type="number" tick={{ fill: '#888888' }} />
+                    <YAxis type="category" dataKey="name" tick={{ fill: '#888888' }} />
                     <Tooltip 
+                      contentStyle={{
+                        backgroundColor: 'rgba(17, 17, 17, 0.8)',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '12px'
+                      }}
+                      cursor={{ fill: 'rgba(255, 255, 255, 0.1)' }}
                       formatter={(value) => [`${value} unidades`, 'Quantidade']}
-                      contentStyle={{ 
-                        borderRadius: '0.5rem',
-                        borderColor: 'rgba(0,0,0,0.1)',
-                        fontSize: '0.875rem',
-                      }} 
+                      labelStyle={{ color: '#888888' }}
                     />
                     <Legend />
-                    <Bar dataKey="quantidade" fill="#8884d8" name="Quantidade" />
+                    <Bar 
+                      dataKey="quantidade" 
+                      fill="#8884d8" 
+                      name="Quantidade"
+                      radius={[4, 4, 0, 0]}
+                    >
+                      <animate attributeName="fill" values="#8884d8;#a78bfa;#8884d8" dur="2s" repeatCount="indefinite" />
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>

@@ -52,8 +52,13 @@ const Movements = () => {
     setIsNewMovementDialogOpen(true);
   };
 
-  // Filter products based on search term and selected category
+  // Filter products that have movements and match search/category criteria
   const filteredProducts = products.filter(product => {
+    // Check if product has any movements
+    const hasMovements = movements.some(m => m.product_id === product.id);
+    
+    if (!hasMovements) return false;
+    
     const matchesSearch = 
       searchTerm === '' || 
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -86,10 +91,7 @@ const Movements = () => {
             <PlusSquare className="h-4 w-4" />
             Registrar Movimentação
           </Button>
-          <Button onClick={handleRefresh} variant="outline" className="gap-2">
-            <RefreshCw className="h-4 w-4" />
-            Atualizar
-          </Button>
+
         </div>
       </div>
 

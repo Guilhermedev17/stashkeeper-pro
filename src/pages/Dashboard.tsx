@@ -190,14 +190,45 @@ const Dashboard = () => {
                   left: 0,
                   bottom: 5,
                 }}
+                barGap={8}
+                barSize={20}
               >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="entradas" fill="#0088FE" name="Entradas" />
-                <Bar dataKey="saidas" fill="#FF8042" name="Saídas" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#525252" opacity={0.4} />
+                <XAxis dataKey="name" tick={{ fill: '#888888' }} />
+                <YAxis tick={{ fill: '#888888' }} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'rgba(17, 17, 17, 0.8)',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '12px'
+                  }}
+                  cursor={{ fill: 'rgba(255, 255, 255, 0.1)' }}
+                  formatter={(value: number) => [`${value} unidades`, '']}
+                  labelStyle={{ color: '#888888' }}
+                />
+                <Legend
+                  wrapperStyle={{ paddingTop: '20px' }}
+                  onClick={(e) => {
+                    // Legend click is handled by Recharts internally
+                  }}
+                />
+                <Bar
+                  dataKey="entradas"
+                  fill="#22c55e"
+                  name="Entradas"
+                  radius={[4, 4, 0, 0]}
+                >
+                  <animate attributeName="fill" values="#22c55e;#86efac;#22c55e" dur="2s" repeatCount="indefinite" />
+                </Bar>
+                <Bar
+                  dataKey="saidas"
+                  fill="#3b82f6"
+                  name="Saídas"
+                  radius={[4, 4, 0, 0]}
+                >
+                  <animate attributeName="fill" values="#3b82f6;#93c5fd;#3b82f6" dur="2s" repeatCount="indefinite" />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -218,11 +249,15 @@ const Dashboard = () => {
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
-                  outerRadius={90}
+                  outerRadius={80}
                   fill="#8884d8"
                   paddingAngle={5}
                   dataKey="value"
-                  label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  label={({name, percent}) => {
+                    const displayName = name.length > 15 ? `${name.slice(0, 12)}...` : name;
+                    return `${displayName} ${(percent * 100).toFixed(0)}%`;
+                  }}
+                  labelLine={{ stroke: '#888888', strokeWidth: 1 }}
                 >
                   {categoryData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
