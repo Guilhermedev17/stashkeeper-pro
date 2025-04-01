@@ -49,7 +49,6 @@ const Settings = () => {
 
   const userName = user?.user_metadata?.name || user?.email || '';
   const userEmail = user?.email || '';
-  const userRole = user?.user_metadata?.role || 'user';
 
   return (
     <div className="space-y-6">
@@ -84,10 +83,7 @@ const Settings = () => {
                 <Label htmlFor="email">Email</Label>
                 <Input id="email" type="email" defaultValue={userEmail} />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="role">Função</Label>
-                <Input id="role" value={userRole === 'admin' ? 'Administrador' : 'Usuário'} disabled />
-              </div>
+
             </CardContent>
             <CardFooter className="flex justify-between">
               <Button variant="outline">Cancelar</Button>

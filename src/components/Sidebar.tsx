@@ -13,7 +13,6 @@ import {
   LogOut,
   Package,
   Settings,
-  Shield,
   ArrowDownUp,
   X,
 } from 'lucide-react';
@@ -24,7 +23,7 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ showMobile, setShowMobile }: SidebarProps) => {
-  const { logout, isAdmin } = useAuth();
+  const { logout } = useAuth();
 
   const handleLogout = async () => {
     await logout();
@@ -45,8 +44,8 @@ const Sidebar = ({ showMobile, setShowMobile }: SidebarProps) => {
             to="/dashboard"
             className={({ isActive }) =>
               cn(
-                'flex items-center rounded-md px-3 py-2 text-sm font-medium text-primary-foreground/70 hover:bg-primary/20 hover:text-primary-foreground transition-colors',
-                isActive && 'bg-primary/30 text-primary-foreground'
+                'flex items-center rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors',
+                isActive && 'bg-sidebar-accent text-sidebar-accent-foreground'
               )
             }
             onClick={closeMobileMenu}
@@ -58,8 +57,8 @@ const Sidebar = ({ showMobile, setShowMobile }: SidebarProps) => {
             to="/products"
             className={({ isActive }) =>
               cn(
-                'flex items-center rounded-md px-3 py-2 text-sm font-medium text-primary-foreground/70 hover:bg-primary/20 hover:text-primary-foreground transition-colors',
-                isActive && 'bg-primary/30 text-primary-foreground'
+                'flex items-center rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors',
+                isActive && 'bg-sidebar-accent text-sidebar-accent-foreground'
               )
             }
             onClick={closeMobileMenu}
@@ -71,8 +70,8 @@ const Sidebar = ({ showMobile, setShowMobile }: SidebarProps) => {
             to="/movements"
             className={({ isActive }) =>
               cn(
-                'flex items-center rounded-md px-3 py-2 text-sm font-medium text-primary-foreground/70 hover:bg-primary/20 hover:text-primary-foreground transition-colors',
-                isActive && 'bg-primary/30 text-primary-foreground'
+                'flex items-center rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors',
+                isActive && 'bg-sidebar-accent text-sidebar-accent-foreground'
               )
             }
             onClick={closeMobileMenu}
@@ -84,8 +83,8 @@ const Sidebar = ({ showMobile, setShowMobile }: SidebarProps) => {
             to="/categories"
             className={({ isActive }) =>
               cn(
-                'flex items-center rounded-md px-3 py-2 text-sm font-medium text-primary-foreground/70 hover:bg-primary/20 hover:text-primary-foreground transition-colors',
-                isActive && 'bg-primary/30 text-primary-foreground'
+                'flex items-center rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors',
+                isActive && 'bg-sidebar-accent text-sidebar-accent-foreground'
               )
             }
             onClick={closeMobileMenu}
@@ -97,8 +96,8 @@ const Sidebar = ({ showMobile, setShowMobile }: SidebarProps) => {
             to="/history"
             className={({ isActive }) =>
               cn(
-                'flex items-center rounded-md px-3 py-2 text-sm font-medium text-primary-foreground/70 hover:bg-primary/20 hover:text-primary-foreground transition-colors',
-                isActive && 'bg-primary/30 text-primary-foreground'
+                'flex items-center rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors',
+                isActive && 'bg-sidebar-accent text-sidebar-accent-foreground'
               )
             }
             onClick={closeMobileMenu}
@@ -110,8 +109,8 @@ const Sidebar = ({ showMobile, setShowMobile }: SidebarProps) => {
             to="/reports"
             className={({ isActive }) =>
               cn(
-                'flex items-center rounded-md px-3 py-2 text-sm font-medium text-primary-foreground/70 hover:bg-primary/20 hover:text-primary-foreground transition-colors',
-                isActive && 'bg-primary/30 text-primary-foreground'
+                'flex items-center rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors',
+                isActive && 'bg-sidebar-accent text-sidebar-accent-foreground'
               )
             }
             onClick={closeMobileMenu}
@@ -123,8 +122,8 @@ const Sidebar = ({ showMobile, setShowMobile }: SidebarProps) => {
             to="/settings"
             className={({ isActive }) =>
               cn(
-                'flex items-center rounded-md px-3 py-2 text-sm font-medium text-primary-foreground/70 hover:bg-primary/20 hover:text-primary-foreground transition-colors',
-                isActive && 'bg-primary/30 text-primary-foreground'
+                'flex items-center rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors',
+                isActive && 'bg-sidebar-accent text-sidebar-accent-foreground'
               )
             }
             onClick={closeMobileMenu}
@@ -132,23 +131,6 @@ const Sidebar = ({ showMobile, setShowMobile }: SidebarProps) => {
             <Settings className="mr-2 h-4 w-4" />
             <span>Configurações</span>
           </NavLink>
-          
-          {/* Adiciona link para a área de administração visível apenas para admins */}
-          {isAdmin && (
-            <NavLink
-              to="/admin"
-              className={({ isActive }) =>
-                cn(
-                  'group flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground',
-                  isActive ? 'bg-accent' : 'transparent'
-                )
-              }
-              onClick={closeMobileMenu}
-            >
-              <Shield className="mr-2 h-4 w-4" />
-              <span>Administração</span>
-            </NavLink>
-          )}
         </div>
       </div>
       <div className="mt-auto px-3 py-3">
@@ -167,7 +149,7 @@ const Sidebar = ({ showMobile, setShowMobile }: SidebarProps) => {
   return (
     <>
       {/* Desktop Sidebar */}
-      <div className="fixed left-0 top-0 hidden h-full w-64 border-r bg-primary/5 pt-16 md:block">
+      <div className="fixed left-0 top-0 hidden h-full w-64 border-r border-sidebar-border bg-sidebar pt-16 md:block">
         <ScrollArea className="h-full py-6">{sidebarContent}</ScrollArea>
       </div>
 
