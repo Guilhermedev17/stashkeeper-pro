@@ -42,7 +42,7 @@ const Reports = () => {
   const [stockMovementData, setStockMovementData] = useState<any[]>([]);
   const [categoryData, setCategoryData] = useState<any[]>([]);
   const [productUsageData, setProductUsageData] = useState<any[]>([]);
-  const [monthlyValueData, setMonthlyValueData] = useState<any[]>([]);
+
   const [totalEntradas, setTotalEntradas] = useState(0);
   const [totalSaidas, setTotalSaidas] = useState(0);
 
@@ -142,10 +142,6 @@ const Reports = () => {
       setStockMovementData(monthlyData);
 
       // Create monthly value data (simplified for now)
-      setMonthlyValueData(monthlyData.map(m => ({
-        name: m.month,
-        value: m.total * 100 // Simplified value calculation
-      })));
 
       // Create product usage data
       const productUsage: Record<string, number> = {};
@@ -307,11 +303,10 @@ const Reports = () => {
       </div>
 
       <Tabs defaultValue="stock">
-        <TabsList className="grid grid-cols-4 mb-8">
+        <TabsList className="grid grid-cols-3 mb-8">
           <TabsTrigger value="stock">Movimentação de Estoque</TabsTrigger>
           <TabsTrigger value="category">Distribuição por Categoria</TabsTrigger>
           <TabsTrigger value="usage">Consumo de Produtos</TabsTrigger>
-          <TabsTrigger value="value">Valor do Estoque</TabsTrigger>
         </TabsList>
         
         {/* Stock Movement Tab */}
@@ -534,91 +529,7 @@ const Reports = () => {
           </Card>
         </TabsContent>
         
-        {/* Stock Value Tab */}
-        <TabsContent value="value" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Valor do Estoque</CardTitle>
-              <CardDescription>
-                Acompanhe a evolução do valor total do estoque.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[400px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={monthlyValueData}
-                    margin={{
-                      top: 5,
-                      right: 30,
-                      left: 20,
-                      bottom: 5,
-                    }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                    <XAxis dataKey="name" />
-                    <YAxis tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`} />
-                    <Tooltip 
-                      formatter={(value) => [`R$ ${value.toLocaleString('pt-BR')}`, 'Valor do Estoque']}
-                      contentStyle={{ 
-                        borderRadius: '0.5rem',
-                        borderColor: 'rgba(0,0,0,0.1)',
-                        fontSize: '0.875rem',
-                      }} 
-                    />
-                    <Legend />
-                    <Line 
-                      type="monotone" 
-                      dataKey="value" 
-                      stroke="#0088FE" 
-                      strokeWidth={2}
-                      activeDot={{ r: 8 }}
-                      name="Valor do Estoque"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
-                <Card>
-                  <CardHeader className="py-2">
-                    <CardTitle className="text-sm text-muted-foreground">Valor Atual</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-xl font-bold">
-                      R$ {(products.reduce((acc, p) => acc + p.quantity, 0) * 100).toLocaleString('pt-BR')}
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="py-2">
-                    <CardTitle className="text-sm text-muted-foreground">Crescimento</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-xl font-bold text-green-500">
-                      {totalEntradas > totalSaidas ? 
-                        `+${Math.round((totalEntradas - totalSaidas) / (totalSaidas || 1) * 100)}%` : 
-                        `${Math.round((totalEntradas - totalSaidas) / (totalSaidas || 1) * 100)}%`}
-                    </div>
-                    <div className="text-sm text-muted-foreground">No período selecionado</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="py-2">
-                    <CardTitle className="text-sm text-muted-foreground">Média por Produto</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-xl font-bold">
-                      R$ {products.length > 0 ? 
-                        ((products.reduce((acc, p) => acc + p.quantity, 0) * 100) / products.length).toLocaleString('pt-BR', {maximumFractionDigits: 2}) : 
-                        "0"}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+
       </Tabs>
 
       <div className="flex items-center justify-center gap-1 pt-4 text-sm text-muted-foreground">
