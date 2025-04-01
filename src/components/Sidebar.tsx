@@ -149,7 +149,7 @@ const Sidebar = ({ showMobile, setShowMobile }: SidebarProps) => {
   return (
     <>
       {/* Desktop Sidebar */}
-      <div className="fixed left-0 top-0 hidden h-full w-64 border-r border-sidebar-border bg-sidebar pt-16 md:block">
+      <div className="fixed left-0 top-0 hidden h-[calc(100vh-2rem)] w-64 bg-sidebar/95 backdrop-blur-sm mt-4 mb-4 pt-16 md:block rounded-r-lg">
         <ScrollArea className="h-full py-6">{sidebarContent}</ScrollArea>
       </div>
 
