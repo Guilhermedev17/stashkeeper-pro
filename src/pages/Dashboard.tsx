@@ -16,7 +16,10 @@ import {
   Percent,
   PackageOpen,
   ArrowDown,
-  ArrowUp
+  ArrowUp,
+  ArrowDownUp,
+  Share2,
+  BarChart2
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
@@ -30,7 +33,9 @@ import {
   XAxis, 
   YAxis, 
   CartesianGrid, 
-  Legend 
+  Legend,
+  LineChart,
+  Line
 } from 'recharts';
 
 export interface Product {
@@ -63,7 +68,7 @@ const Dashboard = () => {
   const [unitData, setUnitData] = useState<any[]>([]);
   const [categoryData, setCategoryData] = useState<any[]>([]);
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
-  
+
   useEffect(() => {
     // Conta produtos por categoria
     const counts: {[key: string]: number} = {};
@@ -131,7 +136,7 @@ const Dashboard = () => {
     
     if (movement.type === 'entrada') {
       acc[date].entradas += 1;
-    } else {
+          } else {
       acc[date].saidas += 1;
     }
     
@@ -141,12 +146,12 @@ const Dashboard = () => {
   // Converte para o formato que o gráfico espera
   const chartData = Object.keys(movementsByDay).sort().slice(-7).map(date => {
     const formattedDate = new Date(date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-    return {
+        return {
       name: formattedDate,
       entradas: movementsByDay[date].entradas,
       saidas: movementsByDay[date].saidas
-    };
-  });
+        };
+      });
   
   // Estatísticas gerais
   const totalProducts = products.length;
@@ -199,62 +204,62 @@ const Dashboard = () => {
 
         <TabsContent value="overview">
           <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-            <Card className="hover:shadow-md transition-all duration-300">
+        <Card className="hover:shadow-md transition-all duration-300">
               <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                <CardTitle className="text-sm font-medium">Total de Produtos</CardTitle>
-                <PackageOpen className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{totalProducts}</div>
-                <p className="text-xs text-muted-foreground">
+            <CardTitle className="text-sm font-medium">Total de Produtos</CardTitle>
+            <PackageOpen className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalProducts}</div>
+            <p className="text-xs text-muted-foreground">
                   Em {totalCategories} categorias diferentes
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-md transition-all duration-300">
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card className="hover:shadow-md transition-all duration-300">
               <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                 <CardTitle className="text-sm font-medium">Estoque Baixo</CardTitle>
                 <AlertTriangle className="h-4 w-4 text-destructive" />
-              </CardHeader>
-              <CardContent>
+          </CardHeader>
+          <CardContent>
                 <div className="text-2xl font-bold">{lowStockCount}</div>
-                <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
                   {lowStockCount > 0 ? `${criticalCount} em nível crítico` : 'Todos os produtos em níveis adequados'}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-md transition-all duration-300">
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card className="hover:shadow-md transition-all duration-300">
               <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                 <CardTitle className="text-sm font-medium">Entradas Recentes</CardTitle>
                 <TrendingUp className="h-4 w-4 text-green-500" />
-              </CardHeader>
-              <CardContent>
+          </CardHeader>
+          <CardContent>
                 <div className="text-2xl font-bold">
                   {movements.filter(m => m.type === 'entrada' && new Date(m.created_at) >= last7Days).length}
                 </div>
-                <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
                   Nos últimos 7 dias
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-md transition-all duration-300">
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card className="hover:shadow-md transition-all duration-300">
               <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                 <CardTitle className="text-sm font-medium">Saídas Recentes</CardTitle>
                 <TrendingDown className="h-4 w-4 text-blue-500" />
-              </CardHeader>
-              <CardContent>
+          </CardHeader>
+          <CardContent>
                 <div className="text-2xl font-bold">
                   {movements.filter(m => m.type === 'saida' && new Date(m.created_at) >= last7Days).length}
                 </div>
-                <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
                   Nos últimos 7 dias
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
           <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-7 mt-4 md:mt-6">
             <Card className="lg:col-span-4">
@@ -485,15 +490,282 @@ const Dashboard = () => {
 
         <TabsContent value="analytics">
           <div className="grid gap-4 md:gap-6 mt-4 md:mt-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+              <Card>
+          <CardHeader>
+                  <CardTitle className="flex items-center justify-between text-base">
+                    <span>Distribuição de Produtos por Categoria</span>
+                  </CardTitle>
+            <CardDescription>
+                    Visualização da distribuição percentual de produtos por categoria
+            </CardDescription>
+          </CardHeader>
+                <CardContent>
+                  <div className="h-[350px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                          data={categories.map(category => ({
+                            name: category.name,
+                            value: categoryCounts[category.id] || 0
+                          })).concat([{
+                            name: 'Sem categoria',
+                            value: categoryCounts['uncategorized'] || 0
+                          }])}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={{
+                            stroke: '#888',
+                            strokeWidth: 1
+                          }}
+                          outerRadius={110}
+                          fill="#8884d8"
+                          dataKey="value"
+                          nameKey="name"
+                          label={({ name, percent }) => {
+                            // Limitar o comprimento do nome se for muito longo
+                            const shortName = name.length > 10 ? name.substring(0, 10) + '...' : name;
+                            return `${shortName}: ${(percent * 100).toFixed(0)}%`;
+                          }}
+                        >
+                          {categories.map((category, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                          <Cell key="cell-uncategorized" fill="#718096" />
+                </Pie>
+                        <Tooltip formatter={(value) => [`${value} produtos`, 'Quantidade']} />
+              </PieChart>
+            </ResponsiveContainer>
+                  </div>
+          </CardContent>
+        </Card>
+
+              <Card>
+          <CardHeader>
+                  <CardTitle className="flex items-center justify-between text-base">
+                    <span>Tendência de Estoque</span>
+                  </CardTitle>
+            <CardDescription>
+                    Análise da tendência de estoque nos últimos 7 dias
+            </CardDescription>
+          </CardHeader>
+                <CardContent>
+                  <div className="h-[350px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart
+                        data={chartData}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 10 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="#444444" />
+                        <XAxis dataKey="name" stroke="#888888" />
+                        <YAxis stroke="#888888" />
+                        <Tooltip 
+                          contentStyle={{ backgroundColor: '#1e1e1e', border: '1px solid #333' }} 
+                          itemStyle={{ color: '#fff' }}
+                        />
+                        <Legend wrapperStyle={{ paddingTop: '10px' }} />
+                        <Line 
+                          type="monotone" 
+                          dataKey="entradas" 
+                          name="Entradas" 
+                          stroke="#22c55e" 
+                          activeDot={{ r: 8 }} 
+                          strokeWidth={2}
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="saidas" 
+                          name="Saídas" 
+                          stroke="#3b82f6" 
+                          activeDot={{ r: 8 }} 
+                          strokeWidth={2}
+                        />
+                      </LineChart>
+            </ResponsiveContainer>
+                  </div>
+          </CardContent>
+        </Card>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+              <Card>
+          <CardHeader>
+                  <CardTitle className="flex items-center justify-between text-base">
+                    <span>Status de Estoque dos Produtos</span>
+                  </CardTitle>
+            <CardDescription>
+                    Análise da distribuição de produtos por status de estoque
+            </CardDescription>
+          </CardHeader>
+                <CardContent>
+                  <div className="h-[350px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                        data={[
+                          {
+                            name: 'Status de Estoque',
+                            crítico: criticalProducts.length,
+                            baixo: lowProducts.length,
+                            normal: products.length - lowStockCount
+                          }
+                        ]}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 10 }}
+                        layout="vertical"
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="#444444" />
+                        <XAxis type="number" stroke="#888888" />
+                        <YAxis dataKey="name" type="category" stroke="#888888" hide />
+                <Tooltip
+                          contentStyle={{ backgroundColor: '#1e1e1e', border: '1px solid #333' }} 
+                          itemStyle={{ color: '#fff' }}
+                        />
+                        <Legend wrapperStyle={{ paddingTop: '10px' }} />
+                        <Bar dataKey="crítico" name="Crítico" fill="#ef4444" radius={[4, 4, 4, 4]} />
+                        <Bar dataKey="baixo" name="Baixo" fill="#f59e0b" radius={[4, 4, 4, 4]} />
+                        <Bar dataKey="normal" name="Normal" fill="#22c55e" radius={[4, 4, 4, 4]} />
+              </BarChart>
+            </ResponsiveContainer>
+                  </div>
+          </CardContent>
+        </Card>
+
+              <Card>
+          <CardHeader>
+                  <CardTitle className="flex items-center justify-between text-base">
+                    <span>Produtos Mais Movimentados</span>
+                  </CardTitle>
+            <CardDescription>
+                    Top 5 produtos com maior número de movimentações
+            </CardDescription>
+          </CardHeader>
+                <CardContent>
+                  {/* Calcular produtos mais movimentados */}
+                  {(() => {
+                    // Agrupar movimentações por produto
+                    const movementsByProduct: Record<string, { productId: string, count: number, name: string }> = {};
+                    
+                    movements.forEach(movement => {
+                      if (!movementsByProduct[movement.product_id]) {
+                        const product = products.find(p => p.id === movement.product_id);
+                        movementsByProduct[movement.product_id] = {
+                          productId: movement.product_id,
+                          count: 0,
+                          name: product ? product.name : 'Produto não encontrado'
+                        };
+                      }
+                      movementsByProduct[movement.product_id].count++;
+                    });
+                    
+                    // Converter para array e ordenar
+                    const topProducts = Object.values(movementsByProduct)
+                      .sort((a, b) => b.count - a.count)
+                      .slice(0, 5);
+                    
+                    return (
+                      <div className="h-[350px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                            data={topProducts.map(product => ({
+                              name: product.name.length > 20 ? product.name.substring(0, 20) + '...' : product.name,
+                              movimentações: product.count
+                            }))}
+                            margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" stroke="#444444" />
+                            <XAxis 
+                              dataKey="name" 
+                              stroke="#888888" 
+                              angle={-45} 
+                              textAnchor="end" 
+                              height={80} 
+                              tick={{ fontSize: 12 }}
+                            />
+                            <YAxis stroke="#888888" />
+                <Tooltip
+                              contentStyle={{ backgroundColor: '#1e1e1e', border: '1px solid #333' }} 
+                              itemStyle={{ color: '#fff' }}
+                            />
+                            <Bar dataKey="movimentações" name="Movimentações" fill="#8884d8" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+                      </div>
+                    );
+                  })()}
+          </CardContent>
+        </Card>
+      </div>
+
             <Card>
-              <CardHeader>
-                <CardTitle>Análise Detalhada</CardTitle>
-              </CardHeader>
-              <CardContent className="pl-2">
-                Em desenvolvimento. Mais gráficos e estatísticas serão adicionados em breve.
-              </CardContent>
-            </Card>
-          </div>
+          <CardHeader>
+                <CardTitle className="flex items-center justify-between text-base">
+                  <span>Métricas de Desempenho do Estoque</span>
+                </CardTitle>
+            <CardDescription>
+                  Indicadores-chave de desempenho do seu sistema de estoque
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Taxa de Giro de Estoque */}
+                  <div className="bg-black/20 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-sm font-medium">Taxa de Giro de Estoque</h3>
+                      <div className="p-2 rounded-full bg-indigo-500/20">
+                        <ArrowDownUp className="h-4 w-4 text-indigo-400" />
+                      </div>
+                    </div>
+                    <div className="flex items-end space-x-1">
+                      <span className="text-2xl font-bold">
+                        {products.length > 0 
+                          ? (totalSaidas / products.reduce((acc, p) => acc + p.quantity, 0)).toFixed(2) 
+                          : '0.00'}
+                      </span>
+                      <span className="text-xs text-muted-foreground mb-1">vezes/período</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Razão entre saídas totais e estoque médio
+                    </p>
+                  </div>
+                  
+                  {/* Nível de Serviço */}
+                  <div className="bg-black/20 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-sm font-medium">Nível de Serviço</h3>
+                      <div className="p-2 rounded-full bg-green-500/20">
+                        <Share2 className="h-4 w-4 text-green-400" />
+                  </div>
+                </div>
+                    <div className="flex items-end space-x-1">
+                      <span className="text-2xl font-bold">
+                        {(((products.length - criticalProducts.length) / products.length) * 100).toFixed(0)}%
+                      </span>
+            </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Percentual de produtos em níveis adequados de estoque
+                    </p>
+                  </div>
+                  
+                  {/* Eficiência de Estoque */}
+                  <div className="bg-black/20 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-sm font-medium">Eficiência de Estoque</h3>
+                      <div className="p-2 rounded-full bg-amber-500/20">
+                        <BarChart2 className="h-4 w-4 text-amber-400" />
+                      </div>
+                    </div>
+                    <div className="flex items-end space-x-1">
+                      <span className="text-2xl font-bold">
+                        {(totalSaidas / (totalEntradas || 1) * 100).toFixed(0)}%
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Proporção entre saídas e entradas no período
+                    </p>
+                  </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
         </TabsContent>
       </Tabs>
     </div>
