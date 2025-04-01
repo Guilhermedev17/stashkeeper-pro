@@ -1,28 +1,47 @@
-
-import React, { useState } from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle,
-  DialogFooter
-} from '@/components/ui/dialog';
+import { useState, useEffect } from 'react';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { ArrowDownUp, Package } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseProducts } from '@/hooks/useSupabaseProducts';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from '@/hooks/use-toast';
+import { useSupabaseMovements } from '@/hooks/useSupabaseMovements';
+import { Textarea } from '@/components/ui/textarea';
 
-interface Product {
+export interface Product {
   id: string;
   code: string;
   name: string;
   description: string;
   unit: string;
 }
+
+// Define o schema de validação para o formulário
+const formSchema = z.object({
+  quantity: z.coerce.number().positive({ message: 'A quantidade deve ser maior que zero' }),
+  notes: z.string().optional(),
+});
+
+type FormValues = z.infer<typeof formSchema>;
 
 interface MovementDialogProps {
   product: Product | null;
@@ -31,142 +50,188 @@ interface MovementDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const MovementDialog: React.FC<MovementDialogProps> = ({
-  product,
-  type,
-  open,
-  onOpenChange
-}) => {
-  const [quantity, setQuantity] = useState<number | ''>(1);
-  const [notes, setNotes] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const { addMovement } = useSupabaseProducts();
-  const { user } = useAuth();
-  
-  const handleMovement = async () => {
-    if (!product || !quantity) {
-      toast({
-        title: "Erro",
-        description: "Produto ou quantidade inválidos",
-        variant: "destructive"
+const MovementDialog = ({ product, type, open, onOpenChange }: MovementDialogProps) => {
+  const { fetchProducts } = useSupabaseProducts();
+  const { fetchMovements } = useSupabaseMovements();
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Inicializa o formulário
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      quantity: 1,
+      notes: '',
+    },
+  });
+
+  // Reset do formulário quando o produto ou tipo muda
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        quantity: 1,
+        notes: '',
       });
-      return;
     }
-    
-    setIsLoading(true);
+  }, [open, form, product, type]);
+
+  // Função para registrar a movimentação
+  const onSubmit = async (values: FormValues) => {
+    if (!product) return;
+
+    setIsSubmitting(true);
     
     try {
-      const result = await addMovement({
-        product_id: product.id,
-        type,
-        quantity: Number(quantity),
-        user_id: user?.id || null,
-        notes: notes.trim() || null
+      // 1. Registra a movimentação
+      const { error: movementError } = await supabase
+        .from('movements')
+        .insert({
+          product_id: product.id,
+          type: type,
+          quantity: values.quantity,
+          notes: values.notes || null,
+        });
+
+      if (movementError) throw movementError;
+
+      // 2. Busca o produto atual para obter a quantidade atualizada
+      const { data: productData, error: productFetchError } = await supabase
+        .from('products')
+        .select('quantity')
+        .eq('id', product.id)
+        .single();
+
+      if (productFetchError) throw productFetchError;
+      
+      // 3. Calcula a nova quantidade
+      const currentQuantity = productData.quantity || 0;
+      const newQuantity = type === 'entrada' 
+        ? currentQuantity + values.quantity 
+        : currentQuantity - values.quantity;
+      
+      // Verifica se há quantidade suficiente para saída
+      if (type === 'saida' && newQuantity < 0) {
+        throw new Error('Quantidade insuficiente em estoque');
+      }
+
+      // 4. Atualiza a quantidade do produto
+      const { error: updateError } = await supabase
+        .from('products')
+        .update({ quantity: newQuantity })
+        .eq('id', product.id);
+
+      if (updateError) throw updateError;
+
+      // Exibe mensagem de sucesso e fecha o diálogo
+      toast({
+        title: 'Movimentação registrada',
+        description: `${type === 'entrada' ? 'Entrada' : 'Saída'} de ${values.quantity} ${product.unit} de ${product.name} registrada com sucesso.`,
       });
       
-      if (result.success) {
-        toast({
-          title: type === 'entrada' ? "Entrada registrada" : "Saída registrada",
-          description: `Movimentação de ${quantity} ${product.unit || 'unidade'} registrada com sucesso.`
-        });
-        resetForm();
-        onOpenChange(false);
-      }
-    } catch (error) {
-      console.error(error);
+      // Atualiza os dados
+      fetchProducts();
+      fetchMovements();
+      onOpenChange(false);
+    } catch (error: any) {
       toast({
-        title: "Erro",
-        description: "Não foi possível registrar a movimentação",
-        variant: "destructive"
+        title: 'Erro ao registrar movimentação',
+        description: error.message || 'Ocorreu um erro ao registrar a movimentação.',
+        variant: 'destructive',
       });
     } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  const resetForm = () => {
-    setQuantity(1);
-    setNotes('');
-  };
-  
-  const handleClose = () => {
-    resetForm();
-    onOpenChange(false);
-  };
-
-  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    
-    if (value === '') {
-      setQuantity('');
-    } else {
-      const numValue = parseInt(value, 10);
-      if (!isNaN(numValue) && numValue > 0) {
-        setQuantity(numValue);
-      }
+      setIsSubmitting(false);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
+      <DialogContent className="sm:max-w-[500px] p-0 gap-0 w-[95vw] overflow-hidden">
+        <DialogHeader className="p-4 sm:p-6 pb-2 sm:pb-4">
+          <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
+            <ArrowDownUp className="h-5 w-5" />
             {type === 'entrada' ? 'Registrar Entrada' : 'Registrar Saída'}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-sm">
             {type === 'entrada' 
-              ? 'Adicionar itens ao estoque do produto selecionado.' 
-              : 'Remover itens do estoque do produto selecionado.'
-            }
+              ? 'Registre a entrada de produtos no estoque.' 
+              : 'Registre a saída de produtos do estoque.'}
           </DialogDescription>
         </DialogHeader>
-        
-        {product && (
-          <div className="py-4 space-y-4">
-            <div>
-              <div className="font-medium">{product.name}</div>
-              <div className="text-sm text-muted-foreground">{product.code}</div>
-              <div className="text-sm text-muted-foreground">{product.description}</div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="quantity">Quantidade</Label>
-              <Input
-                id="quantity"
-                type="number"
-                min="1"
-                value={quantity}
-                onChange={handleQuantityChange}
-                placeholder="Quantidade"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="notes">Observações</Label>
-              <Textarea
-                id="notes"
-                value={notes}
-                onChange={e => setNotes(e.target.value)}
-                placeholder="Motivo ou detalhes da movimentação"
-                rows={3}
-              />
-            </div>
+
+        {product ? (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-0">
+              <div className="p-4 sm:p-6 pt-2 sm:pt-4 space-y-4">
+                <div className="p-3 sm:p-4 border rounded-md bg-muted/40 flex items-start gap-3">
+                  <Package className="h-5 w-5 mt-1 text-muted-foreground shrink-0" />
+                  <div className="space-y-1">
+                    <div className="font-medium text-sm sm:text-base line-clamp-1">{product.name}</div>
+                    <div className="text-xs text-muted-foreground font-mono">{product.code}</div>
+                    {product.description && (
+                      <div className="text-xs text-muted-foreground line-clamp-2">{product.description}</div>
+                    )}
+                  </div>
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="quantity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Quantidade ({product.unit})</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.01" min="0.01" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="notes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Observações (opcional)</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Detalhes adicionais sobre esta movimentação" 
+                          className="resize-none"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <DialogFooter className="p-4 sm:p-6 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  type="submit" 
+                  className={type === 'entrada' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Enviando...' : type === 'entrada' ? 'Registrar Entrada' : 'Registrar Saída'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        ) : (
+          <div className="p-6 flex flex-col items-center justify-center h-[200px]">
+            <Package className="h-10 w-10 mb-4 text-muted-foreground" />
+            <p className="text-muted-foreground text-center">
+              Nenhum produto selecionado.
+            </p>
           </div>
         )}
-        
-        <DialogFooter>
-          <Button variant="outline" onClick={handleClose} disabled={isLoading}>
-            Cancelar
-          </Button>
-          <Button 
-            onClick={handleMovement} 
-            disabled={!quantity || isLoading}
-            variant={type === 'entrada' ? 'default' : 'destructive'}
-          >
-            {isLoading ? 'Processando...' : type === 'entrada' ? 'Confirmar Entrada' : 'Confirmar Saída'}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

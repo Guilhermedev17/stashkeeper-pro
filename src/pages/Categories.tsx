@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,20 +35,20 @@ import {
   FolderPlus, 
   MoreHorizontal, 
   Trash2,
-  RefreshCw
+  Plus,
+  Search
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useSupabaseCategories, Category } from '@/hooks/useSupabaseCategories';
 
 const Categories = () => {
   const { categories, loading, error, fetchCategories, addCategory, updateCategory, deleteCategory } = useSupabaseCategories();
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [newCategory, setNewCategory] = useState({ name: '', description: '' });
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [refreshing, setRefreshing] = useState(false);
 
   const filteredCategories = categories.filter(category => 
     category.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -66,7 +65,7 @@ const Categories = () => {
     
     if (result.success) {
       setNewCategory({ name: '', description: '' });
-      setIsAddDialogOpen(false);
+      setIsDialogOpen(false);
     }
   };
 
@@ -103,71 +102,20 @@ const Categories = () => {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await fetchCategories();
-    setRefreshing(false);
-  };
-
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Categorias</h1>
-          <p className="text-muted-foreground">
-            Gerencie as categorias de produtos do almoxarifado.
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Categorias</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">
+            Gerencie as categorias para organizar seus produtos.
           </p>
         </div>
-        
-        <div className="flex space-x-2">
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <FolderPlus className="mr-2 h-4 w-4" />
-                Nova Categoria
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Adicionar Categoria</DialogTitle>
-                <DialogDescription>
-                  Preencha os detalhes da nova categoria.
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="grid gap-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nome</Label>
-                  <Input
-                    id="name"
-                    value={newCategory.name}
-                    onChange={e => setNewCategory({ ...newCategory, name: e.target.value })}
-                    placeholder="Nome da categoria"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="description">Descrição</Label>
-                  <Textarea
-                    id="description"
-                    value={newCategory.description}
-                    onChange={e => setNewCategory({ ...newCategory, description: e.target.value })}
-                    placeholder="Descrição da categoria"
-                    rows={3}
-                  />
-                </div>
-              </div>
-              
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleAddCategory}>
-                  Adicionar
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button onClick={() => setIsDialogOpen(true)} className="gap-2 w-full sm:w-auto">
+            <Plus className="h-4 w-4" />
+            <span>Nova Categoria</span>
+          </Button>
         </div>
       </div>
 

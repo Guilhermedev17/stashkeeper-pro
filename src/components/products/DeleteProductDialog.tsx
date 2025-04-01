@@ -1,20 +1,19 @@
-
 import React from 'react';
-import { Button } from '@/components/ui/button';
 import { 
   Dialog, 
   DialogContent, 
   DialogDescription, 
-  DialogFooter, 
   DialogHeader, 
-  DialogTitle 
+  DialogTitle,
+  DialogFooter
 } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { AlertTriangle } from 'lucide-react';
 
 interface Product {
   id: string;
-  code: string;
   name: string;
-  description: string;
+  code: string;
 }
 
 interface DeleteProductDialogProps {
@@ -31,34 +30,42 @@ const DeleteProductDialog: React.FC<DeleteProductDialogProps> = ({
   onConfirm
 }) => {
   return (
-    <Dialog 
-      open={open} 
-      onOpenChange={onOpenChange}
-    >
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Excluir Produto</DialogTitle>
-          <DialogDescription>
-            Esta ação não pode ser desfeita. Tem certeza que deseja excluir este produto?
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px] p-0 gap-0 w-[95vw] max-h-[95vh] overflow-hidden">
+        <DialogHeader className="px-4 pt-5 pb-2 sm:px-6 text-center">
+          <div className="flex justify-center mb-2">
+            <div className="p-2 bg-amber-100 rounded-full dark:bg-amber-900/30">
+              <AlertTriangle className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+            </div>
+          </div>
+          <DialogTitle className="text-lg sm:text-xl">Excluir Produto</DialogTitle>
+          <DialogDescription className="text-sm">
+            Esta ação não pode ser desfeita. O produto será removido permanentemente.
           </DialogDescription>
         </DialogHeader>
         
-        {product && (
-          <div className="py-4">
-            <p className="font-medium">
-              {product.name} ({product.code})
-            </p>
-            <p className="text-sm text-muted-foreground">
-              {product.description}
-            </p>
-          </div>
-        )}
+        <div className="px-4 py-4 sm:px-6 text-center">
+          {product && (
+            <div className="space-y-2 text-center">
+              <p className="font-medium text-base">{product.name}</p>
+              <p className="text-sm text-muted-foreground">Código: {product.code}</p>
+            </div>
+          )}
+        </div>
         
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <DialogFooter className="px-4 pb-5 pt-2 sm:px-6 border-t flex sm:justify-between gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => onOpenChange(false)}
+            className="flex-1 sm:flex-none"
+          >
             Cancelar
           </Button>
-          <Button variant="destructive" onClick={onConfirm}>
+          <Button 
+            variant="destructive" 
+            onClick={onConfirm}
+            className="flex-1 sm:flex-none"
+          >
             Excluir
           </Button>
         </DialogFooter>

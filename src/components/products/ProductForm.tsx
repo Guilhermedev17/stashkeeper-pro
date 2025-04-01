@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -17,7 +17,7 @@ interface Category {
 }
 
 interface Product {
-  id: string;
+  id?: string;
   code: string;
   name: string;
   description: string;
@@ -25,7 +25,7 @@ interface Product {
   quantity: number;
   minQuantity: number;
   unit: string;
-  createdAt: Date;
+  createdAt?: Date;
 }
 
 interface ProductFormProps {
@@ -46,45 +46,48 @@ const ProductForm: React.FC<ProductFormProps> = ({
   onChange 
 }) => {
   return (
-    <div className="grid gap-4 py-4">
+    <div className="grid gap-4 py-2">
       <div className="space-y-2">
-        <Label htmlFor="code">Código</Label>
+        <Label htmlFor="code" className="text-sm font-medium">Código</Label>
         <Input
           id="code"
           value={product.code || ''}
           onChange={e => onChange('code', e.target.value)}
           placeholder="Código do produto"
           disabled={!isNew}
+          className="w-full"
         />
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="name">Nome</Label>
+        <Label htmlFor="name" className="text-sm font-medium">Nome</Label>
         <Input
           id="name"
           value={product.name || ''}
           onChange={e => onChange('name', e.target.value)}
           placeholder="Nome do produto"
+          className="w-full"
         />
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="description">Descrição</Label>
-        <Input
+        <Label htmlFor="description" className="text-sm font-medium">Descrição</Label>
+        <Textarea
           id="description"
           value={product.description || ''}
           onChange={e => onChange('description', e.target.value)}
           placeholder="Descrição do produto"
+          className="w-full min-h-[80px] resize-none"
         />
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="category">Categoria</Label>
+        <Label htmlFor="category" className="text-sm font-medium">Categoria</Label>
         <Select
           value={product.categoryId || ''}
           onValueChange={value => onChange('categoryId', value)}
         >
-          <SelectTrigger>
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Selecione uma categoria" />
           </SelectTrigger>
           <SelectContent>
@@ -97,9 +100,9 @@ const ProductForm: React.FC<ProductFormProps> = ({
         </Select>
       </div>
       
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="quantity">Quantidade</Label>
+          <Label htmlFor="quantity" className="text-sm font-medium">Quantidade</Label>
           <Input
             id="quantity"
             type="number"
@@ -107,11 +110,12 @@ const ProductForm: React.FC<ProductFormProps> = ({
             value={product.quantity === 0 && isNew ? '' : product.quantity || ''}
             onChange={e => onChange('quantity', e.target.value === '' ? 0 : Number(e.target.value))}
             placeholder="0"
+            className="w-full"
           />
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="minQuantity">Quantidade Mínima</Label>
+          <Label htmlFor="minQuantity" className="text-sm font-medium">Quantidade Mínima</Label>
           <Input
             id="minQuantity"
             type="number"
@@ -119,16 +123,17 @@ const ProductForm: React.FC<ProductFormProps> = ({
             value={product.minQuantity === 0 && isNew ? '' : product.minQuantity || ''}
             onChange={e => onChange('minQuantity', e.target.value === '' ? 0 : Number(e.target.value))}
             placeholder="0"
+            className="w-full"
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="unit">Unidade</Label>
+          <Label htmlFor="unit" className="text-sm font-medium">Unidade</Label>
           <Select
             value={product.unit || 'unidade'}
             onValueChange={value => onChange('unit', value)}
           >
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Selecione uma unidade" />
             </SelectTrigger>
             <SelectContent>
@@ -144,12 +149,12 @@ const ProductForm: React.FC<ProductFormProps> = ({
         </div>
       </div>
       
-      <div className="flex justify-end space-x-2 pt-4">
-        <Button variant="outline" onClick={onCancel}>
+      <div className="flex justify-end gap-2 pt-4 border-t mt-2">
+        <Button variant="outline" onClick={onCancel} size="sm" className="w-24">
           Cancelar
         </Button>
-        <Button onClick={onSubmit}>
-          {isNew ? 'Adicionar' : 'Salvar Alterações'}
+        <Button onClick={onSubmit} size="sm" className="w-24">
+          {isNew ? 'Adicionar' : 'Salvar'}
         </Button>
       </div>
     </div>

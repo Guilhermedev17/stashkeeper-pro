@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,7 +14,6 @@ import Categories from "./pages/Categories";
 import Reports from "./pages/Reports";
 import History from "./pages/History";
 import Settings from "./pages/Settings";
-import AdminPage from "./pages/AdminPage";
 import Movements from "./pages/Movements";
 import NotFound from "./pages/NotFound";
 

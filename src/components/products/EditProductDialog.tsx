@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   Dialog, 
@@ -9,6 +8,11 @@ import {
 } from '@/components/ui/dialog';
 import ProductForm from './ProductForm';
 
+interface Category {
+  id: string;
+  name: string;
+}
+
 interface Product {
   id: string;
   code: string;
@@ -17,12 +21,8 @@ interface Product {
   categoryId: string;
   quantity: number;
   minQuantity: number;
+  unit: string;
   createdAt: Date;
-}
-
-interface Category {
-  id: string;
-  name: string;
 }
 
 interface EditProductDialogProps {
@@ -30,7 +30,7 @@ interface EditProductDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   categories: Category[];
-  onUpdate: (product: Product) => void;
+  onUpdate: () => void;
   onChange: (field: string, value: any) => void;
 }
 
@@ -44,26 +44,26 @@ const EditProductDialog: React.FC<EditProductDialogProps> = ({
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Editar Produto</DialogTitle>
-          <DialogDescription>
-            Atualize os detalhes do produto selecionado.
+      <DialogContent className="sm:max-w-[550px] p-0 gap-0 w-[95vw] max-h-[95vh] overflow-hidden">
+        <DialogHeader className="px-4 pt-5 pb-2 sm:px-6">
+          <DialogTitle className="text-lg sm:text-xl">Editar Produto</DialogTitle>
+          <DialogDescription className="text-sm">
+            Atualize as informações do produto selecionado.
           </DialogDescription>
         </DialogHeader>
         
-        {product && (
-          <ProductForm 
-            product={product}
-            isNew={false}
-            categories={categories}
-            onChange={onChange}
-            onSubmit={() => {
-              if (product) onUpdate(product);
-            }}
-            onCancel={() => onOpenChange(false)}
-          />
-        )}
+        <div className="px-4 pb-5 sm:px-6 overflow-y-auto max-h-[calc(95vh-10rem)]">
+          {product && (
+            <ProductForm 
+              product={product}
+              isNew={false}
+              categories={categories}
+              onChange={onChange}
+              onSubmit={onUpdate}
+              onCancel={() => onOpenChange(false)}
+            />
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );

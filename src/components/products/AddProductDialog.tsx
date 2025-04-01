@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,8 +6,7 @@ import {
   DialogContent, 
   DialogDescription, 
   DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
+  DialogTitle
 } from '@/components/ui/dialog';
 import ProductForm from './ProductForm';
 
@@ -23,6 +21,8 @@ interface NewProduct {
   categoryId: string;
   quantity: number;
   minQuantity: number;
+  code: string;
+  unit: string;
 }
 
 interface AddProductDialogProps {
@@ -44,28 +44,24 @@ const AddProductDialog: React.FC<AddProductDialogProps> = ({
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Novo Produto
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Adicionar Produto</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="sm:max-w-[550px] p-0 gap-0 w-[95vw] max-h-[95vh] overflow-hidden">
+        <DialogHeader className="px-4 pt-5 pb-2 sm:px-6">
+          <DialogTitle className="text-lg sm:text-xl">Adicionar Produto</DialogTitle>
+          <DialogDescription className="text-sm">
             Preencha os detalhes do novo produto, incluindo o código.
           </DialogDescription>
         </DialogHeader>
         
-        <ProductForm 
-          product={newProduct}
-          isNew={true}
-          categories={categories}
-          onChange={onChange}
-          onSubmit={onSubmit}
-          onCancel={() => onOpenChange(false)}
-        />
+        <div className="px-4 pb-5 sm:px-6 overflow-y-auto max-h-[calc(95vh-10rem)]">
+          <ProductForm 
+            product={newProduct}
+            isNew={true}
+            categories={categories}
+            onChange={onChange}
+            onSubmit={onSubmit}
+            onCancel={() => onOpenChange(false)}
+          />
+        </div>
       </DialogContent>
     </Dialog>
   );

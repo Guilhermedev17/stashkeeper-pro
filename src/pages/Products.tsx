@@ -1,17 +1,20 @@
-
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useSupabaseProducts } from '@/hooks/useSupabaseProducts';
 import { useSupabaseCategories } from '@/hooks/useSupabaseCategories';
-import ProductList from '@/components/products/ProductList';
+import ProductList, { Product } from '@/components/products/ProductList';
 import ProductFilters from '@/components/products/ProductFilters';
 import AddProductDialog from '@/components/products/AddProductDialog';
 import EditProductDialog from '@/components/products/EditProductDialog';
 import DeleteProductDialog from '@/components/products/DeleteProductDialog';
 import MovementDialog from '@/components/products/MovementDialog';
 import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { PlusSquare } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
-interface Product {
+// Interface para o EditProductDialog
+interface EditProduct {
   id: string;
   code: string;
   name: string;
@@ -23,7 +26,32 @@ interface Product {
   createdAt: Date;
 }
 
+// Interface para o DeleteProductDialog
+interface DeleteProduct {
+  id: string;
+  name: string;
+  code: string;
+}
 
+// Interface para o MovementDialog
+interface MovementProduct {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  unit: string;
+}
+
+// Interface para o NewProduct usado no AddProductDialog e ProductForm
+interface NewProduct {
+  code: string;
+  name: string;
+  description: string;
+  categoryId: string;
+  quantity: number;
+  minQuantity: number;
+  unit: string;
+}
 
 const Products = () => {
   
@@ -39,7 +67,7 @@ const Products = () => {
   const [movementType, setMovementType] = useState<'entrada' | 'saida'>('entrada');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   
-  const [newProduct, setNewProduct] = useState({
+  const [newProduct, setNewProduct] = useState<NewProduct>({
     code: '',
     name: '',
     description: '',
@@ -58,7 +86,8 @@ const Products = () => {
     fetchProducts, 
     addProduct,
     updateProduct,
-    deleteProduct
+    deleteProduct,
+    addMovement
   } = useSupabaseProducts();
 
   const { categories } = useSupabaseCategories();
@@ -71,9 +100,9 @@ const Products = () => {
         code: p.code,
         name: p.name,
         description: p.description,
-        categoryId: p.category_id,
+        category_id: p.category_id,
         quantity: p.quantity,
-        minQuantity: p.min_quantity,
+        min_quantity: p.min_quantity,
         unit: p.unit,
         createdAt: new Date(p.created_at)
       }));
@@ -90,16 +119,16 @@ const Products = () => {
         product.code.toLowerCase().includes(lowercasedFilter) ||
         product.description?.toLowerCase().includes(lowercasedFilter);
       
-      const matchesCategory = selectedCategory === 'all' || product.categoryId === selectedCategory;
+      const matchesCategory = selectedCategory === 'all' || product.category_id === selectedCategory;
 
       let matchesStatus = true;
       if (selectedStatus !== 'all') {
         if (selectedStatus === 'critico') {
-          matchesStatus = product.quantity <= product.minQuantity;
+          matchesStatus = product.quantity <= product.min_quantity;
         } else if (selectedStatus === 'baixo') {
-          matchesStatus = product.quantity > product.minQuantity && product.quantity <= product.minQuantity * 1.5;
+          matchesStatus = product.quantity > product.min_quantity && product.quantity <= product.min_quantity * 1.5;
         } else if (selectedStatus === 'normal') {
-          matchesStatus = product.quantity > product.minQuantity * 1.5;
+          matchesStatus = product.quantity > product.min_quantity * 1.5;
         }
       }
       
@@ -139,9 +168,9 @@ const Products = () => {
     const result = await updateProduct(selectedProduct.id, {
       name: selectedProduct.name,
       description: selectedProduct.description,
-      category_id: selectedProduct.categoryId,
+      category_id: selectedProduct.category_id,
       quantity: selectedProduct.quantity,
-      min_quantity: selectedProduct.minQuantity,
+      min_quantity: selectedProduct.min_quantity,
       unit: selectedProduct.unit
     });
     
@@ -186,9 +215,17 @@ const Products = () => {
     setNewProduct({ ...newProduct, [field]: value });
   };
 
+  // Função para atualizar o selectedProduct com base no campo alterado
   const handleSelectedProductChange = (field: string, value: any) => {
     if (selectedProduct) {
-      setSelectedProduct({ ...selectedProduct, [field]: value });
+      // Mapeia os campos da interface do EditProductDialog para a interface do Product
+      if (field === 'categoryId') {
+        setSelectedProduct({ ...selectedProduct, category_id: value });
+      } else if (field === 'minQuantity') {
+        setSelectedProduct({ ...selectedProduct, min_quantity: value });
+      } else {
+        setSelectedProduct({ ...selectedProduct, [field]: value });
+      }
     }
   };
 
@@ -197,46 +234,91 @@ const Products = () => {
     return category ? category.name : 'Sem categoria';
   };
 
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+
+  // Função para mapear Product para EditProduct com as propriedades corretas
+  const mapProductToEditProduct = (product: Product): EditProduct => {
+    return {
+      id: product.id,
+      code: product.code,
+      name: product.name,
+      description: product.description,
+      categoryId: product.category_id,
+      quantity: product.quantity,
+      minQuantity: product.min_quantity,
+      unit: product.unit,
+      createdAt: product.createdAt
+    };
+  };
+
+  // Função para mapear Product para DeleteProduct
+  const mapProductToDeleteProduct = (product: Product): DeleteProduct => {
+    return {
+      id: product.id,
+      code: product.code,
+      name: product.name
+    };
+  };
+
+  // Função para mapear Product para MovementProduct
+  const mapProductToMovementProduct = (product: Product): MovementProduct => {
+    return {
+      id: product.id,
+      code: product.code,
+      name: product.name,
+      description: product.description,
+      unit: product.unit
+    };
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 max-w-7xl">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Produtos</h1>
-          <p className="text-muted-foreground">
-            Gerencie o inventário de produtos do almoxarifado.
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Produtos</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">
+            Visualize e gerencie todos os seus produtos.
           </p>
         </div>
-        
-        <AddProductDialog
-          open={isAddDialogOpen}
-          onOpenChange={setIsAddDialogOpen}
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder="Buscar produto..."
+            className="max-w-[200px] h-10"
+            value={searchTerm}
+            onChange={handleSearch}
+          />
+          <Button onClick={() => setIsAddDialogOpen(true)} className="gap-2" title="Adicionar novo produto">
+            <PlusSquare className="h-4 w-4" /> Novo Produto
+          </Button>
+        </div>
+      </div>
+
+      <div className="mb-6">
+        <ProductFilters
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
           categories={categories}
-          newProduct={newProduct}
-          onChange={handleNewProductChange}
-          onSubmit={handleAddProduct}
+          selectedCategory={selectedCategory}
+          onCategoryChange={setSelectedCategory}
+          selectedStatus={selectedStatus}
+          onStatusChange={setSelectedStatus}
         />
       </div>
 
-      <ProductFilters
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        categories={categories}
-        selectedCategory={selectedCategory}
-        onCategoryChange={setSelectedCategory}
-        selectedStatus={selectedStatus}
-        onStatusChange={setSelectedStatus}
-      />
-
-      <ProductList
-        products={filteredProducts}
-        getCategoryName={getCategoryName}
-        onEdit={handleEditClick}
-        onDelete={handleDeleteClick}
-        onMovement={handleMovementClick}
-      />
+      <div className="rounded-md border overflow-hidden">
+        <ProductList
+          products={filteredProducts}
+          getCategoryName={getCategoryName}
+          onEdit={handleEditClick}
+          onDelete={handleDeleteClick}
+          onMovement={handleMovementClick}
+        />
+      </div>
 
       <EditProductDialog
-        product={selectedProduct}
+        product={selectedProduct ? mapProductToEditProduct(selectedProduct) : null}
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
         categories={categories}
@@ -245,17 +327,26 @@ const Products = () => {
       />
 
       <DeleteProductDialog
-        product={selectedProduct}
+        product={selectedProduct ? mapProductToDeleteProduct(selectedProduct) : null}
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
         onConfirm={handleDeleteProduct}
       />
 
-      <MovementDialog
-        product={selectedProduct}
+      <MovementDialog 
+        product={selectedProduct ? mapProductToMovementProduct(selectedProduct) : null}
         type={movementType}
         open={isMovementDialogOpen}
         onOpenChange={setIsMovementDialogOpen}
+      />
+      
+      <AddProductDialog
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        categories={categories}
+        newProduct={newProduct}
+        onChange={handleNewProductChange}
+        onSubmit={handleAddProduct}
       />
     </div>
   );

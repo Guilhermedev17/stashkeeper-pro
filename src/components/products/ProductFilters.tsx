@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -35,43 +34,50 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
   onStatusChange
 }) => {
   return (
-    <div className="flex items-center gap-4">
-      <div className="relative flex-1">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="relative col-span-1 sm:col-span-2 lg:col-span-1">
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
-          type="search"
           placeholder="Buscar produtos..."
-          className="pl-8"
           value={searchTerm}
-          onChange={e => onSearchChange(e.target.value)}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="pl-8 w-full"
         />
       </div>
       
-      <Select value={selectedCategory} onValueChange={onCategoryChange}>
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Filtrar por Categoria" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Todas Categorias</SelectItem>
-          {categories.map(category => (
-            <SelectItem key={category.id} value={category.id}>
-              {category.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      <Select value={selectedStatus} onValueChange={onStatusChange}>
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Filtrar por Status" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Todos Status</SelectItem>
-          <SelectItem value="normal">Normal</SelectItem>
-          <SelectItem value="baixo">Baixo</SelectItem>
-          <SelectItem value="critico">Crítico</SelectItem>
-        </SelectContent>
-      </Select>
+      <div className="grid grid-cols-2 gap-2 col-span-1">
+        <Select
+          value={selectedCategory}
+          onValueChange={onCategoryChange}
+        >
+          <SelectTrigger className="w-full text-xs sm:text-sm">
+            <SelectValue placeholder="Categoria" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas Categorias</SelectItem>
+            {categories.map(category => (
+              <SelectItem key={category.id} value={category.id}>
+                {category.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        
+        <Select
+          value={selectedStatus}
+          onValueChange={onStatusChange}
+        >
+          <SelectTrigger className="w-full text-xs sm:text-sm">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos Status</SelectItem>
+            <SelectItem value="normal">Normal</SelectItem>
+            <SelectItem value="baixo">Baixo</SelectItem>
+            <SelectItem value="critico">Crítico</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   );
 };

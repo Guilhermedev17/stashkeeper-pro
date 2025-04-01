@@ -1,393 +1,501 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/contexts/AuthContext';
-import { BarChart, LineChart, PieChart, ResponsiveContainer, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend, Line, Pie, Cell } from 'recharts';
-import { ArchiveRestore, ArrowDown, ArrowUp, CircleDollarSign, ClipboardList, PackageOpen, Percent } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSupabaseProducts } from '@/hooks/useSupabaseProducts';
 import { useSupabaseMovements } from '@/hooks/useSupabaseMovements';
 import { useSupabaseCategories } from '@/hooks/useSupabaseCategories';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { 
+  RefreshCw, 
+  Package as PackageIcon, 
+  AlertTriangle, 
+  TrendingDown, 
+  TrendingUp, 
+  ArrowRight,
+  Percent,
+  PackageOpen,
+  ArrowDown,
+  ArrowUp
+} from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { 
+  ResponsiveContainer, 
+  PieChart, 
+  Pie, 
+  Cell, 
+  Tooltip, 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Legend 
+} from 'recharts';
+
+export interface Product {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  category_id: string;
+  category_name?: string;
+  quantity: number;
+  min_quantity: number;
+  unit: string;
+  status?: 'active' | 'inactive';
+}
+
+export interface Movement {
+  id: string;
+  product_id: string;
+  type: 'entrada' | 'saida';
+  quantity: number;
+  created_at: string;
+}
 
 const Dashboard = () => {
-  const { user } = useAuth();
-  const { products } = useSupabaseProducts();
-  const { movements } = useSupabaseMovements();
+  const { products, loading: loadingProducts, fetchProducts } = useSupabaseProducts();
+  const { movements, loading: loadingMovements, fetchMovements } = useSupabaseMovements();
   const { categories } = useSupabaseCategories();
-  
-  const [monthlyData, setMonthlyData] = useState<any[]>([]);
-  const [categoryData, setCategoryData] = useState<any[]>([]);
+  const { user } = useAuth();
+  const [categoryCounts, setCategoryCounts] = useState<{[key: string]: number}>({});
   const [unitData, setUnitData] = useState<any[]>([]);
-  const [criticalStock, setCriticalStock] = useState<any[]>([]);
-  const [recentMovements, setRecentMovements] = useState<any[]>([]);
-
-  const userName = user?.user_metadata?.name || user?.email || 'Usuário';
-
+  const [categoryData, setCategoryData] = useState<any[]>([]);
+  const [monthlyData, setMonthlyData] = useState<any[]>([]);
+  
   useEffect(() => {
-    if (movements.length > 0) {
-      const last6Months = Array.from({ length: 6 }, (_, i) => {
-        const date = new Date();
-        date.setMonth(date.getMonth() - i);
-        return date.toLocaleString('pt-BR', { month: 'short' });
-      }).reverse();
+    // Conta produtos por categoria
+    const counts: {[key: string]: number} = {};
+    products.forEach(product => {
+      if (product.category_id) {
+        counts[product.category_id] = (counts[product.category_id] || 0) + 1;
+      } else {
+        counts['uncategorized'] = (counts['uncategorized'] || 0) + 1;
+      }
+    });
+    setCategoryCounts(counts);
+  }, [products]);
 
-      const groupedData = last6Months.map(month => {
-        const monthMovements = movements.filter(m => {
-          const movementDate = new Date(m.created_at);
-          const monthStr = movementDate.toLocaleString('pt-BR', { month: 'short' });
-          return monthStr === month;
-        });
-
-        const entradas = monthMovements.filter(m => m.type === 'entrada').reduce((acc, m) => acc + m.quantity, 0);
-        const saidas = monthMovements.filter(m => m.type === 'saida').reduce((acc, m) => acc + m.quantity, 0);
-
-        return {
-          name: month,
-          entradas,
-          saidas
-        };
-      });
-
-      setMonthlyData(groupedData);
-
-      const recent = [...movements]
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-        .slice(0, 4)
-        .map(m => ({
-          id: m.id,
-          type: m.type,
-          name: m.product_name || 'Produto',
-          qty: m.quantity,
-          date: new Date(m.created_at).toLocaleDateString('pt-BR')
-        }));
-      
-      setRecentMovements(recent);
+  // Produtos com estoque baixo
+  const lowStockProducts = products
+    .filter(product => {
+      // Considera estoque baixo quando:
+      // 1. Quantidade está abaixo do mínimo (crítico)
+      // 2. Quantidade está até 30% acima do mínimo (baixo)
+      return product.quantity <= product.min_quantity * 1.3;
+    })
+    .sort((a, b) => {
+      // Calcula porcentagem do estoque em relação ao mínimo
+      const aPercentage = a.quantity / a.min_quantity;
+      const bPercentage = b.quantity / b.min_quantity;
+      return aPercentage - bPercentage; // Ordena do mais crítico para o menos crítico
+    });
+  
+  // Produtos críticos (abaixo do mínimo)
+  const criticalProducts = products.filter(p => p.quantity <= p.min_quantity);
+  
+  // Produtos com estoque baixo (até 30% acima do mínimo)
+  const lowProducts = products.filter(p => p.quantity > p.min_quantity && p.quantity <= p.min_quantity * 1.3);
+  
+  // Cria uma lista com produtos críticos e baixos para mostrar
+  let displayProducts: typeof products = [];
+  
+  // Adiciona todos os produtos críticos
+  if (criticalProducts.length > 0) {
+    displayProducts = displayProducts.concat(criticalProducts);
+  }
+  
+  // Se ainda não atingiu 5 produtos, adiciona alguns com estoque baixo
+  if (displayProducts.length < 5 && lowProducts.length > 0) {
+    const remainingCount = 5 - displayProducts.length;
+    displayProducts = displayProducts.concat(lowProducts.slice(0, remainingCount));
+  }
+  
+  // Ordenar por nível de criticidade (mais crítico primeiro)
+  displayProducts.sort((a, b) => {
+    const aPercentage = a.quantity / a.min_quantity;
+    const bPercentage = b.quantity / b.min_quantity;
+    return aPercentage - bPercentage;
+  });
+  
+  // Dados para gráfico de movimentações por dia
+  const movementsByDay = movements.reduce((acc: {[key: string]: {entradas: number, saidas: number}}, movement) => {
+    const date = new Date(movement.created_at).toISOString().split('T')[0];
+    if (!acc[date]) {
+      acc[date] = {
+        entradas: 0,
+        saidas: 0
+      };
     }
-  }, [movements]);
-
-  useEffect(() => {
-    if (products.length > 0) {
-      // Agrupar produtos por unidade
-      const unitCounts: Record<string, { count: number, total: number }> = {};
-      const catCounts: Record<string, number> = {};
-      
-      products.forEach(product => {
-        // Contagem por unidade
-        const unit = product.unit || 'unidade';
-        if (!unitCounts[unit]) {
-          unitCounts[unit] = { count: 0, total: 0 };
-        }
-        unitCounts[unit].count++;
-        unitCounts[unit].total += product.quantity;
-
-        // Contagem por categoria
-        if (product.category_id) {
-          if (catCounts[product.category_id]) {
-            catCounts[product.category_id]++;
-          } else {
-            catCounts[product.category_id] = 1;
-          }
-        }
-      });
-
-      // Formatar dados de unidade para o gráfico
-      const unitDataArray = Object.entries(unitCounts).map(([unit, data]) => ({
-        name: unit,
-        quantidade: data.count,
-        total: data.total
-      }));
-      setUnitData(unitDataArray);
-
-      // Formatar dados de categoria para o gráfico
-      const catData = Object.entries(catCounts).map(([id, value]) => {
-        const cat = categories.find(c => c.id === id);
-        return {
-          name: cat ? cat.name : 'Sem categoria',
-          value
-        };
-      });
-      setCategoryData(catData.length > 0 ? catData : [{ name: 'Sem dados', value: 1 }]);
-
-      // Produtos com estoque crítico
-      const critical = products
-        .filter(p => p.quantity <= p.min_quantity)
-        .sort((a, b) => a.quantity - b.quantity)
-        .slice(0, 4)
-        .map(p => ({
-          id: p.id,
-          name: p.name,
-          stock: p.quantity,
-          min: p.min_quantity,
-          unit: p.unit || 'unidade'
-        }));
-      
-      setCriticalStock(critical);
+    
+    if (movement.type === 'entrada') {
+      acc[date].entradas += 1;
+    } else {
+      acc[date].saidas += 1;
     }
-  }, [products, categories]);
-
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
-
+    
+    return acc;
+  }, {});
+  
+  // Converte para o formato que o gráfico espera
+  const chartData = Object.keys(movementsByDay).sort().slice(-7).map(date => {
+    const formattedDate = new Date(date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    return {
+      name: formattedDate,
+      entradas: movementsByDay[date].entradas,
+      saidas: movementsByDay[date].saidas
+    };
+  });
+  
+  // Estatísticas gerais
   const totalProducts = products.length;
   const totalEntradas = movements.filter(m => m.type === 'entrada').reduce((acc, m) => acc + m.quantity, 0);
   const totalSaidas = movements.filter(m => m.type === 'saida').reduce((acc, m) => acc + m.quantity, 0);
   const criticalCount = products.filter(p => p.quantity <= p.min_quantity).length;
+  const lowStockCount = products.filter(p => p.quantity <= p.min_quantity * 1.3).length;
+  const totalCategories = categories.length;
+  
+  // Cálculo de movimentações recentes (últimos 7 dias)
+  const last7Days = new Date();
+  last7Days.setDate(last7Days.getDate() - 7);
+  
+  const recentMovementsData = movements
+    .filter(m => new Date(m.created_at) >= last7Days)
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 5);
+  
+  // Encontra os detalhes dos produtos das movimentações recentes
+  const recentMovementsWithProducts = recentMovementsData.map(movement => {
+    const product = products.find(p => p.id === movement.product_id);
+    return {
+      ...movement,
+      productName: product?.name || 'Produto não encontrado',
+      productCode: product?.code || '',
+      unit: product?.unit || ''
+    };
+  });
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+
+  const userName = user?.user_metadata?.name || user?.email || 'Usuário';
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Bem-vindo, {userName}. Aqui está um resumo do almoxarifado.
-        </p>
+    <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 max-w-7xl">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">
+            Visão geral e estatísticas do sistema de estoque.
+          </p>
+        </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="hover:shadow-md transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total de Produtos</CardTitle>
-            <PackageOpen className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalProducts}</div>
-            <p className="text-xs text-muted-foreground">
-              Produtos cadastrados
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card className="hover:shadow-md transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total de Entradas</CardTitle>
-            <ArrowDown className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalEntradas}</div>
-            <p className="text-xs text-muted-foreground">
-              Itens recebidos
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card className="hover:shadow-md transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total de Saídas</CardTitle>
-            <ArrowUp className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalSaidas}</div>
-            <p className="text-xs text-muted-foreground">
-              Itens distribuídos
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card className="hover:shadow-md transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Estoque Crítico</CardTitle>
-            <Percent className="h-4 w-4 text-amber-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{criticalCount}</div>
-            <p className="text-xs text-muted-foreground">
-              Produtos abaixo do mínimo
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList className="grid grid-cols-2 w-full sm:w-[400px]">
+          <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+          <TabsTrigger value="analytics">Analíticos</TabsTrigger>
+        </TabsList>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="md:col-span-3 hover:shadow-md transition-all duration-300">
-          <CardHeader>
-            <CardTitle>Produtos por Unidade</CardTitle>
-            <CardDescription>
-              Distribuição dos produtos por tipo de unidade
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex justify-center">
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={unitData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  paddingAngle={5}
-                  dataKey="quantidade"
-                  label={({name, percent}) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                  labelLine={{ stroke: '#888888', strokeWidth: 1 }}
-                >
-                  {unitData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+        <TabsContent value="overview">
+          <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+            <Card className="hover:shadow-md transition-all duration-300">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                <CardTitle className="text-sm font-medium">Total de Produtos</CardTitle>
+                <PackageOpen className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{totalProducts}</div>
+                <p className="text-xs text-muted-foreground">
+                  Em {totalCategories} categorias diferentes
+                </p>
+              </CardContent>
+            </Card>
 
-        <Card className="md:col-span-3 hover:shadow-md transition-all duration-300">
-          <CardHeader>
-            <CardTitle>Distribuição por Categoria</CardTitle>
-            <CardDescription>
-              Produtos por categoria
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex justify-center">
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={categoryData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  paddingAngle={5}
-                  dataKey="value"
-                  label={({name, percent}) => {
-                    const displayName = name.length > 15 ? `${name.slice(0, 12)}...` : name;
-                    return `${displayName} ${(percent * 100).toFixed(0)}%`;
-                  }}
-                  labelLine={{ stroke: '#888888', strokeWidth: 1 }}
-                >
-                  {categoryData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+            <Card className="hover:shadow-md transition-all duration-300">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                <CardTitle className="text-sm font-medium">Estoque Baixo</CardTitle>
+                <AlertTriangle className="h-4 w-4 text-destructive" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{lowStockCount}</div>
+                <p className="text-xs text-muted-foreground">
+                  {lowStockCount > 0 ? `${criticalCount} em nível crítico` : 'Todos os produtos em níveis adequados'}
+                </p>
+              </CardContent>
+            </Card>
 
-        <Card className="md:col-span-3 hover:shadow-md transition-all duration-300">
-          <CardHeader>
-            <CardTitle>Movimentação Mensal</CardTitle>
-            <CardDescription>
-              Comparativo de entradas e saídas nos últimos meses
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pl-2">
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart
-                data={monthlyData}
-                margin={{
-                  top: 5,
-                  right: 30,
-                  left: 0,
-                  bottom: 5,
-                }}
-                barGap={8}
-                barSize={20}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#525252" opacity={0.4} />
-                <XAxis dataKey="name" tick={{ fill: '#888888' }} />
-                <YAxis tick={{ fill: '#888888' }} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#1a1a1a',
-                    border: '1px solid #333333',
-                    borderRadius: '6px',
-                  }}
-                  itemStyle={{ color: '#888888' }}
-                />
-                <Legend wrapperStyle={{ color: '#888888' }} />
-                <Bar dataKey="entradas" name="Entradas" fill="#22c55e" />
-                <Bar dataKey="saidas" name="Saídas" fill="#3b82f6" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+            <Card className="hover:shadow-md transition-all duration-300">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                <CardTitle className="text-sm font-medium">Entradas Recentes</CardTitle>
+                <TrendingUp className="h-4 w-4 text-green-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {movements.filter(m => m.type === 'entrada' && new Date(m.created_at) >= last7Days).length}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Nos últimos 7 dias
+                </p>
+              </CardContent>
+            </Card>
 
-        <Card className="md:col-span-3 hover:shadow-md transition-all duration-300">
-          <CardHeader>
-            <CardTitle>Estoque por Unidade</CardTitle>
-            <CardDescription>
-              Quantidade total em estoque por unidade
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pl-2">
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart
-                data={unitData}
-                margin={{
-                  top: 5,
-                  right: 30,
-                  left: 0,
-                  bottom: 5,
-                }}
-                barSize={20}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#525252" opacity={0.4} />
-                <XAxis dataKey="name" tick={{ fill: '#888888' }} />
-                <YAxis tick={{ fill: '#888888' }} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#1a1a1a',
-                    border: '1px solid #333333',
-                    borderRadius: '6px',
-                  }}
-                  itemStyle={{ color: '#888888' }}
-                />
-                <Bar dataKey="total" name="Quantidade" fill="#8884d8" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
+            <Card className="hover:shadow-md transition-all duration-300">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                <CardTitle className="text-sm font-medium">Saídas Recentes</CardTitle>
+                <TrendingDown className="h-4 w-4 text-blue-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {movements.filter(m => m.type === 'saida' && new Date(m.created_at) >= last7Days).length}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Nos últimos 7 dias
+                </p>
+              </CardContent>
+            </Card>
+          </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card className="hover:shadow-md transition-all duration-300">
-          <CardHeader>
-            <CardTitle>Produtos com Estoque Crítico</CardTitle>
-            <CardDescription>
-              Produtos abaixo do estoque mínimo
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {criticalStock.map(item => (
-                <div key={item.id} className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium leading-none">{item.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Mínimo: {item.min} {item.unit}
-                    </p>
+          <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-7 mt-4 md:mt-6">
+            <Card className="lg:col-span-4">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Movimentações Recentes</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="relative w-full h-[300px] sm:h-[340px]">
+                  {/* Gráfico de movimentações recentes */}
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={chartData}
+                      margin={{
+                        top: 20,
+                        right: 30,
+                        left: 20,
+                        bottom: 5,
+                      }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="entradas" name="Entradas" fill="#22c55e" />
+                      <Bar dataKey="saidas" name="Saídas" fill="#3b82f6" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="lg:col-span-3">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Últimas Movimentações</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {recentMovementsWithProducts.length > 0 ? (
+                  <div className="space-y-4">
+                    {recentMovementsWithProducts.map((movement) => (
+                      <div key={movement.id} className="flex items-center">
+                        <div className={`w-2 h-2 rounded-full mr-2 ${
+                          movement.type === 'entrada' ? 'bg-green-500' : 'bg-blue-500'
+                        }`} />
+                        <div className="flex-1 space-y-1">
+                          <p className="text-sm font-medium leading-none flex items-center gap-1">
+                            {movement.productName}
+                            <Badge variant="outline" className="text-[10px] ml-1 py-0 px-2 h-4">
+                              {movement.type === 'entrada' ? 'Entrada' : 'Saída'}
+                            </Badge>
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {movement.quantity} {movement.unit} em {new Date(movement.created_at).toLocaleDateString('pt-BR')}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="pt-1">
+                      <Button variant="ghost" size="sm" className="gap-1 w-full justify-center" onClick={() => window.location.href = '/movements'}>
+                        <span>Ver todas movimentações</span>
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="text-sm font-medium">
-                    {item.stock} {item.unit}
+                ) : (
+                  <div className="py-6 text-center text-muted-foreground">
+                    <p>Nenhuma movimentação recente encontrada</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-7 mt-4 md:mt-6">
+            <Card className="lg:col-span-3 bg-black/10">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span>Produtos com Estoque Baixo</span>
+                    <Badge variant="destructive" className="bg-red-600 rounded-full" title="Total de produtos com estoque baixo">
+                      {lowStockCount}
+                    </Badge>
+                  </div>
+                </CardTitle>
+                <CardDescription className="text-xs text-muted-foreground">
+                  Produtos que precisam de reposição (críticos ou com estoque baixo)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {displayProducts.length > 0 ? (
+                  <div className="space-y-2.5">
+                    {displayProducts.map((product) => {
+                      const isCritical = product.quantity <= product.min_quantity;
+                      const percentage = Math.round((product.quantity / product.min_quantity) * 100);
+                      
+                      // Função para pluralizar a unidade corretamente
+                      const formatUnit = (quantity: number, unit: string) => {
+                        // Unidades que precisam de pluralização
+                        const pluralRules: Record<string, string> = {
+                          'pacote': 'pacotes',
+                          'rolo': 'rolos',
+                          'caixa': 'caixas',
+                          'peça': 'peças',
+                          'unidade': 'unidades',
+                          'garrafa': 'garrafas',
+                          'litro': 'litros',
+                          'metro': 'metros'
+                        };
+                        
+                        // Algumas unidades não mudam no plural
+                        const invariantUnits = ['kg', 'g', 'ml', 'L', 'm'];
+                        
+                        let result = unit;
+                        
+                        // Aplica pluralização se necessário
+                        if (!invariantUnits.includes(unit)) {
+                          result = quantity > 1 && pluralRules[unit] ? pluralRules[unit] : unit;
+                        }
+                        
+                        // Capitaliza a primeira letra (exceto para unidades que são siglas)
+                        if (!invariantUnits.includes(result)) {
+                          result = result.charAt(0).toUpperCase() + result.slice(1);
+                        }
+                        
+                        return result;
+                      };
+                      
+                      return (
+                        <div 
+                          key={product.id} 
+                          className={`flex items-start gap-3 p-3 rounded-md ${
+                            isCritical 
+                              ? 'bg-red-950/20 border border-red-900/30' 
+                              : 'bg-amber-950/20 border border-amber-900/30'
+                          }`}
+                        >
+                          <div className={`flex-shrink-0 ${isCritical ? 'text-red-500' : 'text-amber-500'}`}>
+                            <AlertTriangle className="h-5 w-5" />
+                          </div>
+                          <div className="space-y-1 flex-1">
+                            <div className="flex justify-between items-center">
+                              <p className="text-sm font-medium line-clamp-1">{product.code || ''}{product.code && product.name ? ' - ' : ''}{product.name}</p>
+                              <Badge 
+                                variant="outline" 
+                                className={`text-[10px] py-0.5 px-2 ${
+                                  isCritical 
+                                    ? 'bg-red-500/20 text-red-400 border-red-500/50' 
+                                    : 'bg-amber-500/20 text-amber-400 border-amber-500/50'
+                                }`}
+                              >
+                                {isCritical ? 'Crítico' : 'Baixo'}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs text-muted-foreground">
+                                Estoque: <span className="text-white/90 font-medium">{product.quantity}</span> de {product.min_quantity} {formatUnit(product.min_quantity, product.unit)}
+                              </p>
+                              <Badge 
+                                variant="outline" 
+                                className={`text-[10px] py-0 px-2 rounded-full ${
+                                  isCritical 
+                                    ? 'bg-red-500/20 text-red-400 border-red-500/50' 
+                                    : 'bg-amber-500/20 text-amber-400 border-amber-500/50'
+                                }`}
+                              >
+                                {percentage}%
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div className="pt-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="gap-1 w-full justify-center text-muted-foreground hover:text-primary hover:bg-transparent" 
+                        onClick={() => window.location.href = '/products?status=baixo'}
+                      >
+                        <span>Ver todos produtos</span>
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="py-6 text-center text-muted-foreground">
+                    <p>Nenhum produto com estoque baixo</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="lg:col-span-4">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Produtos por Categoria</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="relative w-full h-[300px] sm:h-[340px]">
+                  <div className="space-y-4">
+                    {categories.map((category) => (
+                      <div key={category.id} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full bg-primary/70" />
+                          <span className="text-sm">{category.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">{categoryCounts[category.id] || 0}</span>
+                          <span className="text-xs text-muted-foreground">produtos</span>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="flex items-center justify-between border-t pt-3 mt-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-muted-foreground" />
+                        <span className="text-sm">Sem categoria</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">{categoryCounts['uncategorized'] || 0}</span>
+                        <span className="text-xs text-muted-foreground">produtos</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
 
-        <Card className="hover:shadow-md transition-all duration-300">
-          <CardHeader>
-            <CardTitle>Movimentações Recentes</CardTitle>
-            <CardDescription>
-              Últimas movimentações realizadas
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentMovements.map(item => (
-                <div key={item.id} className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium leading-none">{item.name}</p>
-                    <p className="text-sm text-muted-foreground">{item.date}</p>
-                  </div>
-                  <div className={`text-sm font-medium ${item.type === 'entrada' ? 'text-green-500' : 'text-blue-500'}`}>
-                    {item.type === 'entrada' ? '+' : '-'}{item.qty}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+        <TabsContent value="analytics">
+          <div className="grid gap-4 md:gap-6 mt-4 md:mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Análise Detalhada</CardTitle>
+              </CardHeader>
+              <CardContent className="pl-2">
+                Em desenvolvimento. Mais gráficos e estatísticas serão adicionados em breve.
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
