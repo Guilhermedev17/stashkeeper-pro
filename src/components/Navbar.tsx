@@ -21,31 +21,31 @@ const Navbar = ({ onMobileMenuToggle }: NavbarProps = {}) => {
   const { user, logout } = useAuth();
 
   return (
-    <header className="h-14 sm:h-16 border-b border-border/40 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 fixed top-0 left-0 right-0 z-30 flex items-center shadow-sm shadow-primary/5">
-      <div className="w-full px-4 flex justify-between items-center">
-        <div className="flex items-center gap-2 sm:gap-3">
+    <header className="h-16 border-b border-border/40 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 fixed top-0 left-0 right-0 z-30 flex items-center shadow-md shadow-primary/5">
+      <div className="w-full px-6 flex justify-between items-center">
+        <div className="flex items-center gap-3 sm:gap-4">
           <Button
             variant="ghost"
             size="icon"
             aria-label="Menu"
-            className="md:hidden text-muted-foreground hover:text-foreground h-9 w-9"
+            className="md:hidden text-muted-foreground hover:text-foreground h-9 w-9 rounded-full"
             onClick={onMobileMenuToggle}
           >
             <Menu className="h-[18px] w-[18px]" />
           </Button>
         
-          <h1 className="text-base sm:text-lg md:text-xl font-semibold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent transition-all flex items-center gap-1.5">
+          <h1 className="text-lg sm:text-xl md:text-2xl font-semibold text-gradient transition-all flex items-center gap-1.5">
             StashKeeper
-            <span className="text-[10px] sm:text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-medium">Pro</span>
+            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">Pro</span>
           </h1>
         </div>
         
-        <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
           <Button
             variant="ghost"
             size="icon"
             aria-label="Help"
-            className="text-muted-foreground hover:text-foreground h-9 w-9 hidden sm:flex"
+            className="text-muted-foreground hover:text-foreground h-9 w-9 rounded-full hidden sm:flex"
           >
             <HelpCircle className="h-[18px] w-[18px]" />
           </Button>
@@ -54,9 +54,10 @@ const Navbar = ({ onMobileMenuToggle }: NavbarProps = {}) => {
             variant="ghost"
             size="icon"
             aria-label="Notifications"
-            className="text-muted-foreground hover:text-foreground h-9 w-9"
+            className="text-muted-foreground hover:text-foreground h-9 w-9 rounded-full relative"
           >
             <Bell className="h-[18px] w-[18px]" />
+            <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></span>
           </Button>
           
           <ThemeSwitcher />
@@ -64,12 +65,17 @@ const Navbar = ({ onMobileMenuToggle }: NavbarProps = {}) => {
           {user && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="p-0 h-9 w-9 hover:bg-accent/50">
+                <Button variant="ghost" className="p-0 h-9 w-9 rounded-full hover:bg-accent/50 overflow-hidden ring-offset-background transition-all duration-300 hover:ring-2 hover:ring-primary/50">
                   <UserAvatar />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
+              <DropdownMenuContent align="end" className="w-56 mt-1 rounded-xl border-border/50 shadow-lg">
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">Minha Conta</p>
+                    <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+                  </div>
+                </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="cursor-pointer">
                   Perfil

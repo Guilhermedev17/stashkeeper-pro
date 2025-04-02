@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
 import { supabase } from '@/integrations/supabase/client';
+import { Mail, KeyRound, User, ArrowRight } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -66,39 +67,44 @@ const Login = () => {
   };
 
   return (
-    <div className="h-screen w-full flex items-center justify-center bg-background/95 p-4">
-      <div className="absolute top-4 right-4">
+    <div className="h-screen w-full flex items-center justify-center bg-background/95 p-4 relative overflow-hidden">
+      {/* Background decorative elements */}
+      <div className="absolute w-[500px] h-[500px] rounded-full bg-primary/10 blur-3xl -top-64 -right-64 animate-pulse-subtle"></div>
+      <div className="absolute w-[400px] h-[400px] rounded-full bg-primary/10 blur-3xl -bottom-32 -left-32 animate-pulse-subtle animation-delay-700"></div>
+      
+      <div className="absolute top-4 right-4 z-10">
         <ThemeSwitcher />
       </div>
       
-      <div className="w-full max-w-md px-8 py-12 rounded-xl glass-effect animate-scale-in shadow-lg bg-background/50 backdrop-blur-sm">
+      <div className="w-full max-w-md px-8 py-12 rounded-2xl card-glass animate-scale-in shadow-xl dark:shadow-primary/5 backdrop-blur-xl border border-white/20 dark:border-white/5 relative z-10">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            StashKeeper
+          <h1 className="text-3xl font-bold text-gradient">
+            StashKeeper<span className="text-primary font-bold">Pro</span>
           </h1>
-          <p className="text-muted-foreground mt-2">
-            Gerenciamento de almoxarifado
+          <p className="text-muted-foreground mt-2 text-sm">
+            Sistema Inteligente de Gerenciamento de Estoque
           </p>
         </div>
         
         <form onSubmit={handleSubmit} className="space-y-6">
           {!isLoginMode && (
             <div className="space-y-2">
-              <Label htmlFor="name">Nome</Label>
+              <Label htmlFor="name" className="text-sm font-medium">Nome</Label>
               <Input
                 id="name"
                 type="text"
-                placeholder="Seu nome"
+                placeholder="Seu nome completo"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required={!isLoginMode}
-                className="bg-background/50 backdrop-blur-xs"
+                className="bg-background/50"
+                prefix={<User className="h-4 w-4 text-muted-foreground" />}
               />
             </div>
           )}
           
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-sm font-medium">Email</Label>
             <Input
               id="email"
               type="email"
@@ -108,13 +114,14 @@ const Login = () => {
               required
               autoComplete="email"
               autoFocus
-              className="bg-background/50 backdrop-blur-xs"
+              className="bg-background/50"
+              prefix={<Mail className="h-4 w-4 text-muted-foreground" />}
             />
           </div>
           
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password">Senha</Label>
+              <Label htmlFor="password" className="text-sm font-medium">Senha</Label>
               {isLoginMode && (
                 <Button variant="link" className="h-auto p-0 text-xs">
                   Esqueceu a senha?
@@ -128,18 +135,20 @@ const Login = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="bg-background/50 backdrop-blur-xs"
+              className="bg-background/50"
+              prefix={<KeyRound className="h-4 w-4 text-muted-foreground" />}
             />
           </div>
           
           <Button 
             type="submit" 
-            className="w-full transition-all duration-300"
+            className="w-full transition-all duration-300 rounded-lg bg-primary text-primary-foreground hover:shadow-md mt-8"
             disabled={isLoading}
           >
             {isLoading 
               ? (isLoginMode ? 'Entrando...' : 'Criando conta...') 
               : (isLoginMode ? 'Entrar' : 'Criar conta')}
+            {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
           </Button>
         </form>
         
@@ -155,9 +164,9 @@ const Login = () => {
           </Button>
         </div>
         
-        <div className="mt-4 text-center text-sm text-muted-foreground">
-          <p>Para usar o sistema, crie uma conta ou entre com:</p>
-          <p className="mt-1">E-mail e senha de sua escolha</p>
+        <div className="mt-4 text-center text-xs text-muted-foreground">
+          <p>Para usar o sistema, crie uma conta ou entre com</p>
+          <p className="mt-1">e-mail e senha de sua escolha</p>
         </div>
       </div>
     </div>
