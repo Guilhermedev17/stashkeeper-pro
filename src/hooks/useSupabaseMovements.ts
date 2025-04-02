@@ -13,8 +13,21 @@ interface Movement {
   quantity: number;
   user_id: string | null;
   user_name?: string;
+  employee_id: string | null;
+  employee_name?: string | null;
+  employee_code?: string | null;
   notes: string | null;
   created_at: string;
+  products?: {
+    id: string;
+    name: string;
+    code: string;
+  };
+  employees?: {
+    id: string;
+    name: string;
+    code: string;
+  };
 }
 
 export const useSupabaseMovements = () => {
@@ -32,38 +45,42 @@ export const useSupabaseMovements = () => {
       const { data, error } = await supabase
         .from('movements')
         .select(`
-          id, product_id, type, quantity, user_id, notes, created_at,
-          products(id, name, code)
+          id, product_id, type, quantity, user_id, notes, created_at, employee_id,
+          products:products(id, name, code),
+          employees:employees(id, name, code)
         `)
-        .or('type.in.(entrada,saida)')
         .order('created_at', { ascending: false });
         
       if (error) {
         console.error('Erro na consulta Supabase:', error);
         throw new Error(`Erro ao buscar movimentações: ${error.message}`);
       }
+
+      if (!data) {
+        throw new Error('Nenhum dado retornado da consulta');
+      }
       
       // Formatar os dados para incluir informações do produto e garantir o tipo correto
-      const formattedData = data?.map(movement => {
+      const formattedData = data.map(movement => {
         const validType = movement.type === 'entrada' || movement.type === 'saida' ? movement.type : 'entrada';
         
-        // Verificar se os dados do produto existem e têm a estrutura esperada
-        let productName = 'Produto Removido';
-        let productCode = 'N/A';
-        
-        // Com a nova sintaxe de consulta, o Supabase sempre retorna o produto como objeto
-        if (movement.products) {
-          productName = movement.products.name || 'Produto Removido';
-          productCode = movement.products.code || 'N/A';
-        }
-        
         return {
-          ...movement,
-          product_name: productName,
-          product_code: productCode,
-          user_name: 'Usuário do Sistema', // Simplificado já que não estamos buscando usuários
-          type: validType
-        };
+          id: movement.id,
+          product_id: movement.product_id,
+          type: validType,
+          quantity: movement.quantity,
+          user_id: movement.user_id,
+          notes: movement.notes,
+          created_at: movement.created_at,
+          employee_id: movement.employee_id,
+          product_name: movement.products?.name || 'Produto Removido',
+          product_code: movement.products?.code || 'N/A',
+          user_name: 'Usuário do Sistema',
+          employee_name: movement.employees?.name || null,
+          employee_code: movement.employees?.code || null,
+          products: movement.products,
+          employees: movement.employees
+        } as Movement;
       }) as Movement[] || [];
       
       setMovements(formattedData);

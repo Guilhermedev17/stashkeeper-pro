@@ -34,6 +34,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/components/ui/use-toast";
 import DateRangeFilter from '@/components/ui/DateRangeFilter';
+import CustomDateRangePicker from '@/components/ui/CustomDateRangePicker';
 
 // Definições de interface para tipagem
 interface ProductItem {
@@ -77,11 +78,15 @@ const Movements = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedType, setSelectedType] = useState<string>('all');
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [dateRange, setDateRange] = useState<'day' | 'week' | 'month' | 'year' | undefined>(
     undefined
   );
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [isNewMovementDialogOpen, setIsNewMovementDialogOpen] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<'predefined' | 'custom'>('predefined');
 
   const handleOpenDialog = (product: ProductItem, type: 'entrada' | 'saida') => {
     setSelectedProduct(product);
@@ -97,26 +102,51 @@ const Movements = () => {
   const handleDateSelect = (selectedDate: Date | undefined) => {
     setDate(selectedDate);
     setDateRange(undefined);
+    setStartDate(undefined);
+    setEndDate(undefined);
+    setActiveFilter('predefined');
   };
 
   const handleDateRangeSelect = (range: 'day' | 'week' | 'month' | 'year') => {
     setDateRange(range);
     setDate(undefined);
+    setStartDate(undefined);
+    setEndDate(undefined);
+    setActiveFilter('predefined');
+  };
+
+  const handleCustomRangeChange = (start: Date | undefined, end: Date | undefined) => {
+    setStartDate(start);
+    setEndDate(end);
+    setDate(undefined);
+    setDateRange(undefined);
+    setActiveFilter('custom');
   };
 
   const clearDateFilter = () => {
     setDate(undefined);
     setDateRange(undefined);
+    setStartDate(undefined);
+    setEndDate(undefined);
   };
 
   // Filtra os movimentos de acordo com a data selecionada
   const filterMovementsByDate = (productMovements: Movement) => {
-    if (!date && !dateRange) return true;
-    
     const movementDate = new Date(productMovements.created_at);
-    const today = new Date();
     
-    // Se uma data específica foi selecionada no calendário
+    // Se não há filtro de data ativo
+    if (!date && !dateRange && !startDate && !endDate) return true;
+    
+    // Filtro por intervalo personalizado
+    if (startDate && endDate) {
+      // Ajustar endDate para incluir o final do dia
+      const adjustedEndDate = new Date(endDate);
+      adjustedEndDate.setHours(23, 59, 59, 999);
+      
+      return movementDate >= startDate && movementDate <= adjustedEndDate;
+    }
+    
+    // Filtro por data específica
     if (date) {
       return (
         movementDate.getDate() === date.getDate() &&
@@ -125,35 +155,41 @@ const Movements = () => {
       );
     }
     
-    // Se um intervalo de datas foi selecionado
-    if (dateRange === 'day') {
-      return (
-        movementDate.getDate() === today.getDate() &&
-        movementDate.getMonth() === today.getMonth() &&
-        movementDate.getFullYear() === today.getFullYear()
-      );
-    } else if (dateRange === 'week') {
-      const weekAgo = new Date();
-      weekAgo.setDate(today.getDate() - 7);
-      return movementDate >= weekAgo;
-    } else if (dateRange === 'month') {
-      const monthAgo = new Date();
-      monthAgo.setMonth(today.getMonth() - 1);
-      return movementDate >= monthAgo;
-    } else if (dateRange === 'year') {
-      const yearAgo = new Date();
-      yearAgo.setFullYear(today.getFullYear() - 1);
-      return movementDate >= yearAgo;
+    // Filtro por intervalo predefinido
+    if (dateRange) {
+      const today = new Date();
+      
+      if (dateRange === 'day') {
+        return (
+          movementDate.getDate() === today.getDate() &&
+          movementDate.getMonth() === today.getMonth() &&
+          movementDate.getFullYear() === today.getFullYear()
+        );
+      } else if (dateRange === 'week') {
+        const weekAgo = new Date();
+        weekAgo.setDate(today.getDate() - 7);
+        return movementDate >= weekAgo;
+      } else if (dateRange === 'month') {
+        const monthAgo = new Date();
+        monthAgo.setMonth(today.getMonth() - 1);
+        return movementDate >= monthAgo;
+      } else if (dateRange === 'year') {
+        const yearAgo = new Date();
+        yearAgo.setFullYear(today.getFullYear() - 1);
+        return movementDate >= yearAgo;
+      }
     }
     
     return true;
   };
 
-  // Filter products that have movements and match search/category criteria
+  // Filter products that have movements and match search/category/type criteria
   const filteredProducts = products.filter(product => {
-    // Check if product has any movements that match the date filter
+    // Check if product has any movements that match the date and type filter
     const hasMovements = movements.some(m => 
-      m.product_id === product.id && filterMovementsByDate(m)
+      m.product_id === product.id && 
+      filterMovementsByDate(m) && 
+      (selectedType === 'all' || m.type === selectedType)
     );
     
     if (!hasMovements) return false;
@@ -194,8 +230,8 @@ const Movements = () => {
       </div>
 
       {/* Filtros de busca, categoria e data */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="relative col-span-1">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
+        <div className="relative col-span-1 sm:col-span-4 md:col-span-1">
           <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar produtos..."
@@ -205,31 +241,99 @@ const Movements = () => {
           />
         </div>
         
-        <Select 
-          value={selectedCategory} 
-          onValueChange={setSelectedCategory}
-        >
-          <SelectTrigger className="w-full text-xs sm:text-sm">
-            <SelectValue placeholder="Filtrar por Categoria" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas Categorias</SelectItem>
-            {categories.map(category => (
-              <SelectItem key={category.id} value={category.id}>
-                {category.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="col-span-1 sm:col-span-2 md:col-span-1">
+          <Select 
+            value={selectedCategory} 
+            onValueChange={setSelectedCategory}
+          >
+            <SelectTrigger className="w-full text-xs sm:text-sm">
+              <SelectValue placeholder="Categoria" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas Categorias</SelectItem>
+              {categories.map(category => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-        <DateRangeFilter
-          date={date}
-          dateRange={dateRange}
-          onDateSelect={handleDateSelect}
-          onDateRangeSelect={handleDateRangeSelect}
-          onClearFilter={clearDateFilter}
-          placeholder="Filtrar por Data"
-        />
+        <div className="col-span-1 sm:col-span-2 md:col-span-1">
+          <Select 
+            value={selectedType} 
+            onValueChange={setSelectedType}
+          >
+            <SelectTrigger className="w-full text-xs sm:text-sm">
+              <SelectValue placeholder="Tipo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="entrada">Entradas</SelectItem>
+              <SelectItem value="saida">Saídas</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center gap-2 col-span-1 sm:col-span-4 md:col-span-1">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button 
+                variant={dateRange ? "default" : "outline"}
+                size="sm" 
+                className="gap-1 flex-1"
+              >
+                <CalendarIcon className="h-4 w-4" />
+                <span className="truncate">Rápido</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="p-0" align="start">
+              <DateRangeFilter
+                date={date}
+                dateRange={dateRange}
+                onDateSelect={handleDateSelect}
+                onDateRangeSelect={handleDateRangeSelect}
+                onClearFilter={clearDateFilter}
+                placeholder="Filtro rápido"
+                className="w-full border-0"
+              />
+            </PopoverContent>
+          </Popover>
+          
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button 
+                variant={startDate && endDate ? "default" : "outline"}
+                size="sm" 
+                className="gap-1 flex-1"
+              >
+                <CalendarIcon className="h-4 w-4" />
+                <span className="truncate">Período</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="p-0" align="start">
+              <CustomDateRangePicker
+                startDate={startDate}
+                endDate={endDate}
+                onRangeChange={handleCustomRangeChange}
+                placeholder="Período específico"
+                className="w-full border-0"
+              />
+            </PopoverContent>
+          </Popover>
+          
+          {(dateRange || date || startDate || endDate) && (
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className="text-destructive"
+              onClick={clearDateFilter}
+            >
+              Limpar
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Estado de carregamento ou sem dados */}
@@ -263,6 +367,8 @@ const Movements = () => {
                     <TableHead>Produto</TableHead>
                     <TableHead className="hidden md:table-cell">Categoria</TableHead>
                     <TableHead className="text-center w-[70px] sm:w-[100px]">Estoque</TableHead>
+                    <TableHead className="text-center w-[100px]">Tipo</TableHead>
+                    <TableHead className="hidden md:table-cell w-[200px]">Colaborador</TableHead>
                     <TableHead className="w-[130px] sm:w-[180px] md:w-[220px]">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -270,7 +376,9 @@ const Movements = () => {
                   {filteredProducts.map((product) => (
                     <TableRow key={product.id}>
                       <TableCell className="font-mono text-xs px-2 sm:px-4 py-2 sm:py-4">
-                        {product.code}
+                        <div className="bg-secondary/40 dark:bg-secondary/20 px-2 py-0.5 rounded border border-border/50 inline-block font-mono">
+                          {product.code}
+                        </div>
                       </TableCell>
                       <TableCell className="px-2 sm:px-4 py-2 sm:py-4">
                         <div className="font-medium">{product.name}</div>
@@ -281,13 +389,28 @@ const Movements = () => {
                         {getCategoryName(product.category_id)}
                       </TableCell>
                       <TableCell className="text-center px-2 sm:px-4 py-2 sm:py-4">
-                        <span className={`px-1.5 py-0.5 sm:px-2 sm:py-1 rounded text-xs sm:text-sm ${
-                          product.quantity <= product.min_quantity 
-                            ? 'bg-destructive/10 text-destructive' 
-                            : 'bg-primary/10 text-primary'
-                        }`}>
+                        <span className={`px-1.5 py-0.5 sm:px-2 sm:py-1 rounded text-xs sm:text-sm ${product.quantity <= product.min_quantity ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary'}`}>
                           {product.quantity}
                         </span>
+                      </TableCell>
+                      <TableCell className="text-center px-2 sm:px-4 py-2 sm:py-4">
+                        {movements.find(m => m.product_id === product.id)?.type === 'entrada' ? (
+                          <span className="px-2 py-1 rounded text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Entrada</span>
+                        ) : (
+                          <span className="px-2 py-1 rounded text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">Saída</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell px-2 sm:px-4 py-2 sm:py-4">
+                        {(() => {
+                          const movement = movements.find(m => m.product_id === product.id);
+                          if (!movement?.employee_name) return '-';
+                          return (
+                            <div className="space-y-1">
+                              <div className="font-medium truncate">{movement.employee_name}</div>
+                              <div className="text-xs text-muted-foreground font-mono">{movement.employee_code || 'Sem código'}</div>
+                            </div>
+                          );
+                        })()} 
                       </TableCell>
                       <TableCell className="px-2 sm:px-4 py-2 sm:py-4">
                         <div className="flex flex-row sm:flex-row gap-1 sm:gap-2">
@@ -361,6 +484,7 @@ const MovementProductSelector = ({
   const [movementType, setMovementType] = useState<'entrada' | 'saida'>('entrada');
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [selectedType, setSelectedType] = useState('all');
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [dateRange, setDateRange] = useState<'day' | 'week' | 'month' | 'year' | undefined>(undefined);
 
@@ -443,7 +567,21 @@ const MovementProductSelector = ({
               </SelectContent>
             </Select>
           
-            <DateRangeFilter
+            <Select 
+          value={selectedType} 
+          onValueChange={setSelectedType}
+        >
+          <SelectTrigger className="w-full text-xs sm:text-sm">
+            <SelectValue placeholder="Filtrar por Tipo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os Tipos</SelectItem>
+            <SelectItem value="entrada">Entradas</SelectItem>
+            <SelectItem value="saida">Saídas</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <DateRangeFilter
               date={date}
               dateRange={dateRange}
               onDateSelect={handleDateSelect}
@@ -476,8 +614,10 @@ const MovementProductSelector = ({
                       <TableRow key={product.id}>
                         <TableCell className="px-2 sm:px-4 py-2">
                           <div className="font-medium text-sm line-clamp-1">{product.name}</div>
-                          <div className="text-xs text-muted-foreground line-clamp-1">{product.code}</div>
-                          <div className="text-xs text-muted-foreground sm:hidden line-clamp-1">
+                          <div className="text-xs bg-secondary/40 dark:bg-secondary/20 px-2 py-0.5 rounded border border-border/50 inline-block mt-1 font-mono">
+                            {product.code}
+                          </div>
+                          <div className="text-xs text-muted-foreground sm:hidden mt-1 line-clamp-1">
                             {getCategoryName(product.category_id)}
                           </div>
                         </TableCell>

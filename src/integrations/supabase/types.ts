@@ -68,6 +68,30 @@ export type Database = {
           },
         ]
       }
+      employees: {
+        Row: {
+          id: string
+          code: string
+          name: string
+          status: 'active' | 'inactive'
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          code: string
+          name: string
+          status?: 'active' | 'inactive'
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          code?: string
+          name?: string
+          status?: 'active' | 'inactive'
+          created_at?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           category_id: string | null

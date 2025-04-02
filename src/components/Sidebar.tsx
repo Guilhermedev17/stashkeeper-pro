@@ -14,6 +14,7 @@ import {
   Settings,
   ArrowDownUp,
   ChevronLeft,
+  Users,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -36,13 +37,13 @@ const Sidebar = ({ showMobile, setShowMobile, showDesktop = true, setShowDesktop
 
   const sidebarContent = (
     <>
-      <div className="px-3 py-4">
+      <div className="px-4 py-4">
         <div className="space-y-1">
           <NavLink
             to="/dashboard"
             className={({ isActive }) =>
               cn(
-                'flex items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors',
+                'flex items-center rounded-md px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors',
                 isActive && 'bg-accent/70 text-primary font-semibold shadow-sm'
               )
             }
@@ -55,7 +56,7 @@ const Sidebar = ({ showMobile, setShowMobile, showDesktop = true, setShowDesktop
             to="/products"
             className={({ isActive }) =>
               cn(
-                'flex items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors',
+                'flex items-center rounded-md px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors',
                 isActive && 'bg-accent/70 text-primary font-semibold shadow-sm'
               )
             }
@@ -68,7 +69,7 @@ const Sidebar = ({ showMobile, setShowMobile, showDesktop = true, setShowDesktop
             to="/movements"
             className={({ isActive }) =>
               cn(
-                'flex items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors',
+                'flex items-center rounded-md px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors',
                 isActive && 'bg-accent/70 text-primary font-semibold shadow-sm'
               )
             }
@@ -81,7 +82,7 @@ const Sidebar = ({ showMobile, setShowMobile, showDesktop = true, setShowDesktop
             to="/categories"
             className={({ isActive }) =>
               cn(
-                'flex items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors',
+                'flex items-center rounded-md px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors',
                 isActive && 'bg-accent/70 text-primary font-semibold shadow-sm'
               )
             }
@@ -91,10 +92,23 @@ const Sidebar = ({ showMobile, setShowMobile, showDesktop = true, setShowDesktop
             <span>Categorias</span>
           </NavLink>
           <NavLink
+            to="/employees"
+            className={({ isActive }) =>
+              cn(
+                'flex items-center rounded-md px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors',
+                isActive && 'bg-accent/70 text-primary font-semibold shadow-sm'
+              )
+            }
+            onClick={closeMobileMenu}
+          >
+            <Users className="mr-2 h-4 w-4" />
+            <span>Colaboradores</span>
+          </NavLink>
+          <NavLink
             to="/history"
             className={({ isActive }) =>
               cn(
-                'flex items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors',
+                'flex items-center rounded-md px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors',
                 isActive && 'bg-accent/70 text-primary font-semibold shadow-sm'
               )
             }
@@ -107,7 +121,7 @@ const Sidebar = ({ showMobile, setShowMobile, showDesktop = true, setShowDesktop
             to="/reports"
             className={({ isActive }) =>
               cn(
-                'flex items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors',
+                'flex items-center rounded-md px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors',
                 isActive && 'bg-accent/70 text-primary font-semibold shadow-sm'
               )
             }
@@ -120,7 +134,7 @@ const Sidebar = ({ showMobile, setShowMobile, showDesktop = true, setShowDesktop
             to="/settings"
             className={({ isActive }) =>
               cn(
-                'flex items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors',
+                'flex items-center rounded-md px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors',
                 isActive && 'bg-accent/70 text-primary font-semibold shadow-sm'
               )
             }
@@ -148,7 +162,7 @@ const Sidebar = ({ showMobile, setShowMobile, showDesktop = true, setShowDesktop
     <>
       {/* Desktop Sidebar */}
       <div className={cn(
-        "fixed left-0 top-16 w-48 bg-background/80 backdrop-blur-md rounded-r-xl shadow-md shadow-primary/5 z-20 transition-transform duration-300 flex",
+        "fixed left-0 top-16 w-64 bg-background/80 backdrop-blur-md rounded-r-xl shadow-md shadow-primary/5 z-20 transition-transform duration-300 flex",
         showDesktop ? "translate-x-0" : "-translate-x-full",
         "md:block hidden"
       )}>

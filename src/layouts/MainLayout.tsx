@@ -57,7 +57,7 @@ const MainLayout = () => {
       />
       
       <main className="pt-16 min-h-screen transition-all duration-300 relative w-full bg-background/50 backdrop-blur-sm">
-        <div className={`h-full transition-all duration-300 ${showDesktopSidebar ? 'md:pl-48' : 'md:pl-12'}`}>
+        <div className={`h-full transition-all duration-300 ${showDesktopSidebar ? 'md:pl-64' : 'md:pl-12'}`}>
           <div className="container mx-auto px-4 py-6 max-w-7xl">
             <AnimatePresence mode="wait">
               <PageTransition key={useLocation().pathname}>

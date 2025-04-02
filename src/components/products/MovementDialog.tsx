@@ -25,7 +25,9 @@ import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseProducts } from '@/hooks/useSupabaseProducts';
 import { useSupabaseMovements } from '@/hooks/useSupabaseMovements';
+import { useSupabaseEmployees } from '@/hooks/useSupabaseEmployees';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export interface Product {
   id: string;
@@ -39,6 +41,7 @@ export interface Product {
 const formSchema = z.object({
   quantity: z.coerce.number().positive({ message: 'A quantidade deve ser maior que zero' }),
   notes: z.string().optional(),
+  employee_id: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -53,8 +56,10 @@ interface MovementDialogProps {
 const MovementDialog = ({ product, type, open, onOpenChange }: MovementDialogProps) => {
   const { fetchProducts } = useSupabaseProducts();
   const { fetchMovements } = useSupabaseMovements();
+  const { employees } = useSupabaseEmployees();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeEmployees, setActiveEmployees] = useState([]);
 
   // Inicializa o formulário
   const form = useForm<FormValues>({
@@ -71,9 +76,14 @@ const MovementDialog = ({ product, type, open, onOpenChange }: MovementDialogPro
       form.reset({
         quantity: 1,
         notes: '',
+        employee_id: '',
       });
     }
   }, [open, form, product, type]);
+
+  useEffect(() => {
+    setActiveEmployees(employees.filter(emp => emp.status === 'active'));
+  }, [employees]);
 
   // Função para registrar a movimentação
   const onSubmit = async (values: FormValues) => {
@@ -90,6 +100,7 @@ const MovementDialog = ({ product, type, open, onOpenChange }: MovementDialogPro
           type: type,
           quantity: values.quantity,
           notes: values.notes || null,
+          employee_id: type === 'saida' ? values.employee_id : null,
         });
 
       if (movementError) throw movementError;
@@ -186,6 +197,33 @@ const MovementDialog = ({ product, type, open, onOpenChange }: MovementDialogPro
                     </FormItem>
                   )}
                 />
+
+                {type === 'saida' && (
+                  <FormField
+                    control={form.control}
+                    name="employee_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Colaborador Responsável</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione o colaborador" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {activeEmployees.map((employee) => (
+                              <SelectItem key={employee.id} value={employee.id}>
+                                {employee.name} ({employee.code})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 <FormField
                   control={form.control}
