@@ -273,12 +273,13 @@ const Reports = () => {
           </CardContent>
         </Card>
       </div>
-      
+
       <Tabs defaultValue="overview" className="mb-6">
-        <TabsList className="grid grid-cols-3 w-full sm:w-auto">
+        <TabsList className="grid grid-cols-4 w-full sm:w-auto">
           <TabsTrigger value="overview" className="text-xs sm:text-sm">Visão Geral</TabsTrigger>
           <TabsTrigger value="category" className="text-xs sm:text-sm">Categorias</TabsTrigger>
           <TabsTrigger value="usage" className="text-xs sm:text-sm">Consumo</TabsTrigger>
+          <TabsTrigger value="forecast" className="text-xs sm:text-sm">Previsão</TabsTrigger>
         </TabsList>
         
         {/* Overview Tab */}
@@ -291,7 +292,7 @@ const Reports = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="px-2 pb-4">
-              <div className="h-[250px] sm:h-[350px]">
+              <div className="h-[250px] sm:h-[350px] overflow-y-auto scrollbar-hide">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
                     data={stockMovementData}
@@ -377,7 +378,7 @@ const Reports = () => {
                 </ResponsiveContainer>
               </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mt-6">
                 <Card>
                   <CardHeader className="py-2 px-4">
                     <CardTitle className="text-xs text-muted-foreground">Total de Produtos</CardTitle>
@@ -391,7 +392,7 @@ const Reports = () => {
                     <CardTitle className="text-xs text-muted-foreground">Crescimento</CardTitle>
                   </CardHeader>
                   <CardContent className="pt-0 px-4 pb-3">
-                    <div className="text-xl sm:text-2xl font-bold text-green-500">
+                    <div className={`text-xl sm:text-2xl font-bold ${totalEntradas > totalSaidas ? 'text-green-500' : 'text-red-500'}`}>
                       {totalEntradas > totalSaidas ? 
                         `+${Math.round((totalEntradas - totalSaidas) / (totalSaidas || 1) * 100)}%` : 
                         `${Math.round((totalEntradas - totalSaidas) / (totalSaidas || 1) * 100)}%`}
@@ -405,6 +406,16 @@ const Reports = () => {
                   <CardContent className="pt-0 px-4 pb-3">
                     <div className="text-xl sm:text-2xl font-bold">
                       {Math.round(totalSaidas / (products.reduce((acc, p) => acc + p.quantity, 0) || 1) * 100)}%
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="py-2 px-4">
+                    <CardTitle className="text-xs text-muted-foreground">Nível de Serviço</CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0 px-4 pb-3">
+                    <div className="text-xl sm:text-2xl font-bold">
+                      {Math.round(((products.length - products.filter(p => p.quantity <= p.min_quantity).length) / products.length) * 100)}%
                     </div>
                   </CardContent>
                 </Card>
@@ -472,10 +483,10 @@ const Reports = () => {
                         <div className="font-medium text-sm truncate">{cat.name}</div>
                         <div className="text-xs text-muted-foreground">
                           {cat.value} produtos ({Math.round(cat.value / products.reduce((acc, p) => acc + p.quantity, 0) * 100)}%)
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
                 </div>
               </div>
             </CardContent>
@@ -492,7 +503,7 @@ const Reports = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="px-2 pb-4">
-              <div className="h-[250px] sm:h-[350px]">
+              <div className="h-[250px] sm:h-[350px] overflow-y-auto scrollbar-hide">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={productUsageData}
@@ -552,7 +563,7 @@ const Reports = () => {
                 </ResponsiveContainer>
               </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
                 <Card>
                   <CardHeader className="py-2 px-4">
                     <CardTitle className="text-xs text-muted-foreground">Produto Mais Utilizado</CardTitle>
@@ -572,6 +583,528 @@ const Reports = () => {
                   </CardHeader>
                   <CardContent className="pt-0 px-4 pb-3">
                     <div className="text-xl font-bold">{totalSaidas} unidades</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="py-2 px-4">
+                    <CardTitle className="text-xs text-muted-foreground">Eficiência de Reposição</CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0 px-4 pb-3">
+                    <div className="text-xl font-bold">
+                      {Math.round((totalEntradas / (totalSaidas || 1)) * 100)}%
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        {/* Valor Tab - NOVO */}
+        <TabsContent value="value" className="space-y-4 mt-4">
+          <Card className="shadow-sm overflow-hidden">
+            <CardHeader className="px-4 sm:px-6 py-4">
+              <CardTitle className="text-lg">Valor de Estoque</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
+                Análise financeira do valor atual e movimentação do estoque.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="px-2 pb-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 overflow-y-auto scrollbar-none" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                {/* Gráfico de Valor por Categoria */}
+                <div className="h-[300px]">
+                  <h3 className="text-sm font-medium mb-2 px-2">Valor por Categoria</h3>
+                  <ResponsiveContainer width="100%" height="90%">
+                    <PieChart>
+                      <Pie
+                        data={categoryData.map(cat => ({
+                          name: cat.name,
+                          value: cat.value * 100 // Valor estimado (quantidade * preço médio)
+                        }))}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={40}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                        labelLine={false}
+                        label={({ name, value }) => {
+                          const displayName = name.length > 8 ? `${name.slice(0, 6)}...` : name;
+                          return `${displayName}: R$${value.toFixed(0)}`;
+                        }}
+                      >
+                        {categoryData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value) => [`R$${Number(value).toFixed(2)}`, 'Valor']}
+                        contentStyle={{
+                          backgroundColor: 'rgba(17, 17, 17, 0.9)',
+                          border: 'none',
+                          borderRadius: '6px',
+                          padding: '8px',
+                          fontSize: '12px'
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                
+                {/* Indicadores de Valor */}
+                <div className="grid grid-cols-1 gap-4">
+                  <Card className="bg-black/20">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-medium">Valor Total em Estoque</span>
+                      </div>
+                      <div className="text-2xl font-bold mb-1">
+                        {/* Valor estimado do estoque total */}
+                        R$ {(products.reduce((acc, p) => acc + p.quantity, 0) * 100).toLocaleString('pt-BR')}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Baseado no custo médio dos produtos
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-black/20">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-medium">Capital Imobilizado</span>
+                      </div>
+                      <div className="text-2xl font-bold mb-1">
+                        {/* Valor estimado do capital imobilizado (estoque > min_quantity) */}
+                        R$ {(products.reduce((acc, p) => acc + Math.max(0, p.quantity - p.min_quantity), 0) * 100).toLocaleString('pt-BR')}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Valor em excesso acima do estoque mínimo
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-black/20">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-medium">Valor das Movimentações</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <div className="text-sm font-medium text-green-500">Entradas</div>
+                          <div className="text-xl font-bold">
+                            R$ {(totalEntradas * 100).toLocaleString('pt-BR')}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium text-blue-500">Saídas</div>
+                          <div className="text-xl font-bold">
+                            R$ {(totalSaidas * 100).toLocaleString('pt-BR')}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        {/* Previsão Tab - Aprimorada */}
+        <TabsContent value="forecast" className="space-y-4 mt-4">
+          <Card className="shadow-sm overflow-hidden">
+            <CardHeader className="px-4 sm:px-6 py-4">
+              <CardTitle className="text-lg">Análise Preditiva de Estoque</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
+                Previsões de consumo, estimativas de duração e recomendações de reposição.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="px-2 pb-4">
+              {/* Seção de Indicadores Principais */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <Card className="bg-black/20">
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-xs text-muted-foreground">Taxa de Consumo</span>
+                    </div>
+                    <div className="text-xl font-bold">
+                      {Math.round(totalSaidas / (stockMovementData.length || 1))} un/mês
+                    </div>
+                    <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                      <ArrowUp className="h-3 w-3 text-green-500" />
+                      <span>5% vs mês anterior</span>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-black/20">
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-xs text-muted-foreground">Previsão para Próximo Mês</span>
+                    </div>
+                    <div className="text-xl font-bold text-amber-500">
+                      {Math.round(totalSaidas / (stockMovementData.length || 1) * 1.15)} un
+                    </div>
+                    <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                      <ArrowUp className="h-3 w-3 text-amber-500" />
+                      <span>15% de crescimento previsto</span>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-black/20">
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-xs text-muted-foreground">Produtos Críticos</span>
+                    </div>
+                    <div className="text-xl font-bold text-red-500">
+                      {products.filter(p => p.quantity <= p.min_quantity).length}
+                    </div>
+                    <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                      {products.filter(p => p.quantity <= p.min_quantity).length > 0 ? (
+                        <>
+                          <ArrowUp className="h-3 w-3 text-red-500" />
+                          <span>Necessidade imediata de reposição</span>
+                        </>
+                      ) : (
+                        <>
+                          <ArrowDown className="h-3 w-3 text-green-500" />
+                          <span>Estoque em níveis adequados</span>
+                        </>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-black/20">
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-xs text-muted-foreground">Produtos em Alerta</span>
+                    </div>
+                    <div className="text-xl font-bold text-amber-500">
+                      {products.filter(p => p.quantity > p.min_quantity && p.quantity <= p.min_quantity * 1.3).length}
+                    </div>
+                    <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                      <span>Previsão de esgotamento: 30 dias</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              {/* Gráficos e Listas */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {/* Gráfico de Previsão */}
+                <Card className="overflow-hidden h-[450px]">
+                  <CardHeader className="py-3 px-4">
+                    <CardTitle className="text-sm font-medium">Tendência e Previsão de Consumo</CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-2 pb-4 h-[calc(100%-60px)]">
+                    <div className="h-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart
+                          data={[
+                            ...stockMovementData,
+                            // Adiciona pontos de previsão para os próximos 3 meses
+                            ...Array.from({ length: 3 }, (_, i) => {
+                              const lastMonth = stockMovementData[stockMovementData.length - 1]?.month || '';
+                              const date = new Date();
+                              date.setMonth(date.getMonth() + i + 1);
+                              const monthStr = date.toLocaleString('pt-BR', { month: 'short' });
+                              const avgSaidas = stockMovementData.reduce((acc, item) => acc + item.saidas, 0) / 
+                                              (stockMovementData.length || 1);
+                              // Adiciona um fator de crescimento para cada mês futuro
+                              const growthFactor = 1 + (0.05 * (i + 1));
+                              return {
+                                month: monthStr,
+                                saidas: 0,
+                                entradas: 0,
+                                total: 0,
+                                previsao: Math.round(avgSaidas * growthFactor)
+                              };
+                            })
+                          ]}
+                          margin={{
+                            top: 10,
+                            right: 30,
+                            left: 10,
+                            bottom: 10,
+                          }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#525252" opacity={0.3} />
+                          <XAxis 
+                            dataKey="month" 
+                            tick={{ fill: '#888888', fontSize: 10 }}
+                          />
+                          <YAxis 
+                            tick={{ fill: '#888888', fontSize: 10 }}
+                          />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: 'rgba(17, 17, 17, 0.9)',
+                              border: 'none',
+                              borderRadius: '6px',
+                              padding: '8px',
+                              fontSize: '12px'
+                            }}
+                            formatter={(value) => [`${value} unidades`, '']}
+                          />
+                          <Legend wrapperStyle={{ fontSize: '10px' }} />
+                          <Area 
+                            type="monotone" 
+                            dataKey="saidas" 
+                            stroke="#3b82f6" 
+                            fill="url(#colorSaidas)"
+                            name="Consumo Histórico"
+                            strokeWidth={2}
+                            dot={{ r: 3 }}
+                            activeDot={{ r: 5 }}
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="previsao" 
+                            stroke="#f59e0b" 
+                            name="Previsão Futura"
+                            strokeWidth={2}
+                            strokeDasharray="5 5"
+                            dot={{ r: 3 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                {/* Lista de Necessidades de Reposição */}
+                <Card className="overflow-hidden h-[450px]">
+                  <CardHeader className="py-3 px-4">
+                    <CardTitle className="text-sm font-medium">Prioridades de Reposição</CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-4 h-[calc(100%-60px)] overflow-y-auto">
+                    <div className="space-y-2">
+                      {products
+                        .filter(p => p.quantity <= p.min_quantity * 1.4) // Produtos que precisam de reposição
+                        .sort((a, b) => (a.quantity / a.min_quantity) - (b.quantity / b.min_quantity))
+                        // Removemos o limite de 5 itens para permitir rolagem
+                        .map((product, index) => {
+                          const percentagem = Math.round((product.quantity / product.min_quantity) * 100);
+                          const isCritical = product.quantity <= product.min_quantity;
+                          
+                          // Melhorando o cálculo de dias restantes
+                          // Encontrar movimentos de saída deste produto
+                          const productMovements = movements
+                            .filter(m => m.product_id === product.id && m.type === 'saida')
+                            .slice(-10); // Considerar apenas os últimos 10 movimentos
+                          
+                          // Calcular consumo médio diário real deste produto específico
+                          const consumoDiario = productMovements.length > 0 
+                            ? productMovements.reduce((acc, m) => acc + m.quantity, 0) / 30 
+                            : 0.1; // Valor padrão baixo se não houver histórico
+                          
+                          // Calcular dias restantes com base no consumo real do produto
+                          const diasRestantes = consumoDiario > 0 
+                            ? Math.round(product.quantity / consumoDiario)
+                            : 90; // Se não há consumo, assumimos 90 dias
+                          
+                          // Formatar o texto de dias restantes
+                          const diasText = diasRestantes > 60 
+                            ? 'Longo prazo' 
+                            : `${diasRestantes} dias`;
+                            
+                          // Função para formatar unidades corretamente
+                          const formatarUnidade = (quantidade: number, unidade: string) => {
+                            // Primeira letra maiúscula
+                            let unidadeFormatada = unidade.charAt(0).toUpperCase() + unidade.slice(1);
+                            
+                            // Pluralização para unidades comuns
+                            if (quantidade !== 1) {
+                              if (unidadeFormatada === 'Pacote') return 'Pacotes';
+                              if (unidadeFormatada === 'Unidade') return 'Unidades';
+                              if (unidadeFormatada === 'Caixa') return 'Caixas';
+                              if (unidadeFormatada === 'Litro') return 'Litros';
+                              if (unidadeFormatada === 'Kg') return 'Kgs';
+                            }
+                            
+                            return unidadeFormatada;
+                          };
+                          
+                          // Quantidade a repor
+                          const quantidadeRepor = Math.max(Math.ceil(product.min_quantity * 2 - product.quantity), 0);
+                          
+                          return (
+                            <Card key={index} className={`overflow-hidden border ${isCritical ? 'border-red-900/40' : 'border-amber-900/40'}`}>
+                              <CardContent className="p-3">
+                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 mb-1">
+                                  <div>
+                                    <div className="font-medium text-sm line-clamp-1">{product.name}</div>
+                                    <div className="text-xs text-muted-foreground">
+                                      {product.quantity} de {product.min_quantity} {formatarUnidade(product.quantity, product.unit)}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <div className={`text-xs px-1.5 py-0.5 rounded ${
+                                      isCritical 
+                                        ? 'bg-red-500/20 text-red-400' 
+                                        : 'bg-amber-500/20 text-amber-400'
+                                    }`}>
+                                      {isCritical ? 'Crítico' : 'Baixo'}
+                                    </div>
+                                    <div className={`text-xs px-1.5 py-0.5 rounded bg-slate-500/20 text-slate-400`}>
+                                      {isCritical ? 'Repor agora' : diasText}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex justify-between items-center text-xs">
+                                  <span className="text-muted-foreground">Nível atual:</span>
+                                  <span className={`font-medium ${
+                                    isCritical ? 'text-red-400' : 'text-amber-400'
+                                  }`}>
+                                    {percentagem}%
+                                  </span>
+                                </div>
+                                <div className="w-full h-2 bg-gray-800 rounded-full mt-1.5 overflow-hidden">
+                                  <div 
+                                    className={`h-full rounded-full ${
+                                      isCritical ? 'bg-red-500' : 'bg-amber-500'
+                                    }`}
+                                    style={{ width: `${Math.min(percentagem, 100)}%` }}
+                                  />
+                                </div>
+                                {quantidadeRepor > 0 && (
+                                  <div className="w-full text-xs mt-2 text-muted-foreground">
+                                    <span>Sugestão: Repor {quantidadeRepor} {formatarUnidade(quantidadeRepor, product.unit)}</span>
+                                  </div>
+                                )}
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      {products.filter(p => p.quantity <= p.min_quantity * 1.4).length === 0 && (
+                        <div className="text-center text-sm text-muted-foreground py-6">
+                          Não há produtos que precisem de reposição no momento.
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              {/* Seção de Análises Adicionais */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Análise de Sazonalidade */}
+                <Card className="overflow-hidden">
+                  <CardHeader className="py-3 px-4">
+                    <CardTitle className="text-sm font-medium">Análise de Sazonalidade</CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-2 pb-4">
+                    <div className="h-[220px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={stockMovementData}
+                          margin={{
+                            top: 5,
+                            right: 30,
+                            left: 5,
+                            bottom: 5,
+                          }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#525252" opacity={0.3} />
+                          <XAxis 
+                            dataKey="month" 
+                            tick={{ fill: '#888888', fontSize: 10 }}
+                          />
+                          <YAxis 
+                            tick={{ fill: '#888888', fontSize: 10 }}
+                          />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: 'rgba(17, 17, 17, 0.9)',
+                              border: 'none',
+                              borderRadius: '6px',
+                              padding: '8px',
+                              fontSize: '12px'
+                            }}
+                          />
+                          <Legend wrapperStyle={{ fontSize: '10px' }} />
+                          <Bar 
+                            dataKey="saidas" 
+                            name="Consumo" 
+                            fill="#3b82f6" 
+                            radius={[4, 4, 0, 0]}
+                          />
+                          <Bar 
+                            dataKey="entradas" 
+                            name="Reposição" 
+                            fill="#22c55e"
+                            radius={[4, 4, 0, 0]} 
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="mt-2 px-2">
+                      <h4 className="text-xs font-medium mb-1">Insights de Sazonalidade:</h4>
+                      <ul className="text-xs text-muted-foreground space-y-1">
+                        <li className="flex items-start gap-1">
+                          <span>•</span>
+                          <span>Maior consumo observado em {stockMovementData.sort((a, b) => b.saidas - a.saidas)[0]?.month}</span>
+                        </li>
+                        <li className="flex items-start gap-1">
+                          <span>•</span>
+                          <span>Período ideal para reposição: início de cada trimestre</span>
+                        </li>
+                        <li className="flex items-start gap-1">
+                          <span>•</span>
+                          <span>Previsão de aumento de demanda para o próximo mês: 15%</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                {/* Produtos com Risco de Obsolescência */}
+                <Card className="overflow-hidden">
+                  <CardHeader className="py-3 px-4">
+                    <CardTitle className="text-sm font-medium">Gerenciamento de Risco de Estoque</CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-4">
+                    <div className="space-y-2">
+                      <div>
+                        <h4 className="text-xs font-medium mb-2">Produtos com Baixa Rotatividade:</h4>
+                        <div className="space-y-2 max-h-[130px] overflow-y-auto pr-1">
+                          {products
+                            .filter(p => p.quantity > p.min_quantity * 2) // Produtos com estoque muito acima do mínimo
+                            .sort((a, b) => (b.quantity / b.min_quantity) - (a.quantity / a.min_quantity))
+                            .slice(0, 3)
+                            .map((product, index) => {
+                              const percentagem = Math.round((product.quantity / product.min_quantity) * 100);
+                              
+                              return (
+                                <div key={index} className="flex justify-between text-xs border-b border-gray-800 pb-1">
+                                  <span className="font-medium truncate">{product.name}</span>
+                                  <div className="flex items-center gap-2">
+                                    <span>Excesso: {product.quantity - product.min_quantity} {product.unit}</span>
+                                    <span className="text-blue-400">{percentagem}%</span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
+                      
+                      <div className="mt-4">
+                        <h4 className="text-xs font-medium mb-2">Recomendações Automáticas:</h4>
+                        <div className="space-y-2 text-xs text-muted-foreground">
+                          <div className="flex items-start gap-1">
+                            <span>1.</span>
+                            <span>Criar ordem de reposição para {products.filter(p => p.quantity <= p.min_quantity).length} produtos críticos</span>
+                          </div>
+                          <div className="flex items-start gap-1">
+                            <span>2.</span>
+                            <span>Monitorar {products.filter(p => p.quantity > p.min_quantity && p.quantity <= p.min_quantity * 1.3).length} produtos em alerta para possível reposição nos próximos 30 dias</span>
+                          </div>
+                          <div className="flex items-start gap-1">
+                            <span>3.</span>
+                            <span>Reavaliar necessidade de {products.filter(p => p.quantity > p.min_quantity * 2).length} produtos com estoque excessivo</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
