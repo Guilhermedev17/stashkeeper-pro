@@ -626,7 +626,7 @@ const Dashboard = () => {
                           }}
                           outerRadius={110}
                   fill="#8884d8"
-                          dataKey="value"
+                  dataKey="value"
                           nameKey="name"
                           label={({ name, percent }) => {
                             // Limitar o comprimento do nome se for muito longo
@@ -665,7 +665,7 @@ const Dashboard = () => {
                         <CartesianGrid strokeDasharray="3 3" stroke="#444444" />
                         <XAxis dataKey="name" stroke="#888888" />
                         <YAxis stroke="#888888" />
-                        <Tooltip 
+                <Tooltip
                           contentStyle={{ backgroundColor: '#1e1e1e', border: '1px solid #333' }} 
                           itemStyle={{ color: '#fff' }}
                         />
@@ -731,7 +731,7 @@ const Dashboard = () => {
                         <Bar dataKey="normal" name="Normal" fill="#22c55e" radius={[4, 4, 4, 4]} />
               </BarChart>
             </ResponsiveContainer>
-                  </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -744,7 +744,7 @@ const Dashboard = () => {
                     Top 5 produtos com maior número de movimentações
             </CardDescription>
           </CardHeader>
-                <CardContent>
+          <CardContent>
                   {/* Calcular produtos mais movimentados */}
                   {(() => {
                     // Agrupar movimentações por produto
@@ -794,7 +794,7 @@ const Dashboard = () => {
                             <Bar dataKey="movimentações" name="Movimentações" fill="#8884d8" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
-                      </div>
+                  </div>
                     );
                   })()}
           </CardContent>
