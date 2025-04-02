@@ -186,7 +186,7 @@ const Dashboard = () => {
   const userName = user?.user_metadata?.name || user?.email || 'Usuário';
 
   return (
-    <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 max-w-7xl">
+    <div className="px-2 sm:px-4 py-4 sm:py-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
@@ -204,7 +204,7 @@ const Dashboard = () => {
 
         <TabsContent value="overview">
           <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="hover:shadow-md transition-all duration-300 border-primary/10">
+        <Card className="hover:shadow-lg transition-all duration-300 border-primary/10 hover:bg-primary/5">
               <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-sm font-medium">Total de Produtos</CardTitle>
             <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -219,7 +219,7 @@ const Dashboard = () => {
           </CardContent>
         </Card>
         
-        <Card className="hover:shadow-md transition-all duration-300 border-destructive/10">
+        <Card className="hover:shadow-lg transition-all duration-300 border-destructive/10 hover:bg-destructive/5">
               <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                 <CardTitle className="text-sm font-medium">Estoque Baixo</CardTitle>
                 <div className="h-8 w-8 rounded-full bg-destructive/10 flex items-center justify-center">
@@ -234,7 +234,7 @@ const Dashboard = () => {
           </CardContent>
         </Card>
         
-        <Card className="hover:shadow-md transition-all duration-300 border-green-500/10">
+        <Card className="hover:shadow-lg transition-all duration-300 border-green-500/10 hover:bg-green-500/5">
               <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                 <CardTitle className="text-sm font-medium">Entradas Recentes</CardTitle>
                 <div className="h-8 w-8 rounded-full bg-green-500/10 flex items-center justify-center">
@@ -251,7 +251,7 @@ const Dashboard = () => {
           </CardContent>
         </Card>
         
-        <Card className="hover:shadow-md transition-all duration-300 border-blue-500/10">
+        <Card className="hover:shadow-lg transition-all duration-300 border-blue-500/10 hover:bg-blue-500/5">
               <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                 <CardTitle className="text-sm font-medium">Saídas Recentes</CardTitle>
                 <div className="h-8 w-8 rounded-full bg-blue-500/10 flex items-center justify-center">
@@ -270,7 +270,7 @@ const Dashboard = () => {
       </div>
 
           <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-7 mt-4 md:mt-6">
-            <Card className="lg:col-span-4 border-primary/10 hover:shadow-md transition-all duration-300">
+            <Card className="lg:col-span-4 border-primary/10 hover:shadow-lg transition-all duration-300 hover:bg-primary/5">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <BarChart2 className="h-4 w-4 text-primary" />
@@ -369,7 +369,7 @@ const Dashboard = () => {
           </div>
 
           <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-7 mt-4 md:mt-6">
-            <Card className="lg:col-span-3 border-destructive/20">
+            <Card className="lg:col-span-3 border-destructive/20 hover:shadow-lg transition-all duration-300 hover:bg-destructive/5">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -425,7 +425,7 @@ const Dashboard = () => {
                       return (
                         <div 
                           key={product.id} 
-                          className={`flex items-start gap-3 p-3 rounded-md ${
+                          className={`flex items-start gap-3 p-3 rounded-md transform hover:scale-[1.02] hover:shadow-lg transition-all duration-200 ${
                             isCritical 
                               ? 'bg-destructive/5 border border-destructive/20' 
                               : 'bg-amber-500/5 border border-amber-500/20'

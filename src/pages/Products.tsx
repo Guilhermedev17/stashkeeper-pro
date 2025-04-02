@@ -274,7 +274,7 @@ const Products = () => {
   };
 
   return (
-    <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 max-w-7xl">
+    <div className="px-2 sm:px-4 py-4 sm:py-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Produtos</h1>
@@ -283,12 +283,6 @@ const Products = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Input
-            placeholder="Buscar produto..."
-            className="max-w-[200px] h-10"
-            value={searchTerm}
-            onChange={handleSearch}
-          />
           <Button onClick={() => setIsAddDialogOpen(true)} className="gap-2" title="Adicionar novo produto">
             <PlusSquare className="h-4 w-4" /> Novo Produto
           </Button>

@@ -19,11 +19,12 @@ interface Movement {
 
 export const useSupabaseMovements = () => {
   const [movements, setMovements] = useState<Movement[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchMovements = async () => {
+    if (loading) return; // Evita múltiplas requisições simultâneas
     try {
       setLoading(true);
       // Buscar todas as movimentações com informações dos produtos

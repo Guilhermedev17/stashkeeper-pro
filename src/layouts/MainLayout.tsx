@@ -1,17 +1,33 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
 import { Toaster } from '@/components/ui/toaster';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { AnimatePresence } from 'framer-motion';
+import PageTransition from '@/components/layout/PageTransition';
 
 const MainLayout = () => {
   const { isAuthenticated, isLoading } = useAuth();
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const [showDesktopSidebar, setShowDesktopSidebar] = useState(true);
   
   const toggleMobileMenu = () => {
     setShowMobileSidebar(prev => !prev);
   };
+
+  // Salva o estado do menu desktop no localStorage
+  useEffect(() => {
+    localStorage.setItem('showDesktopSidebar', showDesktopSidebar.toString());
+  }, [showDesktopSidebar]);
+
+  // Recupera o estado do menu desktop do localStorage
+  useEffect(() => {
+    const savedState = localStorage.getItem('showDesktopSidebar');
+    if (savedState !== null) {
+      setShowDesktopSidebar(savedState === 'true');
+    }
+  }, []);
   
   // Show loading state
   if (isLoading) {
@@ -33,11 +49,22 @@ const MainLayout = () => {
   return (
     <div className="min-h-screen bg-background w-full">
       <Navbar onMobileMenuToggle={toggleMobileMenu} />
-      <Sidebar showMobile={showMobileSidebar} setShowMobile={setShowMobileSidebar} />
+      <Sidebar 
+        showMobile={showMobileSidebar} 
+        setShowMobile={setShowMobileSidebar}
+        showDesktop={showDesktopSidebar}
+        setShowDesktop={setShowDesktopSidebar}
+      />
       
-      <main className="pt-16 md:pl-64 min-h-screen transition-all duration-300">
-        <div className="p-3 sm:p-4 md:p-6 animate-fade-in">
-          <Outlet />
+      <main className="pt-16 min-h-screen transition-all duration-300 relative w-full bg-background/50 backdrop-blur-sm">
+        <div className={`h-full transition-all duration-300 ${showDesktopSidebar ? 'md:pl-48' : 'md:pl-12'}`}>
+          <div className="container mx-auto px-4 py-6 max-w-7xl">
+            <AnimatePresence mode="wait">
+              <PageTransition key={useLocation().pathname}>
+                <Outlet />
+              </PageTransition>
+            </AnimatePresence>
+          </div>
         </div>
       </main>
       

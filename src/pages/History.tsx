@@ -2,16 +2,12 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ArrowDown, ArrowUp, CalendarDays, Clock, Download, FileText, Search, User } from 'lucide-react';
 import { useSupabaseMovements } from '@/hooks/useSupabaseMovements';
+import DateRangeFilter from '@/components/ui/DateRangeFilter';
+import { addDays, startOfToday, startOfWeek, startOfMonth, startOfYear, isWithinInterval } from 'date-fns';
 
 interface HistoryItem {
   id: string;
@@ -27,7 +23,8 @@ interface HistoryItem {
 const History = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
-  const [dateFilter, setDateFilter] = useState('all');
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [dateRange, setDateRange] = useState<'day' | 'week' | 'month' | 'year' | undefined>();
   
   const { movements, loading } = useSupabaseMovements();
   const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
@@ -60,22 +57,33 @@ const History = () => {
     const matchType = typeFilter === 'all' || item.type === typeFilter;
     
     let matchDate = true;
-    const today = new Date();
     const itemDate = new Date(item.date);
-    
-    if (dateFilter === 'today') {
-      matchDate = 
-        itemDate.getDate() === today.getDate() &&
-        itemDate.getMonth() === today.getMonth() &&
-        itemDate.getFullYear() === today.getFullYear();
-    } else if (dateFilter === 'week') {
-      const weekAgo = new Date();
-      weekAgo.setDate(today.getDate() - 7);
-      matchDate = itemDate >= weekAgo;
-    } else if (dateFilter === 'month') {
-      const monthAgo = new Date();
-      monthAgo.setMonth(today.getMonth() - 1);
-      matchDate = itemDate >= monthAgo;
+
+    if (selectedDate) {
+      matchDate = itemDate.toDateString() === selectedDate.toDateString();
+    } else if (dateRange) {
+      const today = startOfToday();
+      let start: Date;
+      let end = new Date();
+
+      switch (dateRange) {
+        case 'day':
+          start = today;
+          break;
+        case 'week':
+          start = startOfWeek(today, { weekStartsOn: 1 });
+          break;
+        case 'month':
+          start = startOfMonth(today);
+          break;
+        case 'year':
+          start = startOfYear(today);
+          break;
+        default:
+          start = today;
+      }
+
+      matchDate = isWithinInterval(itemDate, { start, end });
     }
     
     return matchSearch && matchType && matchDate;
@@ -125,28 +133,40 @@ const History = () => {
           />
         </div>
         
-        <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Tipo de Movimentação" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os Tipos</SelectItem>
-            <SelectItem value="entrada">Entradas</SelectItem>
-            <SelectItem value="saida">Saídas</SelectItem>
-          </SelectContent>
-        </Select>
-        
-        <Select value={dateFilter} onValueChange={setDateFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Período" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todo o Período</SelectItem>
-            <SelectItem value="today">Hoje</SelectItem>
-            <SelectItem value="week">Última Semana</SelectItem>
-            <SelectItem value="month">Último Mês</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex flex-row flex-wrap gap-4 items-center">
+          
+          <div className="flex flex-row gap-4 items-center">
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Tipo de Movimentação" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os Tipos</SelectItem>
+                <SelectItem value="entrada">Entradas</SelectItem>
+                <SelectItem value="saida">Saídas</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <DateRangeFilter
+              date={selectedDate}
+              dateRange={dateRange}
+              onDateSelect={(date) => {
+                setSelectedDate(date);
+                setDateRange(undefined);
+              }}
+              onDateRangeSelect={(range) => {
+                setDateRange(range);
+                setSelectedDate(undefined);
+              }}
+              onClearFilter={() => {
+                setSelectedDate(undefined);
+                setDateRange(undefined);
+              }}
+              className="w-[180px]"
+              placeholder="Filtrar por data"
+            />
+          </div>
+        </div>
       </div>
       
       <div className="space-y-6">

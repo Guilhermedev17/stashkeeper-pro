@@ -207,7 +207,7 @@ const Reports = () => {
   }, [products, categories, category]);
 
   return (
-    <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 max-w-7xl">
+    <div className="px-2 sm:px-4 py-4 sm:py-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Relatórios</h1>

@@ -274,8 +274,53 @@ const Categories = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Create Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nova Categoria</DialogTitle>
+            <DialogDescription>
+              Adicione uma nova categoria para organizar seus produtos.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Nome</Label>
+              <Input
+                id="name"
+                value={newCategory.name}
+                onChange={e => setNewCategory({ ...newCategory, name: e.target.value })}
+                placeholder="Digite o nome da categoria"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="description">Descrição</Label>
+              <Textarea
+                id="description"
+                value={newCategory.description}
+                onChange={e => setNewCategory({ ...newCategory, description: e.target.value })}
+                placeholder="Digite uma descrição (opcional)"
+                rows={3}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleAddCategory}>
+              Criar Categoria
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
+
 
 export default Categories;

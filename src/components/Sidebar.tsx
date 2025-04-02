@@ -13,15 +13,17 @@ import {
   Package,
   Settings,
   ArrowDownUp,
-  X,
+  ChevronLeft,
 } from 'lucide-react';
 
 interface SidebarProps {
   showMobile: boolean;
   setShowMobile: (show: boolean) => void;
+  showDesktop?: boolean;
+  setShowDesktop?: (show: boolean) => void;
 }
 
-const Sidebar = ({ showMobile, setShowMobile }: SidebarProps) => {
+const Sidebar = ({ showMobile, setShowMobile, showDesktop = true, setShowDesktop }: SidebarProps) => {
   const { logout } = useAuth();
 
   const handleLogout = async () => {
@@ -145,8 +147,22 @@ const Sidebar = ({ showMobile, setShowMobile }: SidebarProps) => {
   return (
     <>
       {/* Desktop Sidebar */}
-      <div className="fixed left-0 top-0 hidden h-[calc(100vh-1.5rem)] w-64 bg-background/80 backdrop-blur-md mt-3 pt-16 md:block rounded-r-xl border-r border-y border-border/40 shadow-md shadow-primary/5 z-20">
-        <ScrollArea className="h-full py-6">{sidebarContent}</ScrollArea>
+      <div className={cn(
+        "fixed left-0 top-16 w-48 bg-background/80 backdrop-blur-md rounded-r-xl shadow-md shadow-primary/5 z-20 transition-transform duration-300 flex",
+        showDesktop ? "translate-x-0" : "-translate-x-full",
+        "md:block hidden"
+      )}>
+        <ScrollArea className="max-h-[calc(100vh-4rem)] py-6 w-full">{sidebarContent}</ScrollArea>
+        {setShowDesktop && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute -right-12 top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-md rounded-full shadow-sm"
+            onClick={() => setShowDesktop(!showDesktop)}
+          >
+            <ChevronLeft className={cn("h-5 w-5 transition-transform duration-300", !showDesktop && "rotate-180")} />
+          </Button>
+        )}
       </div>
 
       {/* Mobile Sidebar (Sheet) */}

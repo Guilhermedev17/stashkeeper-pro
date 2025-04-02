@@ -28,11 +28,12 @@ interface Movement {
 
 export const useSupabaseProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchProducts = async () => {
+    if (loading) return; // Evita múltiplas requisições simultâneas
     try {
       setLoading(true);
       const { data, error } = await supabase

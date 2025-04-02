@@ -13,11 +13,12 @@ export interface Category {
 
 export const useSupabaseCategories = () => {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchCategories = async () => {
+    if (loading) return; // Evita múltiplas requisições simultâneas
     try {
       setLoading(true);
       setError(null);
