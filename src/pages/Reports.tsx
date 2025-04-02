@@ -1075,9 +1075,9 @@ const Reports = () => {
                               const percentagem = Math.round((product.quantity / product.min_quantity) * 100);
                               
                               return (
-                                <div key={index} className="flex justify-between text-xs border-b border-gray-800 pb-1">
-                                  <span className="font-medium truncate">{product.name}</span>
-                                  <div className="flex items-center gap-2">
+                                <div key={index} className="flex flex-col text-xs border-b border-gray-800 pb-1 mb-1">
+                                  <div className="font-medium mb-1">{product.name}</div>
+                                  <div className="flex justify-between">
                                     <span>Excesso: {product.quantity - product.min_quantity} {product.unit}</span>
                                     <span className="text-blue-400 flex items-center gap-1" title="Porcentagem em relação ao estoque mínimo">
                                       <span className="bg-blue-950/50 px-1.5 py-0.5 rounded-md">{percentagem}%</span>

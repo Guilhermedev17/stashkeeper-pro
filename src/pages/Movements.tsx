@@ -394,23 +394,45 @@ const Movements = () => {
                         </span>
                       </TableCell>
                       <TableCell className="text-center px-2 sm:px-4 py-2 sm:py-4">
-                        {movements.find(m => m.product_id === product.id)?.type === 'entrada' ? (
-                          <span className="px-2 py-1 rounded text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Entrada</span>
-                        ) : (
-                          <span className="px-2 py-1 rounded text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">Saída</span>
-                        )}
+                        {(() => {
+                          const movement = movements.find(m => m.product_id === product.id);
+                          if (movement?.type === 'entrada') {
+                            return (
+                              <span className="px-2 py-1 rounded text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Entrada</span>
+                            );
+                          } else {
+                            return (
+                              <span className="px-2 py-1 rounded text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">Saída</span>
+                            );
+                          }
+                        })()}
+                        {/* Exibir informação reduzida do colaborador em telas menores */}
+                        {(() => {
+                          const movement = movements.find(m => m.product_id === product.id);
+                          if (movement?.type === 'saida' && movement?.employee_name) {
+                            return (
+                              <div className="text-xs mt-1 md:hidden">
+                                <span className="text-muted-foreground">Colaborador:</span>
+                                <div className="font-medium truncate">{movement.employee_name}</div>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
                       </TableCell>
                       <TableCell className="hidden md:table-cell px-2 sm:px-4 py-2 sm:py-4">
                         {(() => {
                           const movement = movements.find(m => m.product_id === product.id);
-                          if (!movement?.employee_name) return '-';
-                          return (
-                            <div className="space-y-1">
-                              <div className="font-medium truncate">{movement.employee_name}</div>
-                              <div className="text-xs text-muted-foreground font-mono">{movement.employee_code || 'Sem código'}</div>
-                            </div>
-                          );
-                        })()} 
+                          if (movement?.type === 'saida' && movement?.employee_name) {
+                            return (
+                              <div className="space-y-1">
+                                <div className="font-medium truncate">{movement.employee_name}</div>
+                                <div className="text-xs text-muted-foreground font-mono">{movement.employee_code || 'Sem código'}</div>
+                              </div>
+                            );
+                          }
+                          return '-';
+                        })()}
                       </TableCell>
                       <TableCell className="px-2 sm:px-4 py-2 sm:py-4">
                         <div className="flex flex-row sm:flex-row gap-1 sm:gap-2">

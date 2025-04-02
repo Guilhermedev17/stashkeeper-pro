@@ -44,6 +44,20 @@ const formSchema = z.object({
   employee_id: z.string().optional(),
 });
 
+// Tipo condicional para tornar employee_id obrigatório para saídas
+const createFormSchema = (type: 'entrada' | 'saida') => {
+  if (type === 'saida') {
+    return formSchema.refine(
+      (data) => !!data.employee_id,
+      {
+        message: 'Selecione um colaborador responsável',
+        path: ['employee_id'],
+      }
+    );
+  }
+  return formSchema;
+};
+
 type FormValues = z.infer<typeof formSchema>;
 
 interface MovementDialogProps {
@@ -61,12 +75,16 @@ const MovementDialog = ({ product, type, open, onOpenChange }: MovementDialogPro
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeEmployees, setActiveEmployees] = useState([]);
 
+  // Resolver atualizado quando o tipo muda
+  const resolver = zodResolver(createFormSchema(type));
+  
   // Inicializa o formulário
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver,
     defaultValues: {
       quantity: 1,
       notes: '',
+      employee_id: '',
     },
   });
 
@@ -78,6 +96,9 @@ const MovementDialog = ({ product, type, open, onOpenChange }: MovementDialogPro
         notes: '',
         employee_id: '',
       });
+      
+      // Revalidar o formulário quando o tipo muda para aplicar a validação condicional
+      form.clearErrors();
     }
   }, [open, form, product, type]);
 
@@ -133,10 +154,20 @@ const MovementDialog = ({ product, type, open, onOpenChange }: MovementDialogPro
 
       if (updateError) throw updateError;
 
+      // Identifica o nome do colaborador, se aplicável
+      let employeeName = '';
+      if (type === 'saida' && values.employee_id) {
+        const employee = activeEmployees.find(emp => emp.id === values.employee_id);
+        employeeName = employee ? employee.name : '';
+      }
+
       // Exibe mensagem de sucesso e fecha o diálogo
       toast({
-        title: 'Movimentação registrada',
-        description: `${type === 'entrada' ? 'Entrada' : 'Saída'} de ${values.quantity} ${product.unit} de ${product.name} registrada com sucesso.`,
+        title: `${type === 'entrada' ? 'Entrada' : 'Saída'} registrada com sucesso`,
+        description: type === 'entrada'
+          ? `Entrada de ${values.quantity} ${product.unit} de ${product.name} registrada.`
+          : `Saída de ${values.quantity} ${product.unit} de ${product.name} registrada para ${employeeName}.`,
+        variant: 'default',
       });
       
       // Atualiza os dados
@@ -204,7 +235,9 @@ const MovementDialog = ({ product, type, open, onOpenChange }: MovementDialogPro
                     name="employee_id"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Colaborador Responsável</FormLabel>
+                        <FormLabel className="flex items-center">
+                          Colaborador Responsável <span className="text-destructive ml-1">*</span>
+                        </FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
@@ -212,13 +245,22 @@ const MovementDialog = ({ product, type, open, onOpenChange }: MovementDialogPro
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {activeEmployees.map((employee) => (
-                              <SelectItem key={employee.id} value={employee.id}>
-                                {employee.name} ({employee.code})
+                            {activeEmployees.length > 0 ? (
+                              activeEmployees.map((employee) => (
+                                <SelectItem key={employee.id} value={employee.id}>
+                                  {employee.name} ({employee.code})
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value="none" disabled>
+                                Não há colaboradores cadastrados
                               </SelectItem>
-                            ))}
+                            )}
                           </SelectContent>
                         </Select>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Obrigatório para saídas de produtos
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
