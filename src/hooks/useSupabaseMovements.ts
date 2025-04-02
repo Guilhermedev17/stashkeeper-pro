@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './use-toast';
+import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 interface Movement {
   id: string;
@@ -80,7 +81,58 @@ export const useSupabaseMovements = () => {
 
   useEffect(() => {
     fetchMovements();
+
+    // Configurar subscriber para atualizações em tempo real
+    const subscription = supabase
+      .channel('movements_changes')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'movements' 
+        }, 
+        async (payload: RealtimePostgresChangesPayload<Movement>) => {
+          // Buscar informações do produto para o novo movimento
+          const fetchProductInfo = async (productId: string) => {
+            const { data } = await supabase
+              .from('products')
+              .select('name, code')
+              .eq('id', productId)
+              .single();
+            return data;
+          };
+
+          if (payload.eventType === 'INSERT') {
+            const productInfo = await fetchProductInfo(payload.new.product_id);
+            const newMovement = {
+              ...payload.new,
+              product_name: productInfo?.name || 'Produto Removido',
+              product_code: productInfo?.code || 'N/A',
+              user_name: 'Usuário do Sistema'
+            } as Movement;
+            setMovements(prev => [newMovement, ...prev]);
+          } else if (payload.eventType === 'DELETE') {
+            setMovements(prev => prev.filter(movement => movement.id !== payload.old.id));
+          } else if (payload.eventType === 'UPDATE') {
+            const productInfo = await fetchProductInfo(payload.new.product_id);
+            const updatedMovement = {
+              ...payload.new,
+              product_name: productInfo?.name || 'Produto Removido',
+              product_code: productInfo?.code || 'N/A',
+              user_name: 'Usuário do Sistema'
+            } as Movement;
+            setMovements(prev => prev.map(movement =>
+              movement.id === updatedMovement.id ? updatedMovement : movement
+            ));
+          }
+      })
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
+
 
   return {
     movements,

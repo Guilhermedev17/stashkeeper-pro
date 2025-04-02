@@ -1079,7 +1079,10 @@ const Reports = () => {
                                   <span className="font-medium truncate">{product.name}</span>
                                   <div className="flex items-center gap-2">
                                     <span>Excesso: {product.quantity - product.min_quantity} {product.unit}</span>
-                                    <span className="text-blue-400">{percentagem}%</span>
+                                    <span className="text-blue-400 flex items-center gap-1" title="Porcentagem em relação ao estoque mínimo">
+                                      <span className="bg-blue-950/50 px-1.5 py-0.5 rounded-md">{percentagem}%</span>
+                                      <span className="text-[10px] text-muted-foreground">(do mínimo)</span>
+                                    </span>
                                   </div>
                                 </div>
                               );

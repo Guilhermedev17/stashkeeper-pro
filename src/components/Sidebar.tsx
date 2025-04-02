@@ -152,15 +152,6 @@ const Sidebar = ({ showMobile, setShowMobile }: SidebarProps) => {
       {/* Mobile Sidebar (Sheet) */}
       <Sheet open={showMobile} onOpenChange={setShowMobile}>
         <SheetContent side="left" className="p-0 pt-10 backdrop-blur-md bg-background/95 border-r border-border/40">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={closeMobileMenu}
-            className="absolute right-4 top-4"
-          >
-            <X className="h-4 w-4" />
-            <span className="sr-only">Close</span>
-          </Button>
           <ScrollArea className="h-full py-6">{sidebarContent}</ScrollArea>
         </SheetContent>
       </Sheet>

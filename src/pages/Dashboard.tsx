@@ -204,10 +204,12 @@ const Dashboard = () => {
 
         <TabsContent value="overview">
           <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="hover:shadow-md transition-all duration-300">
+        <Card className="hover:shadow-md transition-all duration-300 border-primary/10">
               <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-sm font-medium">Total de Produtos</CardTitle>
-            <PackageOpen className="h-4 w-4 text-muted-foreground" />
+            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <PackageOpen className="h-4 w-4 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalProducts}</div>
@@ -217,10 +219,12 @@ const Dashboard = () => {
           </CardContent>
         </Card>
         
-        <Card className="hover:shadow-md transition-all duration-300">
+        <Card className="hover:shadow-md transition-all duration-300 border-destructive/10">
               <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                 <CardTitle className="text-sm font-medium">Estoque Baixo</CardTitle>
-                <AlertTriangle className="h-4 w-4 text-destructive" />
+                <div className="h-8 w-8 rounded-full bg-destructive/10 flex items-center justify-center">
+                  <AlertTriangle className="h-4 w-4 text-destructive" />
+                </div>
           </CardHeader>
           <CardContent>
                 <div className="text-2xl font-bold">{lowStockCount}</div>
@@ -230,10 +234,12 @@ const Dashboard = () => {
           </CardContent>
         </Card>
         
-        <Card className="hover:shadow-md transition-all duration-300">
+        <Card className="hover:shadow-md transition-all duration-300 border-green-500/10">
               <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                 <CardTitle className="text-sm font-medium">Entradas Recentes</CardTitle>
-                <TrendingUp className="h-4 w-4 text-green-500" />
+                <div className="h-8 w-8 rounded-full bg-green-500/10 flex items-center justify-center">
+                  <TrendingUp className="h-4 w-4 text-green-500" />
+                </div>
           </CardHeader>
           <CardContent>
                 <div className="text-2xl font-bold">
@@ -245,10 +251,12 @@ const Dashboard = () => {
           </CardContent>
         </Card>
         
-        <Card className="hover:shadow-md transition-all duration-300">
+        <Card className="hover:shadow-md transition-all duration-300 border-blue-500/10">
               <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                 <CardTitle className="text-sm font-medium">Saídas Recentes</CardTitle>
-                <TrendingDown className="h-4 w-4 text-blue-500" />
+                <div className="h-8 w-8 rounded-full bg-blue-500/10 flex items-center justify-center">
+                  <TrendingDown className="h-4 w-4 text-blue-500" />
+                </div>
           </CardHeader>
           <CardContent>
                 <div className="text-2xl font-bold">
@@ -262,9 +270,12 @@ const Dashboard = () => {
       </div>
 
           <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-7 mt-4 md:mt-6">
-            <Card className="lg:col-span-4">
+            <Card className="lg:col-span-4 border-primary/10 hover:shadow-md transition-all duration-300">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Movimentações Recentes</CardTitle>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <BarChart2 className="h-4 w-4 text-primary" />
+                  <span>Movimentações Recentes</span>
+                </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="relative w-full h-[300px] sm:h-[340px]">
@@ -279,35 +290,54 @@ const Dashboard = () => {
                         bottom: 5,
                       }}
                     >
-                      <CartesianGrid strokeDasharray="3 3" />
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                       <XAxis dataKey="name" />
                       <YAxis />
-                      <Tooltip />
+                      <Tooltip 
+                        contentStyle={{ 
+                          borderRadius: '8px', 
+                          border: '1px solid rgba(var(--primary), 0.2)',
+                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)' 
+                        }} 
+                      />
                       <Legend />
-                      <Bar dataKey="entradas" name="Entradas" fill="#22c55e" />
-                      <Bar dataKey="saidas" name="Saídas" fill="#3b82f6" />
+                      <Bar dataKey="entradas" name="Entradas" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="saidas" name="Saídas" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="lg:col-span-3">
+            <Card className="lg:col-span-3 border-blue-500/10 hover:shadow-md transition-all duration-300">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Últimas Movimentações</CardTitle>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <ArrowDownUp className="h-4 w-4 text-blue-500" />
+                  <span>Últimas Movimentações</span>
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {recentMovementsWithProducts.length > 0 ? (
                   <div className="space-y-4">
                     {recentMovementsWithProducts.map((movement) => (
-                      <div key={movement.id} className="flex items-center">
-                        <div className={`w-2 h-2 rounded-full mr-2 ${
-                          movement.type === 'entrada' ? 'bg-green-500' : 'bg-blue-500'
-                        }`} />
+                      <div key={movement.id} className="flex items-center p-2 rounded-md hover:bg-accent/50 transition-colors">
+                        <div className={`w-6 h-6 rounded-full mr-3 flex items-center justify-center ${
+                          movement.type === 'entrada' ? 'bg-green-500/10' : 'bg-blue-500/10'
+                        }`}>
+                          {movement.type === 'entrada' ? 
+                            <ArrowUp className="h-3.5 w-3.5 text-green-500" /> : 
+                            <ArrowDown className="h-3.5 w-3.5 text-blue-500" />
+                          }
+                        </div>
                         <div className="flex-1 space-y-1">
                           <p className="text-sm font-medium leading-none flex items-center gap-1">
                             {movement.productName}
-                            <Badge variant="outline" className="text-[10px] ml-1 py-0 px-2 h-4">
+                            <Badge 
+                              variant="outline" 
+                              className={`text-[10px] ml-1 py-0 px-2 h-4 ${
+                                movement.type === 'entrada' ? 'bg-green-500/10 text-green-600 border-green-500/30' : 'bg-blue-500/10 text-blue-600 border-blue-500/30'
+                              }`}
+                            >
                               {movement.type === 'entrada' ? 'Entrada' : 'Saída'}
                             </Badge>
                           </p>
@@ -317,8 +347,13 @@ const Dashboard = () => {
                         </div>
                       </div>
                     ))}
-                    <div className="pt-1">
-                      <Button variant="ghost" size="sm" className="gap-1 w-full justify-center" onClick={() => window.location.href = '/movements'}>
+                    <div className="pt-3">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="gap-1 w-full justify-center border-blue-500/20 text-blue-600 hover:bg-blue-500/5 hover:text-blue-700" 
+                        onClick={() => window.location.href = '/movements'}
+                      >
                         <span>Ver todas movimentações</span>
                         <ArrowRight className="h-3.5 w-3.5" />
                       </Button>
@@ -334,12 +369,12 @@ const Dashboard = () => {
           </div>
 
           <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-7 mt-4 md:mt-6">
-            <Card className="lg:col-span-3 bg-black/10">
+            <Card className="lg:col-span-3 border-destructive/20">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span>Produtos com Estoque Baixo</span>
-                    <Badge variant="destructive" className="bg-red-600 rounded-full" title="Total de produtos com estoque baixo">
+                    <Badge variant="destructive" className="rounded-full" title="Total de produtos com estoque baixo">
                       {lowStockCount}
                     </Badge>
                   </div>
@@ -392,11 +427,11 @@ const Dashboard = () => {
                           key={product.id} 
                           className={`flex items-start gap-3 p-3 rounded-md ${
                             isCritical 
-                              ? 'bg-red-950/20 border border-red-900/30' 
-                              : 'bg-amber-950/20 border border-amber-900/30'
+                              ? 'bg-destructive/5 border border-destructive/20' 
+                              : 'bg-amber-500/5 border border-amber-500/20'
                           }`}
                         >
-                          <div className={`flex-shrink-0 ${isCritical ? 'text-red-500' : 'text-amber-500'}`}>
+                          <div className={`flex-shrink-0 ${isCritical ? 'text-destructive' : 'text-amber-500'}`}>
                             <AlertTriangle className="h-5 w-5" />
                           </div>
                           <div className="space-y-1 flex-1">
@@ -406,8 +441,8 @@ const Dashboard = () => {
                                 variant="outline" 
                                 className={`text-[10px] py-0.5 px-2 ${
                                   isCritical 
-                                    ? 'bg-red-500/20 text-red-400 border-red-500/50' 
-                                    : 'bg-amber-500/20 text-amber-400 border-amber-500/50'
+                                    ? 'bg-destructive/10 text-destructive border-destructive/30' 
+                                    : 'bg-amber-500/10 text-amber-600 border-amber-500/30'
                                 }`}
                               >
                                 {isCritical ? 'Crítico' : 'Baixo'}
@@ -415,14 +450,14 @@ const Dashboard = () => {
                             </div>
                             <div className="flex items-center justify-between">
                               <p className="text-xs text-muted-foreground">
-                                Estoque: <span className="text-white/90 font-medium">{product.quantity}</span> de {product.min_quantity} {formatUnit(product.min_quantity, product.unit)}
+                                Estoque: <span className="text-foreground font-medium">{product.quantity}</span> de {product.min_quantity} {formatUnit(product.min_quantity, product.unit)}
                               </p>
                               <Badge 
                                 variant="outline" 
                                 className={`text-[10px] py-0 px-2 rounded-full ${
                                   isCritical 
-                                    ? 'bg-red-500/20 text-red-400 border-red-500/50' 
-                                    : 'bg-amber-500/20 text-amber-400 border-amber-500/50'
+                                    ? 'bg-destructive/10 text-destructive border-destructive/30' 
+                                    : 'bg-amber-500/10 text-amber-600 border-amber-500/30'
                                 }`}
                               >
                                 {percentage}%
@@ -434,9 +469,9 @@ const Dashboard = () => {
                     })}
                     <div className="pt-2">
                       <Button 
-                        variant="ghost" 
+                        variant="outline" 
                         size="sm" 
-                        className="gap-1 w-full justify-center text-muted-foreground hover:text-primary hover:bg-transparent" 
+                        className="gap-1 w-full justify-center border-destructive/20 text-destructive hover:bg-destructive/5 hover:text-destructive" 
                         onClick={() => window.location.href = '/products?status=baixo'}
                       >
                         <span>Ver todos produtos</span>
@@ -490,6 +525,77 @@ const Dashboard = () => {
 
         <TabsContent value="analytics">
           <div className="grid gap-4 md:gap-6 mt-4 md:mt-6">
+            <Card>
+          <CardHeader>
+                <CardTitle className="flex items-center justify-between text-base">
+                  <span>Métricas de Desempenho do Estoque</span>
+                </CardTitle>
+            <CardDescription>
+                  Indicadores-chave de desempenho do seu sistema de estoque
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Taxa de Giro de Estoque */}
+                  <div className="bg-black/20 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-sm font-medium">Taxa de Giro de Estoque</h3>
+                      <div className="p-2 rounded-full bg-indigo-500/20">
+                        <ArrowDownUp className="h-4 w-4 text-indigo-400" />
+                      </div>
+                    </div>
+                    <div className="flex items-end space-x-1">
+                      <span className="text-2xl font-bold">
+                        {products.length > 0 
+                          ? (totalSaidas / products.reduce((acc, p) => acc + p.quantity, 0)).toFixed(2) 
+                          : '0.00'}
+                      </span>
+                      <span className="text-xs text-muted-foreground mb-1">vezes/período</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Razão entre saídas totais e estoque médio
+                    </p>
+                  </div>
+                  
+                  {/* Nível de Serviço */}
+                  <div className="bg-black/20 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-sm font-medium">Nível de Serviço</h3>
+                      <div className="p-2 rounded-full bg-green-500/20">
+                        <Share2 className="h-4 w-4 text-green-400" />
+                  </div>
+                </div>
+                    <div className="flex items-end space-x-1">
+                      <span className="text-2xl font-bold">
+                        {(((products.length - criticalProducts.length) / products.length) * 100).toFixed(0)}%
+                      </span>
+            </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Percentual de produtos em níveis adequados de estoque
+                    </p>
+                  </div>
+                  
+                  {/* Eficiência de Estoque */}
+                  <div className="bg-black/20 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-sm font-medium">Eficiência de Estoque</h3>
+                      <div className="p-2 rounded-full bg-amber-500/20">
+                        <BarChart2 className="h-4 w-4 text-amber-400" />
+                      </div>
+                    </div>
+                    <div className="flex items-end space-x-1">
+                      <span className="text-2xl font-bold">
+                        {(totalSaidas / (totalEntradas || 1) * 100).toFixed(0)}%
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Proporção entre saídas e entradas no período
+                    </p>
+                  </div>
+            </div>
+          </CardContent>
+        </Card>
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
               <Card>
           <CardHeader>
@@ -512,14 +618,14 @@ const Dashboard = () => {
                             name: 'Sem categoria',
                             value: categoryCounts['uncategorized'] || 0
                           }])}
-                          cx="50%"
-                          cy="50%"
+                  cx="50%"
+                  cy="50%"
                           labelLine={{
                             stroke: '#888',
                             strokeWidth: 1
                           }}
                           outerRadius={110}
-                          fill="#8884d8"
+                  fill="#8884d8"
                           dataKey="value"
                           nameKey="name"
                           label={({ name, percent }) => {
@@ -695,76 +801,7 @@ const Dashboard = () => {
         </Card>
       </div>
 
-            <Card>
-          <CardHeader>
-                <CardTitle className="flex items-center justify-between text-base">
-                  <span>Métricas de Desempenho do Estoque</span>
-                </CardTitle>
-            <CardDescription>
-                  Indicadores-chave de desempenho do seu sistema de estoque
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Taxa de Giro de Estoque */}
-                  <div className="bg-black/20 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-medium">Taxa de Giro de Estoque</h3>
-                      <div className="p-2 rounded-full bg-indigo-500/20">
-                        <ArrowDownUp className="h-4 w-4 text-indigo-400" />
-                      </div>
-                    </div>
-                    <div className="flex items-end space-x-1">
-                      <span className="text-2xl font-bold">
-                        {products.length > 0 
-                          ? (totalSaidas / products.reduce((acc, p) => acc + p.quantity, 0)).toFixed(2) 
-                          : '0.00'}
-                      </span>
-                      <span className="text-xs text-muted-foreground mb-1">vezes/período</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Razão entre saídas totais e estoque médio
-                    </p>
-                  </div>
-                  
-                  {/* Nível de Serviço */}
-                  <div className="bg-black/20 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-medium">Nível de Serviço</h3>
-                      <div className="p-2 rounded-full bg-green-500/20">
-                        <Share2 className="h-4 w-4 text-green-400" />
-                  </div>
-                </div>
-                    <div className="flex items-end space-x-1">
-                      <span className="text-2xl font-bold">
-                        {(((products.length - criticalProducts.length) / products.length) * 100).toFixed(0)}%
-                      </span>
-            </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Percentual de produtos em níveis adequados de estoque
-                    </p>
-                  </div>
-                  
-                  {/* Eficiência de Estoque */}
-                  <div className="bg-black/20 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-medium">Eficiência de Estoque</h3>
-                      <div className="p-2 rounded-full bg-amber-500/20">
-                        <BarChart2 className="h-4 w-4 text-amber-400" />
-                      </div>
-                    </div>
-                    <div className="flex items-end space-x-1">
-                      <span className="text-2xl font-bold">
-                        {(totalSaidas / (totalEntradas || 1) * 100).toFixed(0)}%
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Proporção entre saídas e entradas no período
-                    </p>
-                  </div>
-            </div>
-          </CardContent>
-        </Card>
+
       </div>
         </TabsContent>
       </Tabs>

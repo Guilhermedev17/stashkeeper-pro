@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './use-toast';
+import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 interface Product {
   id: string;
@@ -41,17 +42,34 @@ export const useSupabaseProducts = () => {
 
       if (error) throw error;
       
-      setProducts((data || []).map(item => ({
-        id: item.id,
-        code: item.code,
-        name: item.name,
-        description: item.description,
-        category_id: item.category_id,
-        quantity: item.quantity,
-        min_quantity: item.min_quantity,
-        unit: item.unit,
-        created_at: item.created_at
-      })));
+       // Usar asserção de tipo para garantir que o TypeScript reconheça todas as propriedades
+      setProducts((data || []).map(item => {
+        // Definir explicitamente o tipo do item retornado pelo Supabase
+        const typedItem = item as {
+          id: string;
+          code: string;
+          name: string;
+          description: string;
+          category_id: string;
+          quantity: number;
+          min_quantity: number;
+          unit?: string;
+          created_at: string;
+        };
+        
+        // Garantir que todas as propriedades estejam presentes, incluindo 'unit'
+        return {
+          id: typedItem.id,
+          code: typedItem.code,
+          name: typedItem.name,
+          description: typedItem.description,
+          category_id: typedItem.category_id,
+          quantity: typedItem.quantity,
+          min_quantity: typedItem.min_quantity,
+          unit: typedItem.unit || '', // Garantir que unit sempre tenha um valor, mesmo que seja string vazia
+          created_at: typedItem.created_at
+        } as Product;
+      }));
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar produtos';
       setError(errorMessage);
@@ -230,6 +248,32 @@ export const useSupabaseProducts = () => {
 
   useEffect(() => {
     fetchProducts();
+
+    // Configurar subscriber para atualizações em tempo real
+    const subscription = supabase
+      .channel('products_changes')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'products' 
+        }, 
+        (payload: RealtimePostgresChangesPayload<Product>) => {
+          if (payload.eventType === 'INSERT') {
+            setProducts(prev => [payload.new as Product, ...prev]);
+          } else if (payload.eventType === 'DELETE') {
+            setProducts(prev => prev.filter(product => product.id !== payload.old.id));
+          } else if (payload.eventType === 'UPDATE') {
+            setProducts(prev => prev.map(product => 
+              product.id === payload.new.id ? payload.new as Product : product
+            ));
+          }
+      })
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   return {

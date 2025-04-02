@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 export interface Category {
   id: string;
@@ -164,7 +165,34 @@ export const useSupabaseCategories = () => {
 
   useEffect(() => {
     fetchCategories();
+
+    // Configurar subscriber para atualizações em tempo real
+    const subscription = supabase
+      .channel('categories_changes')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'categories' 
+        }, 
+        (payload: RealtimePostgresChangesPayload<Category>) => {
+          if (payload.eventType === 'INSERT') {
+            setCategories(prev => [...prev, payload.new as Category]);
+          } else if (payload.eventType === 'DELETE') {
+            setCategories(prev => prev.filter(category => category.id !== payload.old.id));
+          } else if (payload.eventType === 'UPDATE') {
+            setCategories(prev => prev.map(category =>
+              category.id === payload.new.id ? payload.new as Category : category
+            ));
+          }
+      })
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
+
 
   return {
     categories,
