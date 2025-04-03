@@ -10,8 +10,9 @@ import DeleteProductDialog from '@/components/products/DeleteProductDialog';
 import MovementDialog from '@/components/products/MovementDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { PlusSquare } from 'lucide-react';
+import { PlusSquare, CheckSquare } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import ImportExcelButton from '@/components/ImportExcelButton';
 
 // Interface para o EditProductDialog
 interface EditProduct {
@@ -66,6 +67,7 @@ const Products = () => {
   const [isMovementDialogOpen, setIsMovementDialogOpen] = useState(false);
   const [movementType, setMovementType] = useState<'entrada' | 'saida'>('entrada');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectMode, setSelectMode] = useState(false);
   
   const [newProduct, setNewProduct] = useState<NewProduct>({
     code: '',
@@ -299,6 +301,61 @@ const Products = () => {
     };
   };
 
+  const toggleSelectMode = () => {
+    setSelectMode(!selectMode);
+  };
+
+  const handleDeleteMultiple = async (productIds: string[]) => {
+    if (productIds.length === 0) return;
+    
+    let success = true;
+    let deleted = 0;
+    
+    // Criar apenas uma notificação que pode ser atualizada
+    const toastInstance = toast({
+      title: "Exclusão em lote",
+      description: `Iniciando exclusão de ${productIds.length} produtos...`,
+      variant: "progress"
+    });
+    
+    // Executa cada exclusão individualmente
+    for (let index = 0; index < productIds.length; index++) {
+      const id = productIds[index];
+      
+      // Atualizar o progresso em intervalos regulares
+      const progressPercent = Math.floor((index / productIds.length) * 100);
+      
+      // Atualizar a notificação mais frequentemente (a cada produto ou a cada 5%)
+      if (productIds.length < 10 || index % Math.max(1, Math.floor(productIds.length / 20)) === 0) {
+        toastInstance.update({
+          id: toastInstance.id,
+          title: "Exclusão em andamento",
+          description: `${index + 1} de ${productIds.length} produtos processados (${progressPercent}%)`,
+          variant: "progress"
+        });
+      }
+      
+      // Usar o modo silencioso para evitar múltiplas notificações
+      const result = await deleteProduct(id, { silent: true });
+      if (result.success) {
+        deleted++;
+      } else {
+        success = false;
+      }
+    }
+    
+    // Atualizar notificação final com o resultado
+    // Incluir o número total e a porcentagem 100% para indicar conclusão
+    toastInstance.update({
+      id: toastInstance.id,
+      title: success ? "Produtos excluídos" : "Exclusão parcial",
+      description: success 
+        ? `${deleted} de ${productIds.length} produtos excluídos com sucesso (100%).`
+        : `${deleted} de ${productIds.length} produtos foram excluídos (100%). Alguns produtos não puderam ser excluídos.`,
+      variant: success ? "success" : "destructive"
+    });
+  };
+
   return (
     <div className="zoom-stable w-full h-full">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -308,10 +365,18 @@ const Products = () => {
             Visualize e gerencie todos os seus produtos.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button onClick={() => setIsAddDialogOpen(true)} className="gap-2" title="Adicionar novo produto">
-            <PlusSquare className="h-4 w-4" /> Novo Produto
-          </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <ImportExcelButton />
+          
+          {!selectMode && (
+            <Button 
+              onClick={() => setIsAddDialogOpen(true)} 
+              className="gap-2" 
+              title="Adicionar novo produto"
+            >
+              <PlusSquare className="h-4 w-4" /> Novo Produto
+            </Button>
+          )}
         </div>
       </div>
 
@@ -324,6 +389,8 @@ const Products = () => {
           onCategoryChange={setSelectedCategory}
           selectedStatus={selectedStatus}
           onStatusChange={setSelectedStatus}
+          selectMode={selectMode}
+          onToggleSelectMode={toggleSelectMode}
         />
       </div>
 
@@ -333,7 +400,10 @@ const Products = () => {
           getCategoryName={getCategoryName}
           onEdit={handleEditClick}
           onDelete={handleDeleteClick}
+          onDeleteMultiple={handleDeleteMultiple}
           onMovement={handleMovementClick}
+          selectMode={selectMode}
+          onToggleSelectMode={toggleSelectMode}
         />
       </div>
 

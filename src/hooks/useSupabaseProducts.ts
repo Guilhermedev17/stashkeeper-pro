@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './use-toast';
@@ -84,7 +83,7 @@ export const useSupabaseProducts = () => {
     }
   };
 
-  const addProduct = async (product: Omit<Product, 'id' | 'created_at'>) => {
+  const addProduct = async (product: Omit<Product, 'id' | 'created_at'>, options?: { silent?: boolean }) => {
     try {
       // Verificar se código já existe
       const { data: existing } = await supabase
@@ -107,10 +106,14 @@ export const useSupabaseProducts = () => {
       
       setProducts(prevProducts => [data as Product, ...prevProducts]);
       
-      toast({
-        title: 'Produto adicionado',
-        description: `${product.name} foi adicionado com sucesso.`,
-      });
+      // Exibir notificação apenas se não estiver no modo silencioso
+      if (!options?.silent) {
+        toast({
+          title: 'Produto adicionado',
+          description: `${product.name} foi adicionado com sucesso.`,
+          variant: 'success'
+        });
+      }
       
       return { success: true, data };
     } catch (err) {
@@ -118,16 +121,21 @@ export const useSupabaseProducts = () => {
       if (errorMessage.includes('duplicate key value')) {
         errorMessage = 'Código já está em uso';
       }
-      toast({
-        title: 'Erro',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+      
+      // Exibir notificação de erro apenas se não estiver no modo silencioso
+      if (!options?.silent) {
+        toast({
+          title: 'Erro',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+      }
+      
       return { success: false, error: errorMessage };
     }
   };
 
-  const updateProduct = async (id: string, updates: Partial<Omit<Product, 'id' | 'created_at'>>) => {
+  const updateProduct = async (id: string, updates: Partial<Omit<Product, 'id' | 'created_at'>>, options?: { silent?: boolean }) => {
     try {
       const { data, error } = await supabase
         .from('products')
@@ -144,24 +152,33 @@ export const useSupabaseProducts = () => {
         )
       );
       
-      toast({
-        title: 'Produto atualizado',
-        description: `Produto foi atualizado com sucesso.`,
-      });
+      // Exibir notificação apenas se não estiver no modo silencioso
+      if (!options?.silent) {
+        toast({
+          title: 'Produto atualizado',
+          description: `Produto foi atualizado com sucesso.`,
+          variant: 'success'
+        });
+      }
       
       return { success: true, data };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar produto';
-      toast({
-        title: 'Erro',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+      
+      // Exibir notificação de erro apenas se não estiver no modo silencioso
+      if (!options?.silent) {
+        toast({
+          title: 'Erro',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+      }
+      
       return { success: false, error: errorMessage };
     }
   };
 
-  const deleteProduct = async (id: string) => {
+  const deleteProduct = async (id: string, options?: { silent?: boolean }) => {
     try {
       const { error } = await supabase
         .from('products')
@@ -174,19 +191,28 @@ export const useSupabaseProducts = () => {
         prevProducts.filter(product => product.id !== id)
       );
       
-      toast({
-        title: 'Produto removido',
-        description: `Produto foi removido com sucesso.`,
-      });
+      // Exibir notificação apenas se não estiver no modo silencioso
+      if (!options?.silent) {
+        toast({
+          title: 'Produto removido',
+          description: `Produto foi removido com sucesso.`,
+          variant: 'success'
+        });
+      }
       
       return { success: true };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao remover produto';
-      toast({
-        title: 'Erro',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+      
+      // Exibir notificação de erro apenas se não estiver no modo silencioso
+      if (!options?.silent) {
+        toast({
+          title: 'Erro',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+      }
+      
       return { success: false, error: errorMessage };
     }
   };
@@ -233,6 +259,7 @@ export const useSupabaseProducts = () => {
       toast({
         title: movement.type === 'entrada' ? 'Entrada registrada' : 'Saída registrada',
         description: `Movimentação registrada com sucesso.`,
+        variant: 'success'
       });
       
       return { success: true, data: movementData };

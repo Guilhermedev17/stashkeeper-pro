@@ -17,6 +17,7 @@ import Settings from "./pages/Settings";
 import Movements from "./pages/Movements";
 import NotFound from "./pages/NotFound";
 import Employees from "./pages/Employees";
+import ExcelImporter from "./components/ExcelImporter";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,13 @@ const App = () => (
                 <Route path="settings" element={<Settings />} />
                 <Route path="employees" element={<Employees />} />
               </Route>
+              <Route path="/import-excel" element={
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+                  <div className="max-w-4xl w-full">
+                    <ExcelImporter onClose={() => window.history.back()} />
+                  </div>
+                </div>
+              } />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </SidebarProvider>

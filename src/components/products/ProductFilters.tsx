@@ -1,6 +1,7 @@
 import React from 'react';
-import { Search } from 'lucide-react';
+import { Search, CheckSquare } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -22,6 +23,8 @@ interface ProductFiltersProps {
   onCategoryChange: (value: string) => void;
   selectedStatus: string;
   onStatusChange: (value: string) => void;
+  onToggleSelectMode?: () => void;
+  selectMode?: boolean;
 }
 
 const ProductFilters: React.FC<ProductFiltersProps> = ({ 
@@ -31,7 +34,9 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
   selectedCategory,
   onCategoryChange,
   selectedStatus,
-  onStatusChange
+  onStatusChange,
+  onToggleSelectMode,
+  selectMode = false
 }) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -45,7 +50,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
         />
       </div>
       
-      <div className="grid grid-cols-2 gap-2 col-span-1">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 col-span-1">
         <Select
           value={selectedCategory}
           onValueChange={onCategoryChange}
@@ -77,6 +82,18 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
             <SelectItem value="critico">Crítico</SelectItem>
           </SelectContent>
         </Select>
+        
+        {!selectMode && onToggleSelectMode && (
+          <Button 
+            variant="outline"
+            onClick={onToggleSelectMode}
+            className="flex items-center justify-center gap-2 text-xs sm:text-sm h-10"
+            title="Selecionar múltiplos produtos"
+          >
+            <CheckSquare className="h-4 w-4" />
+            <span className="hidden xs:inline-block">Selecionar</span>
+          </Button>
+        )}
       </div>
     </div>
   );
