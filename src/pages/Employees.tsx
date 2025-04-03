@@ -11,8 +11,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { PlusSquare, UserPlus, Edit2, AlertTriangle, Trash2, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useRealtime } from '@/contexts/RealtimeContext';
 import ImportEmployeesButton from '@/components/ImportEmployeesButton';
+
+// Hook de fallback para quando o RealtimeContext não estiver disponível
+const useFallbackRealtime = () => ({
+  refreshAllData: () => console.log('Fallback refresh called'),
+  lastUpdated: null,
+  refreshing: false
+});
+
+// Tenta importar useRealtime, mas usa fallback caso falhe
+let useRealtimeHook = useFallbackRealtime;
+try {
+  const RealtimeModule = require('@/contexts/RealtimeContext');
+  if (RealtimeModule && RealtimeModule.useRealtime) {
+    useRealtimeHook = RealtimeModule.useRealtime;
+  }
+} catch (error) {
+  console.warn('useRealtime não disponível, usando fallback');
+}
 
 interface Employee {
   id: string;
@@ -47,7 +64,8 @@ const Employees = () => {
     updateEmployee,
     deleteEmployee
   } = useSupabaseEmployees();
-  const { refreshAllData } = useRealtime();
+  // Usa o hook que pode ser o real ou o fallback
+  const { refreshAllData } = useRealtimeHook();
 
   useEffect(() => {
     if (supabaseEmployees.length > 0) {
