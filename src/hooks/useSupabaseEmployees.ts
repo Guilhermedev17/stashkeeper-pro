@@ -42,7 +42,10 @@ export const useSupabaseEmployees = () => {
     }
   };
 
-  const addEmployee = async (employee: Omit<Employee, 'id' | 'created_at'>) => {
+  const addEmployee = async (
+    employee: Omit<Employee, 'id' | 'created_at'>,
+    options?: { silent?: boolean }
+  ) => {
     try {
       // Verificar se código já existe
       const { data: existing } = await supabase
@@ -65,10 +68,13 @@ export const useSupabaseEmployees = () => {
       
       setEmployees(prevEmployees => [data as Employee, ...prevEmployees]);
       
-      toast({
-        title: 'Colaborador adicionado',
-        description: `${employee.name} foi adicionado com sucesso.`,
-      });
+      if (!options?.silent) {
+        toast({
+          title: 'Colaborador adicionado',
+          description: `${employee.name} foi adicionado com sucesso.`,
+          variant: 'success'
+        });
+      }
       
       return { success: true, data };
     } catch (err) {
@@ -76,16 +82,24 @@ export const useSupabaseEmployees = () => {
       if (errorMessage.includes('duplicate key value')) {
         errorMessage = 'Código já está em uso';
       }
-      toast({
-        title: 'Erro',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+      
+      if (!options?.silent) {
+        toast({
+          title: 'Erro',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+      }
+      
       return { success: false, error: errorMessage };
     }
   };
 
-  const updateEmployee = async (id: string, updates: Partial<Omit<Employee, 'id' | 'created_at'>>) => {
+  const updateEmployee = async (
+    id: string, 
+    updates: Partial<Omit<Employee, 'id' | 'created_at'>>,
+    options?: { silent?: boolean }
+  ) => {
     try {
       const { data, error } = await supabase
         .from('employees')
@@ -102,19 +116,26 @@ export const useSupabaseEmployees = () => {
         )
       );
       
-      toast({
-        title: 'Colaborador atualizado',
-        description: `Colaborador foi atualizado com sucesso.`,
-      });
+      if (!options?.silent) {
+        toast({
+          title: 'Colaborador atualizado',
+          description: `Colaborador foi atualizado com sucesso.`,
+          variant: 'success'
+        });
+      }
       
       return { success: true, data };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar colaborador';
-      toast({
-        title: 'Erro',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+      
+      if (!options?.silent) {
+        toast({
+          title: 'Erro',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+      }
+      
       return { success: false, error: errorMessage };
     }
   };
@@ -166,6 +187,7 @@ export const useSupabaseEmployees = () => {
       toast({
         title: 'Colaborador excluído',
         description: `Colaborador foi excluído com sucesso.`,
+        variant: 'success'
       });
       
       return { success: true, data };

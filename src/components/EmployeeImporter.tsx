@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Upload, FileSpreadsheet, Check, Search, X, AlertCircle } from 'lucide-react';
+import { Upload, AlertCircle, FileSpreadsheet, Check, Search, X, CheckSquare, Square, Info } from 'lucide-react';
 import { useSupabaseEmployees } from '@/hooks/useSupabaseEmployees';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,20 +9,23 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import * as XLSX from 'xlsx';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Card, CardContent } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
 
 // Variável global para controlar se o importador já está aberto
 let GLOBAL_EMPLOYEE_IMPORTER_OPEN = false;
-
-interface EmployeeImporterProps {
-  onClose?: () => void;
-  onImportComplete?: () => void;
-}
 
 interface EmployeeData {
   code: string;
   name: string;
   status: 'active' | 'inactive';
-  selected?: boolean;
+  valid: boolean;
+  selected: boolean;
+}
+
+interface EmployeeImporterProps {
+  onClose?: () => void;
+  onImportComplete?: () => void;
 }
 
 const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) => {
@@ -193,14 +195,15 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
       // Mapeamento fixo de colunas conforme o formato da planilha:
       // A: Código
       // B: Nome do Colaborador
-      const code = String(row.A || '');
-      const name = String(row.B || '');
+      const code = String(row.A || '').trim();
+      const name = String(row.B || '').trim();
       
       return {
         code,
         name,
-        status: 'active' as const, // Colaboradores importados são ativos por padrão
-        valid: Boolean(code && name)
+        status: 'active' as 'active' | 'inactive',
+        valid: Boolean(code && name),
+        selected: true
       };
     });
     
@@ -298,7 +301,7 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
             name: item.name,
             code: item.code,
             status: item.status
-          });
+          }, { silent: true });
           
           if (result.success) {
             stats.updated++;
@@ -311,7 +314,7 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
             name: item.name,
             code: item.code,
             status: item.status
-          });
+          }, { silent: true });
           
           if (result.success) {
             stats.added++;
@@ -393,21 +396,20 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
         
         <div className="p-4">
           <p className="text-sm text-muted-foreground mb-6">
-            Importe colaboradores de um arquivo Excel com colunas para Código e Nome
+            Importe dados de colaboradores de um arquivo Excel com código e nome
           </p>
           
           {importStep === 'select' && (
-            <div className="space-y-6">
+            <div className="space-y-8">
               <div className="space-y-3">
-                <Label htmlFor="file" className="text-base">Arquivo Excel</Label>
                 <div className="grid w-full items-center gap-1.5">
-                  <Label
+                  <label
                     htmlFor="file-upload"
-                    className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/30 transition-colors"
+                    className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/30 transition-colors"
                   >
                     <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      <FileSpreadsheet className="w-10 h-10 text-primary/70 mb-3" />
-                      <p className="mb-2 text-sm text-muted-foreground">
+                      <FileSpreadsheet className="w-8 h-8 text-primary/70 mb-2" />
+                      <p className="mb-1 text-sm text-muted-foreground">
                         <span className="font-semibold">Clique para selecionar</span> ou arraste o arquivo
                       </p>
                       <p className="text-xs text-muted-foreground">
@@ -427,18 +429,19 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
                       className="hidden"
                       onChange={handleFileChange}
                     />
-                  </Label>
+                  </label>
                 </div>
               </div>
               
-              <Alert className="bg-blue-50 border-blue-100">
-                <AlertCircle className="h-4 w-4 text-blue-600" />
-                <AlertTitle className="text-blue-800">Formato da Planilha</AlertTitle>
-                <AlertDescription className="text-blue-700">
-                  A planilha deve conter:
-                  <ul className="mt-2 list-disc list-inside text-sm space-y-1">
-                    <li>Coluna A: Código do colaborador</li>
-                    <li>Coluna B: Nome do colaborador</li>
+              <Alert className="bg-secondary/50 border-secondary">
+                <Info className="h-5 w-5 text-primary/80" />
+                <AlertTitle className="text-base font-medium">Como importar seus colaboradores</AlertTitle>
+                <AlertDescription className="mt-1 text-sm">
+                  <p className="mb-2">Use sua planilha Excel com informações de colaboradores:</p>
+                  <ul className="space-y-1.5 list-disc pl-5">
+                    <li>Prepare uma planilha com <strong>código</strong> e <strong>nome</strong> dos colaboradores</li>
+                    <li>Faça o upload do arquivo e revise os dados</li>
+                    <li>Confirme os colaboradores que deseja importar</li>
                   </ul>
                 </AlertDescription>
               </Alert>
@@ -447,74 +450,92 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
           
           {importStep === 'preview' && (
             <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-                <h3 className="text-lg font-semibold">Pré-visualização dos Dados</h3>
-                
-                <div className="flex items-center gap-3 w-full sm:w-auto">
-                  <div className="relative w-full sm:w-64">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Buscar colaborador..."
-                      className="pl-8"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="select-all" 
-                      checked={selectAll}
-                      onCheckedChange={toggleSelectAll}
-                    />
-                    <label
-                      htmlFor="select-all"
-                      className="text-sm font-medium cursor-pointer"
-                    >
-                      Todos
-                    </label>
-                  </div>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-2 border-b">
+                <h3 className="text-lg font-medium">Pré-visualização dos dados</h3>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <Search className="h-4 w-4 text-muted-foreground" />
+                  <Input 
+                    placeholder="Buscar por nome ou código..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-8 w-full"
+                  />
                 </div>
               </div>
               
-              <div className="border rounded-md">
-                <div className="overflow-auto" ref={tableContainerRef} style={{ maxHeight: '400px' }}>
-                  <table className="w-full">
-                    <thead className="bg-muted/50 sticky top-0">
-                      <tr>
-                        <th className="p-2 text-left w-14">
-                          <span className="sr-only">Selecionar</span>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-2">
+                <div className="flex items-center gap-2">
+                  <Checkbox 
+                    id="select-all" 
+                    checked={selectAll}
+                    onCheckedChange={toggleSelectAll}
+                    className="h-4 w-4"
+                  />
+                  <Label htmlFor="select-all" className="text-sm font-medium">
+                    Selecionar todos
+                  </Label>
+                </div>
+                <div className="px-2 py-0.5 bg-secondary/60 rounded-md text-xs">
+                  <span className="font-medium">{previewData.filter(item => item.selected).length}</span> de <span className="font-medium">{previewData.length}</span> selecionados
+                </div>
+              </div>
+              
+              <div className="border rounded-lg overflow-hidden shadow-sm">
+                <div 
+                  ref={tableContainerRef}
+                  className="overflow-auto" 
+                  style={{ maxHeight: '300px' }}
+                >
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-muted">
+                        <th className="px-2 py-2 text-center font-medium w-10">
+                          Sel.
                         </th>
-                        <th className="p-2 text-left text-sm font-medium text-muted-foreground">Código</th>
-                        <th className="p-2 text-left text-sm font-medium text-muted-foreground">Nome</th>
-                        <th className="p-2 text-left text-sm font-medium text-muted-foreground">Status</th>
+                        <th className="px-3 py-2 text-left font-medium">Código</th>
+                        <th className="px-3 py-2 text-left font-medium">Nome</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredPreviewData.length > 0 ? (
                         filteredPreviewData.map((item, index) => (
-                          <tr key={index} className="border-t hover:bg-muted/30">
-                            <td className="p-2 text-center">
+                          <tr 
+                            key={index} 
+                            className={`border-t hover:bg-secondary/30 transition-colors ${item.selected ? '' : 'bg-muted/20'}`}
+                            onClick={() => toggleSelectItem(previewData.indexOf(item))}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <td 
+                              className="px-2 py-1.5 text-center" 
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               <Checkbox 
                                 checked={item.selected}
-                                onCheckedChange={() => toggleSelectItem(
-                                  previewData.findIndex(i => i.code === item.code && i.name === item.name)
-                                )}
+                                onCheckedChange={() => toggleSelectItem(previewData.indexOf(item))}
+                                className="h-4 w-4"
                               />
                             </td>
-                            <td className="p-2 text-sm">{item.code}</td>
-                            <td className="p-2 text-sm">{item.name}</td>
-                            <td className="p-2 text-sm">
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                Ativo
-                              </span>
+                            <td className="px-3 py-1.5 font-medium">{item.code}</td>
+                            <td className="px-3 py-1.5 max-w-[220px]">
+                              <div 
+                                className="truncate hover:whitespace-normal"
+                                title={item.name}
+                              >
+                                {item.name}
+                              </div>
                             </td>
                           </tr>
                         ))
+                      ) : searchQuery ? (
+                        <tr>
+                          <td colSpan={3} className="px-4 py-6 text-center text-muted-foreground">
+                            Nenhum colaborador encontrado com o termo "{searchQuery}"
+                          </td>
+                        </tr>
                       ) : (
                         <tr>
-                          <td colSpan={4} className="p-4 text-center text-muted-foreground">
-                            {searchQuery ? "Nenhum resultado encontrado" : "Nenhum colaborador para importar"}
+                          <td colSpan={3} className="px-4 py-6 text-center text-muted-foreground">
+                            Nenhum colaborador encontrado no arquivo
                           </td>
                         </tr>
                       )}
@@ -523,43 +544,85 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
                 </div>
               </div>
               
-              <div className="flex justify-between items-center text-sm text-muted-foreground">
-                <div>
-                  Total: {filteredPreviewData.length} colaboradores
-                </div>
-                <div>
-                  Selecionados: {filteredPreviewData.filter(i => i.selected).length}
-                </div>
+              <div className="text-xs text-muted-foreground flex justify-between">
+                <span>{filteredPreviewData.length} itens exibidos</span>
+                <span>{previewData.filter(item => item.selected).length} selecionados para importação</span>
               </div>
+              
+              <Alert className="bg-muted/50">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Antes de importar</AlertTitle>
+                <AlertDescription>
+                  <ul className="list-disc space-y-1 pl-4 text-sm">
+                    <li>Todos os colaboradores selecionados serão adicionados ou atualizados.</li>
+                    <li>Colaboradores com códigos existentes terão seus nomes atualizados.</li>
+                  </ul>
+                </AlertDescription>
+              </Alert>
             </div>
           )}
           
           {importStep === 'result' && (
             <div className="space-y-6">
-              <div className="p-4 rounded-lg border bg-card">
-                <h3 className="text-lg font-semibold mb-4">Resultado da Importação</h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="p-4 rounded-md bg-green-50 border border-green-100">
-                    <p className="font-semibold text-green-700">Adicionados</p>
-                    <p className="text-3xl font-bold text-green-600">{importStats.added}</p>
-                  </div>
-                  
-                  <div className="p-4 rounded-md bg-blue-50 border border-blue-100">
-                    <p className="font-semibold text-blue-700">Atualizados</p>
-                    <p className="text-3xl font-bold text-blue-600">{importStats.updated}</p>
-                  </div>
-                  
-                  <div className="p-4 rounded-md bg-red-50 border border-red-100">
-                    <p className="font-semibold text-red-700">Erros</p>
-                    <p className="text-3xl font-bold text-red-600">{importStats.errors}</p>
-                  </div>
-                </div>
-                
-                <div className="mt-4 text-muted-foreground text-sm">
-                  <p>Total processado: {importStats.total} colaboradores</p>
-                </div>
+              <div className="flex items-center justify-between border-b pb-3">
+                <h3 className="text-xl font-medium">Importação concluída</h3>
               </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <Card className="shadow-sm">
+                  <CardContent className="pt-6 pb-4">
+                    <div className="text-center">
+                      <p className="text-muted-foreground text-sm mb-1">Total</p>
+                      <p className="text-3xl font-bold">{importStats.total}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-green-500/5 shadow-sm border-green-500/20">
+                  <CardContent className="pt-6 pb-4">
+                    <div className="text-center">
+                      <p className="text-muted-foreground text-sm mb-1">Adicionados</p>
+                      <p className="text-3xl font-bold text-green-500">{importStats.added}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-blue-500/5 shadow-sm border-blue-500/20">
+                  <CardContent className="pt-6 pb-4">
+                    <div className="text-center">
+                      <p className="text-muted-foreground text-sm mb-1">Atualizados</p>
+                      <p className="text-3xl font-bold text-blue-500">{importStats.updated}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                {importStats.errors > 0 ? (
+                  <Card className="bg-red-500/5 shadow-sm border-red-500/20">
+                    <CardContent className="pt-6 pb-4">
+                      <div className="text-center">
+                        <p className="text-muted-foreground text-sm mb-1">Erros</p>
+                        <p className="text-3xl font-bold text-red-500">{importStats.errors}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : null}
+              </div>
+              
+              <Alert variant={importStats.errors > 0 ? "destructive" : "default"}>
+                {importStats.errors > 0 ? (
+                  <AlertCircle className="h-4 w-4" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+                <AlertTitle>
+                  {importStats.errors > 0 ? "Importação concluída com erros" : "Importação concluída com sucesso"}
+                </AlertTitle>
+                <AlertDescription>
+                  {importStats.errors > 0 ? (
+                    <p className="text-sm">Alguns colaboradores não puderam ser importados. Verifique os dados e tente novamente.</p>
+                  ) : (
+                    <p className="text-sm">Todos os colaboradores foram importados com sucesso.</p>
+                  )}
+                </AlertDescription>
+              </Alert>
             </div>
           )}
         </div>

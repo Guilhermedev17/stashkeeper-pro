@@ -12,7 +12,7 @@ import { PlusSquare, UserPlus, Edit2, AlertTriangle, Trash2, Search } from 'luci
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useRealtime } from '@/contexts/RealtimeContext';
-import ImportEmployeeButton from '@/components/ImportEmployeeButton';
+import ImportEmployeesButton from '@/components/ImportEmployeesButton';
 
 interface Employee {
   id: string;
@@ -81,6 +81,22 @@ const Employees = () => {
       document.removeEventListener('visibilitychange', onFocus);
     };
   }, []);
+
+  // Adicionar um listener para eventos de atualização específicos do Excel
+  useEffect(() => {
+    // Criar um evento personalizado para comunicação entre componentes
+    const handleEmployeeImport = () => {
+      console.log("Evento de importação de colaboradores detectado - atualizando lista");
+      fetchEmployees();
+    };
+
+    // Registrar o evento
+    window.addEventListener('employee-import-complete', handleEmployeeImport);
+
+    return () => {
+      window.removeEventListener('employee-import-complete', handleEmployeeImport);
+    };
+  }, [fetchEmployees]);
 
   const handleAddEmployee = async () => {
     if (!newEmployee.code || !newEmployee.name) {
@@ -153,9 +169,9 @@ const Employees = () => {
           </p>
         </div>
 
-        <div className="flex gap-2">
-          <ImportEmployeeButton />
-          
+        <div className="flex flex-col sm:flex-row gap-2">
+          <ImportEmployeesButton />
+
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2">
