@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { PlusSquare, UserPlus, Edit2, AlertTriangle, Trash2, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useRealtime } from '@/contexts/RealtimeContext';
+import ImportEmployeeButton from '@/components/ImportEmployeeButton';
 
 interface Employee {
   id: string;
@@ -45,6 +47,7 @@ const Employees = () => {
     updateEmployee,
     deleteEmployee
   } = useSupabaseEmployees();
+  const { refreshAllData } = useRealtime();
 
   useEffect(() => {
     if (supabaseEmployees.length > 0) {
@@ -62,6 +65,22 @@ const Employees = () => {
     });
     setFilteredEmployees(filtered);
   }, [searchTerm, employees]);
+
+  useEffect(() => {
+    fetchEmployees();
+    
+    const onFocus = () => {
+      if (document.visibilityState === 'visible') {
+        fetchEmployees();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', onFocus);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', onFocus);
+    };
+  }, []);
 
   const handleAddEmployee = async () => {
     if (!newEmployee.code || !newEmployee.name) {
@@ -134,63 +153,67 @@ const Employees = () => {
           </p>
         </div>
 
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <UserPlus className="h-4 w-4" />
-              Novo Colaborador
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Adicionar Colaborador</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="code">Código</Label>
-                <Input
-                  id="code"
-                  placeholder="Digite o código do colaborador"
-                  value={newEmployee.code}
-                  onChange={(e) => setNewEmployee({ ...newEmployee, code: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="name">Nome</Label>
-                <Input
-                  id="name"
-                  placeholder="Digite o nome do colaborador"
-                  value={newEmployee.name}
-                  onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  value={newEmployee.status}
-                  onValueChange={(value: 'active' | 'inactive') => 
-                    setNewEmployee({ ...newEmployee, status: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Ativo</SelectItem>
-                    <SelectItem value="inactive">Inativo</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button
-                className="w-full mt-4"
-                onClick={handleAddEmployee}
-                disabled={!newEmployee.code || !newEmployee.name}
-              >
-                Adicionar Colaborador
+        <div className="flex gap-2">
+          <ImportEmployeeButton />
+          
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <UserPlus className="h-4 w-4" />
+                Novo Colaborador
               </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Adicionar Colaborador</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="code">Código</Label>
+                  <Input
+                    id="code"
+                    placeholder="Digite o código do colaborador"
+                    value={newEmployee.code}
+                    onChange={(e) => setNewEmployee({ ...newEmployee, code: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nome</Label>
+                  <Input
+                    id="name"
+                    placeholder="Digite o nome do colaborador"
+                    value={newEmployee.name}
+                    onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Select
+                    value={newEmployee.status}
+                    onValueChange={(value: 'active' | 'inactive') => 
+                      setNewEmployee({ ...newEmployee, status: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Ativo</SelectItem>
+                      <SelectItem value="inactive">Inativo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  className="w-full mt-4"
+                  onClick={handleAddEmployee}
+                  disabled={!newEmployee.code || !newEmployee.name}
+                >
+                  Adicionar Colaborador
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
 
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent>
