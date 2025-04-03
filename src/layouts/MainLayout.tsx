@@ -47,7 +47,7 @@ const MainLayout = () => {
   }
   
   return (
-    <div className="min-h-screen bg-background w-full">
+    <div className="min-h-screen min-h-dvh bg-background w-full relative flex flex-col">
       <Navbar onMobileMenuToggle={toggleMobileMenu} />
       <Sidebar 
         showMobile={showMobileSidebar} 
@@ -56,9 +56,9 @@ const MainLayout = () => {
         setShowDesktop={setShowDesktopSidebar}
       />
       
-      <main className="pt-16 min-h-screen transition-all duration-300 relative w-full bg-background/50 backdrop-blur-sm">
-        <div className={`h-full transition-all duration-300 ${showDesktopSidebar ? 'md:pl-64' : 'md:pl-12'}`}>
-          <div className="container mx-auto px-4 py-6 max-w-7xl">
+      <main className="pt-16 flex-grow transition-all duration-300 relative w-full bg-background/50 backdrop-blur-sm">
+        <div className={`h-full min-h-full transition-all duration-300 ${showDesktopSidebar ? 'md:pl-64' : 'md:pl-12'}`}>
+          <div className="zoom-stable h-full w-full px-2 sm:px-4 md:px-6 py-4 sm:py-6">
             <AnimatePresence mode="wait">
               <PageTransition key={useLocation().pathname}>
                 <Outlet />

@@ -186,625 +186,412 @@ const Dashboard = () => {
   const userName = user?.user_metadata?.name || user?.email || 'Usuário';
 
   return (
-    <div className="px-2 sm:px-4 py-4 sm:py-6">
+    <div className="zoom-stable w-full h-full">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground text-sm sm:text-base">
-            Visão geral e estatísticas do sistema de estoque.
+            Visão geral e ações necessárias para o estoque.
           </p>
         </div>
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid grid-cols-2 w-full sm:w-[400px]">
-          <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-          <TabsTrigger value="analytics">Analíticos</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview">
-          <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="hover:shadow-lg transition-all duration-300 border-primary/10 hover:bg-primary/5">
-              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">Total de Produtos</CardTitle>
-            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <PackageOpen className="h-4 w-4 text-primary" />
-            </div>
+      <div className="space-y-6 w-full">
+        {/* Cards de ações imediatas */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 w-full">
+          <Card className="hover:shadow-lg transition-all duration-300 border-destructive/10 hover:bg-destructive/5">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium">Ações Necessárias</CardTitle>
+              <div className="h-8 w-8 rounded-full bg-destructive/10 flex items-center justify-center">
+                <AlertTriangle className="h-4 w-4 text-destructive" />
+              </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalProducts}</div>
+              <div className="text-3xl font-bold">{lowStockCount}</div>
             <p className="text-xs text-muted-foreground">
-                  Em {totalCategories} categorias diferentes
+                Produtos precisando de reposição
             </p>
           </CardContent>
         </Card>
         
-        <Card className="hover:shadow-lg transition-all duration-300 border-destructive/10 hover:bg-destructive/5">
-              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                <CardTitle className="text-sm font-medium">Estoque Baixo</CardTitle>
-                <div className="h-8 w-8 rounded-full bg-destructive/10 flex items-center justify-center">
-                  <AlertTriangle className="h-4 w-4 text-destructive" />
-                </div>
+          <Card className="hover:shadow-lg transition-all duration-300 border-blue-500/10 hover:bg-blue-500/5">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium">Taxa de Saída</CardTitle>
+              <div className="h-8 w-8 rounded-full bg-blue-500/10 flex items-center justify-center">
+            <ArrowUp className="h-4 w-4 text-blue-500" />
+              </div>
           </CardHeader>
           <CardContent>
-                <div className="text-2xl font-bold">{lowStockCount}</div>
+              <div className="text-3xl font-bold">
+                {movements.filter(m => m.type === 'saida' && new Date(m.created_at) >= last7Days).length}
+              </div>
             <p className="text-xs text-muted-foreground">
-                  {lowStockCount > 0 ? `${criticalCount} em nível crítico` : 'Todos os produtos em níveis adequados'}
+                Saídas nos últimos 7 dias
             </p>
           </CardContent>
         </Card>
         
-        <Card className="hover:shadow-lg transition-all duration-300 border-green-500/10 hover:bg-green-500/5">
-              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                <CardTitle className="text-sm font-medium">Entradas Recentes</CardTitle>
-                <div className="h-8 w-8 rounded-full bg-green-500/10 flex items-center justify-center">
-                  <TrendingUp className="h-4 w-4 text-green-500" />
-                </div>
+          <Card className="hover:shadow-lg transition-all duration-300 border-green-500/10 hover:bg-green-500/5">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium">Taxa de Entradas</CardTitle>
+              <div className="h-8 w-8 rounded-full bg-green-500/10 flex items-center justify-center">
+                <ArrowDown className="h-4 w-4 text-green-500" />
+              </div>
           </CardHeader>
           <CardContent>
-                <div className="text-2xl font-bold">
-                  {movements.filter(m => m.type === 'entrada' && new Date(m.created_at) >= last7Days).length}
-                </div>
+              <div className="text-3xl font-bold">
+                {movements.filter(m => m.type === 'entrada' && new Date(m.created_at) >= last7Days).length}
+              </div>
             <p className="text-xs text-muted-foreground">
-                  Nos últimos 7 dias
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card className="hover:shadow-lg transition-all duration-300 border-blue-500/10 hover:bg-blue-500/5">
-              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                <CardTitle className="text-sm font-medium">Saídas Recentes</CardTitle>
-                <div className="h-8 w-8 rounded-full bg-blue-500/10 flex items-center justify-center">
-                  <TrendingDown className="h-4 w-4 text-blue-500" />
-                </div>
-          </CardHeader>
-          <CardContent>
-                <div className="text-2xl font-bold">
-                  {movements.filter(m => m.type === 'saida' && new Date(m.created_at) >= last7Days).length}
-                </div>
-            <p className="text-xs text-muted-foreground">
-                  Nos últimos 7 dias
+                Entradas nos últimos 7 dias
             </p>
           </CardContent>
         </Card>
       </div>
 
-          <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-7 mt-4 md:mt-6">
-            <Card className="lg:col-span-4 border-primary/10 hover:shadow-lg transition-all duration-300 hover:bg-primary/5">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <BarChart2 className="h-4 w-4 text-primary" />
-                  <span>Movimentações Recentes</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="relative w-full h-[300px] sm:h-[340px]">
-                  {/* Gráfico de movimentações recentes */}
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={chartData}
-                      margin={{
-                        top: 20,
-                        right: 30,
-                        left: 20,
-                        bottom: 5,
-                      }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip 
-                        contentStyle={{ 
-                          borderRadius: '8px', 
-                          border: '1px solid rgba(var(--primary), 0.2)',
-                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)' 
-                        }} 
-                      />
-                      <Legend />
-                      <Bar dataKey="entradas" name="Entradas" fill="#22c55e" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="saidas" name="Saídas" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 w-full">
+          <Card className="h-full border-destructive/10 hover:shadow-lg transition-all duration-300">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-destructive" />
+                  <span>Estoque Crítico - Ação Imediata</span>
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card className="lg:col-span-3 border-blue-500/10 hover:shadow-md transition-all duration-300">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <ArrowDownUp className="h-4 w-4 text-blue-500" />
-                  <span>Últimas Movimentações</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {recentMovementsWithProducts.length > 0 ? (
-                  <div className="space-y-4">
-                    {recentMovementsWithProducts.map((movement) => (
-                      <div key={movement.id} className="flex items-center p-2 rounded-md hover:bg-accent/50 transition-colors">
-                        <div className={`w-6 h-6 rounded-full mr-3 flex items-center justify-center ${
-                          movement.type === 'entrada' ? 'bg-green-500/10' : 'bg-blue-500/10'
-                        }`}>
-                          {movement.type === 'entrada' ? 
-                            <ArrowUp className="h-3.5 w-3.5 text-green-500" /> : 
-                            <ArrowDown className="h-3.5 w-3.5 text-blue-500" />
-                          }
+              </CardTitle>
+              <CardDescription className="text-xs text-muted-foreground">
+                Produtos abaixo do nível mínimo que necessitam reposição urgente
+            </CardDescription>
+          </CardHeader>
+            <CardContent>
+              {criticalProducts.length > 0 ? (
+                <div className="space-y-2.5">
+                  {criticalProducts.slice(0, 5).map((product) => {
+                    const percentage = Math.round((product.quantity / product.min_quantity) * 100);
+                    
+                    return (
+                      <div 
+                        key={product.id} 
+                        className="flex items-start gap-3 p-3 rounded-md transform hover:scale-[1.01] hover:shadow-md transition-all duration-200 bg-destructive/5 border border-destructive/20"
+                      >
+                        <div className="flex-shrink-0 text-destructive">
+                          <AlertTriangle className="h-5 w-5" />
                         </div>
-                        <div className="flex-1 space-y-1">
-                          <p className="text-sm font-medium leading-none flex items-center gap-1">
-                            {movement.productName}
+                        <div className="space-y-1 flex-1">
+                          <div className="flex justify-between items-center">
+                            <p className="text-sm font-medium line-clamp-1">{product.code || ''}{product.code && product.name ? ' - ' : ''}{product.name}</p>
                             <Badge 
                               variant="outline" 
-                              className={`text-[10px] ml-1 py-0 px-2 h-4 ${
-                                movement.type === 'entrada' ? 'bg-green-500/10 text-green-600 border-green-500/30' : 'bg-blue-500/10 text-blue-600 border-blue-500/30'
-                              }`}
+                              className="text-[10px] py-0.5 px-2 bg-destructive/10 text-destructive border-destructive/30"
                             >
-                              {movement.type === 'entrada' ? 'Entrada' : 'Saída'}
+                              Crítico
                             </Badge>
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {movement.quantity} {movement.unit} em {new Date(movement.created_at).toLocaleDateString('pt-BR')}
-                          </p>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs text-muted-foreground">
+                              <span className="text-destructive font-medium">{product.quantity}</span> / {product.min_quantity} {product.unit}
+                            </p>
+                            <Badge 
+                              variant="outline" 
+                              className="text-[10px] py-0 px-2 rounded-full bg-destructive/10 text-destructive border-destructive/30"
+                            >
+                              {percentage}%
+                            </Badge>
+                          </div>
+                          
+                          <div className="mt-2 pt-1">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="gap-1 mt-2 border-destructive/20 text-destructive hover:bg-destructive/5 hover:text-destructive" 
+                              onClick={() => window.location.href = `/movements?product=${product.id}&type=entrada`}
+                            >
+                              <span>Registrar Entrada</span>
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    ))}
-                    <div className="pt-3">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="gap-1 w-full justify-center border-blue-500/20 text-blue-600 hover:bg-blue-500/5 hover:text-blue-700" 
-                        onClick={() => window.location.href = '/movements'}
-                      >
-                        <span>Ver todas movimentações</span>
-                        <ArrowRight className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="py-6 text-center text-muted-foreground">
-                    <p>Nenhuma movimentação recente encontrada</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-7 mt-4 md:mt-6">
-            <Card className="lg:col-span-3 border-destructive/20 hover:shadow-lg transition-all duration-300 hover:bg-destructive/5">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span>Produtos com Estoque Baixo</span>
-                    <Badge variant="destructive" className="rounded-full" title="Total de produtos com estoque baixo">
-                      {lowStockCount}
-                    </Badge>
-                  </div>
-                </CardTitle>
-                <CardDescription className="text-xs text-muted-foreground">
-                  Produtos que precisam de reposição (críticos ou com estoque baixo)
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {displayProducts.length > 0 ? (
-                  <div className="space-y-2.5">
-                    {displayProducts.map((product) => {
-                      const isCritical = product.quantity <= product.min_quantity;
-                      const percentage = Math.round((product.quantity / product.min_quantity) * 100);
-                      
-                      // Função para pluralizar a unidade corretamente
-                      const formatUnit = (quantity: number, unit: string) => {
-                        // Unidades que precisam de pluralização
-                        const pluralRules: Record<string, string> = {
-                          'pacote': 'pacotes',
-                          'rolo': 'rolos',
-                          'caixa': 'caixas',
-                          'peça': 'peças',
-                          'unidade': 'unidades',
-                          'garrafa': 'garrafas',
-                          'litro': 'litros',
-                          'metro': 'metros'
-                        };
-                        
-                        // Algumas unidades não mudam no plural
-                        const invariantUnits = ['kg', 'g', 'ml', 'L', 'm'];
-                        
-                        let result = unit;
-                        
-                        // Aplica pluralização se necessário
-                        if (!invariantUnits.includes(unit)) {
-                          result = quantity > 1 && pluralRules[unit] ? pluralRules[unit] : unit;
-                        }
-                        
-                        // Capitaliza a primeira letra (exceto para unidades que são siglas)
-                        if (!invariantUnits.includes(result)) {
-                          result = result.charAt(0).toUpperCase() + result.slice(1);
-                        }
-                        
-                        return result;
-                      };
-                      
-                      return (
-                        <div 
-                          key={product.id} 
-                          className={`flex items-start gap-3 p-3 rounded-md transform hover:scale-[1.02] hover:shadow-lg transition-all duration-200 ${
-                            isCritical 
-                              ? 'bg-destructive/5 border border-destructive/20' 
-                              : 'bg-amber-500/5 border border-amber-500/20'
-                          }`}
-                        >
-                          <div className={`flex-shrink-0 ${isCritical ? 'text-destructive' : 'text-amber-500'}`}>
-                            <AlertTriangle className="h-5 w-5" />
-                          </div>
-                          <div className="space-y-1 flex-1">
-                            <div className="flex justify-between items-center">
-                              <p className="text-sm font-medium line-clamp-1">{product.code || ''}{product.code && product.name ? ' - ' : ''}{product.name}</p>
-                              <Badge 
-                                variant="outline" 
-                                className={`text-[10px] py-0.5 px-2 ${
-                                  isCritical 
-                                    ? 'bg-destructive/10 text-destructive border-destructive/30' 
-                                    : 'bg-amber-500/10 text-amber-600 border-amber-500/30'
-                                }`}
-                              >
-                                {isCritical ? 'Crítico' : 'Baixo'}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <p className="text-xs text-muted-foreground">
-                                Estoque: <span className="text-foreground font-medium">{product.quantity}</span> de {product.min_quantity} {formatUnit(product.min_quantity, product.unit)}
-                              </p>
-                              <Badge 
-                                variant="outline" 
-                                className={`text-[10px] py-0 px-2 rounded-full ${
-                                  isCritical 
-                                    ? 'bg-destructive/10 text-destructive border-destructive/30' 
-                                    : 'bg-amber-500/10 text-amber-600 border-amber-500/30'
-                                }`}
-                              >
-                                {percentage}%
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                    );
+                  })}
+                  
+                  {criticalProducts.length > 5 && (
                     <div className="pt-2">
                       <Button 
                         variant="outline" 
                         size="sm" 
                         className="gap-1 w-full justify-center border-destructive/20 text-destructive hover:bg-destructive/5 hover:text-destructive" 
-                        onClick={() => window.location.href = '/products?status=baixo'}
+                        onClick={() => window.location.href = '/products?status=critico'}
                       >
-                        <span>Ver todos produtos</span>
+                        <span>Ver todos produtos críticos ({criticalProducts.length})</span>
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-10 text-center">
+                  <div className="bg-green-500/10 rounded-full p-3 mb-3">
+                    <PackageOpen className="h-6 w-6 text-green-500" />
+                  </div>
+                  <p className="text-sm font-medium">Nenhum produto com estoque crítico</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Todos os produtos estão com estoque acima do nível mínimo
+                  </p>
+                </div>
+              )}
+          </CardContent>
+        </Card>
+
+          <Card className="h-full border-amber-500/10 hover:shadow-lg transition-all duration-300">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ArrowDownUp className="h-4 w-4 text-blue-500" />
+                  <span>Movimentações Recentes</span>
+                </div>
+              </CardTitle>
+              <CardDescription className="text-xs text-muted-foreground">
+                Últimas movimentações de estoque realizadas no sistema
+            </CardDescription>
+          </CardHeader>
+            <CardContent>
+              {recentMovementsWithProducts.length > 0 ? (
+                <div className="space-y-3">
+                  {recentMovementsWithProducts.map((movement) => (
+                    <div key={movement.id} className="flex items-center p-2 rounded-md hover:bg-accent/50 transition-colors">
+                      <div className={`w-6 h-6 rounded-full mr-3 flex items-center justify-center ${
+                        movement.type === 'entrada' ? 'bg-green-500/10' : 'bg-blue-500/10'
+                      }`}>
+                        {movement.type === 'entrada' ? 
+                          <ArrowDown className="h-3.5 w-3.5 text-green-500" /> : 
+                          <ArrowUp className="h-3.5 w-3.5 text-blue-500" />
+                        }
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <p className="text-sm font-medium leading-none flex items-center gap-1">
+                          {movement.productName}
+                          <Badge 
+                            variant="outline" 
+                            className={`text-[10px] ml-1 py-0 px-2 h-4 ${
+                              movement.type === 'entrada' ? 'bg-green-500/10 text-green-600 border-green-500/30' : 'bg-blue-500/10 text-blue-600 border-blue-500/30'
+                            }`}
+                          >
+                            {movement.type === 'entrada' ? 'Entrada' : 'Saída'}
+                          </Badge>
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {movement.quantity} {movement.unit} em {new Date(movement.created_at).toLocaleDateString('pt-BR')}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="flex justify-between pt-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="gap-1 w-[48%] justify-center border-blue-500/20 text-blue-600 hover:bg-blue-500/5 hover:text-blue-700" 
+                      onClick={() => window.location.href = '/movements?type=saida&open=true'}
+                    >
+                      <span>Registrar Saída</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="gap-1 w-[48%] justify-center border-green-500/20 text-green-600 hover:bg-green-500/5 hover:text-green-700" 
+                      onClick={() => window.location.href = '/movements?type=entrada&open=true'}
+                    >
+                      <span>Registrar Entrada</span>
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-10 text-center">
+                  <div className="bg-blue-500/10 rounded-full p-3 mb-3">
+                    <ArrowDownUp className="h-6 w-6 text-blue-500" />
+                  </div>
+                  <p className="text-sm font-medium">Nenhuma movimentação recente</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Registre entradas e saídas para visualizar aqui
+                  </p>
+                  <div className="flex justify-between pt-4 w-full max-w-xs">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-[48%]"
+                      onClick={() => window.location.href = '/movements?type=saida&open=true'}
+                    >
+                      Registrar Saída
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      className="w-[48%]"
+                      onClick={() => window.location.href = '/movements?type=entrada&open=true'}
+                    >
+                      Registrar Entrada
+                    </Button>
+                  </div>
+                </div>
+              )}
+          </CardContent>
+        </Card>
+      </div>
+
+        <div className="grid grid-cols-1 gap-4 md:gap-6 w-full">
+          <Card className="h-full border-primary/10 hover:shadow-lg transition-all duration-300">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <PackageIcon className="h-4 w-4 text-primary" />
+                  <span>Ações Recomendadas</span>
+                </div>
+              </CardTitle>
+              <CardDescription className="text-xs text-muted-foreground">
+                Ações sugeridas com base na situação atual do estoque
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+                {criticalProducts.length > 0 && (
+                  <div className="flex items-start gap-3 p-3 rounded-md bg-destructive/5 border border-destructive/20">
+                    <div className="flex-shrink-0 text-destructive">
+                      <AlertTriangle className="h-5 w-5" />
+                    </div>
+                    <div className="space-y-1 flex-1">
+                      <p className="text-sm font-medium">Repor produtos em nível crítico</p>
+                      <p className="text-xs text-muted-foreground">
+                        Existem {criticalProducts.length} produtos abaixo do estoque mínimo
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="gap-1 mt-2 border-destructive/20 text-destructive hover:bg-destructive/5 hover:text-destructive" 
+                        onClick={() => window.location.href = '/products?status=critico'}
+                      >
+                        <span>Ver produtos críticos</span>
                         <ArrowRight className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                   </div>
-                ) : (
-                  <div className="py-6 text-center text-muted-foreground">
-                    <p>Nenhum produto com estoque baixo</p>
+                )}
+                
+                {lowProducts.length > 0 && (
+                  <div className="flex items-start gap-3 p-3 rounded-md bg-amber-500/5 border border-amber-500/20">
+                    <div className="flex-shrink-0 text-amber-500">
+                      <AlertTriangle className="h-5 w-5" />
+                    </div>
+                    <div className="space-y-1 flex-1">
+                      <p className="text-sm font-medium">Planejar reposição de produtos com estoque baixo</p>
+                      <p className="text-xs text-muted-foreground">
+                        {lowProducts.length} produtos estão com estoque abaixo do ideal
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="gap-1 mt-2 border-amber-500/20 text-amber-600 hover:bg-amber-500/5 hover:text-amber-700" 
+                        onClick={() => window.location.href = '/products?status=baixo'}
+                      >
+                        <span>Ver produtos com estoque baixo</span>
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </div>
                 )}
-              </CardContent>
-            </Card>
-
-            <Card className="lg:col-span-4">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Produtos por Categoria</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="relative w-full h-[300px] sm:h-[340px]">
-                  <div className="space-y-4">
-                    {categories.map((category) => (
-                      <div key={category.id} className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 rounded-full bg-primary/70" />
-                          <span className="text-sm">{category.name}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">{categoryCounts[category.id] || 0}</span>
-                          <span className="text-xs text-muted-foreground">produtos</span>
-                        </div>
-                      </div>
-                    ))}
-                    <div className="flex items-center justify-between border-t pt-3 mt-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-muted-foreground" />
-                        <span className="text-sm">Sem categoria</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">{categoryCounts['uncategorized'] || 0}</span>
-                        <span className="text-xs text-muted-foreground">produtos</span>
-                      </div>
+                
+                {movements.length === 0 && (
+                  <div className="flex items-start gap-3 p-3 rounded-md bg-blue-500/5 border border-blue-500/20">
+                    <div className="flex-shrink-0 text-blue-500">
+                      <ArrowDownUp className="h-5 w-5" />
                     </div>
+                    <div className="space-y-1 flex-1">
+                      <p className="text-sm font-medium">Registrar movimentações de estoque</p>
+                      <p className="text-xs text-muted-foreground">
+                        Nenhuma movimentação encontrada - registre entradas e saídas
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="gap-1 mt-2 border-blue-500/20 text-blue-600 hover:bg-blue-500/5 hover:text-blue-700" 
+                        onClick={() => window.location.href = '/movements'}
+                      >
+                        <span>Ir para movimentações</span>
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Button>
+                </div>
+            </div>
+                )}
+                
+                {products.length === 0 && (
+                  <div className="flex items-start gap-3 p-3 rounded-md bg-primary/5 border border-primary/20">
+                    <div className="flex-shrink-0 text-primary">
+                      <PackageIcon className="h-5 w-5" />
+                    </div>
+                    <div className="space-y-1 flex-1">
+                      <p className="text-sm font-medium">Cadastrar produtos no sistema</p>
+                      <p className="text-xs text-muted-foreground">
+                        Nenhum produto encontrado - comece cadastrando seus itens
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="gap-1 mt-2 border-primary/20 text-primary hover:bg-primary/5 hover:text-primary" 
+                        onClick={() => window.location.href = '/products'}
+                      >
+                        <span>Cadastrar produtos</span>
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
+                {categories.length === 0 && products.length > 0 && (
+                  <div className="flex items-start gap-3 p-3 rounded-md bg-purple-500/5 border border-purple-500/20">
+                    <div className="flex-shrink-0 text-purple-500">
+                      <Percent className="h-5 w-5" />
+                    </div>
+                    <div className="space-y-1 flex-1">
+                      <p className="text-sm font-medium">Organizar produtos em categorias</p>
+                      <p className="text-xs text-muted-foreground">
+                        Crie categorias para melhor organização do estoque
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="gap-1 mt-2 border-purple-500/20 text-purple-600 hover:bg-purple-500/5 hover:text-purple-700" 
+                        onClick={() => window.location.href = '/settings'}
+                      >
+                        <span>Ir para configurações</span>
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
+                {criticalProducts.length === 0 && lowProducts.length === 0 && products.length > 0 && movements.length > 0 && (
+                  <div className="flex items-start gap-3 p-3 rounded-md bg-green-500/5 border border-green-500/20">
+                    <div className="flex-shrink-0 text-green-500">
+                      <RefreshCw className="h-5 w-5" />
+                    </div>
+                    <div className="space-y-1 flex-1">
+                      <p className="text-sm font-medium">Estoque em níveis saudáveis</p>
+                      <p className="text-xs text-muted-foreground">
+                        Todos os produtos estão com níveis adequados de estoque
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="gap-1 mt-2 border-green-500/20 text-green-600 hover:bg-green-500/5 hover:text-green-700" 
+                        onClick={() => window.location.href = '/reports'}
+                      >
+                        <span>Ver relatórios detalhados</span>
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Button>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="analytics">
-          <div className="grid gap-4 md:gap-6 mt-4 md:mt-6">
-            <Card>
-          <CardHeader>
-                <CardTitle className="flex items-center justify-between text-base">
-                  <span>Métricas de Desempenho do Estoque</span>
-                </CardTitle>
-            <CardDescription>
-                  Indicadores-chave de desempenho do seu sistema de estoque
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Taxa de Giro de Estoque */}
-                  <div className="bg-black/20 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-medium">Taxa de Giro de Estoque</h3>
-                      <div className="p-2 rounded-full bg-indigo-500/20">
-                        <ArrowDownUp className="h-4 w-4 text-indigo-400" />
-                      </div>
-                    </div>
-                    <div className="flex items-end space-x-1">
-                      <span className="text-2xl font-bold">
-                        {products.length > 0 
-                          ? (totalSaidas / products.reduce((acc, p) => acc + p.quantity, 0)).toFixed(2) 
-                          : '0.00'}
-                      </span>
-                      <span className="text-xs text-muted-foreground mb-1">vezes/período</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Razão entre saídas totais e estoque médio
-                    </p>
-                  </div>
-                  
-                  {/* Nível de Serviço */}
-                  <div className="bg-black/20 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-medium">Nível de Serviço</h3>
-                      <div className="p-2 rounded-full bg-green-500/20">
-                        <Share2 className="h-4 w-4 text-green-400" />
-                  </div>
-                </div>
-                    <div className="flex items-end space-x-1">
-                      <span className="text-2xl font-bold">
-                        {(((products.length - criticalProducts.length) / products.length) * 100).toFixed(0)}%
-                      </span>
-            </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Percentual de produtos em níveis adequados de estoque
-                    </p>
-                  </div>
-                  
-                  {/* Eficiência de Estoque */}
-                  <div className="bg-black/20 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-medium">Eficiência de Estoque</h3>
-                      <div className="p-2 rounded-full bg-amber-500/20">
-                        <BarChart2 className="h-4 w-4 text-amber-400" />
-                      </div>
-                    </div>
-                    <div className="flex items-end space-x-1">
-                      <span className="text-2xl font-bold">
-                        {(totalSaidas / (totalEntradas || 1) * 100).toFixed(0)}%
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Proporção entre saídas e entradas no período
-                    </p>
-                  </div>
+                )}
             </div>
           </CardContent>
         </Card>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-              <Card>
-          <CardHeader>
-                  <CardTitle className="flex items-center justify-between text-base">
-                    <span>Distribuição de Produtos por Categoria</span>
-                  </CardTitle>
-            <CardDescription>
-                    Visualização da distribuição percentual de produtos por categoria
-            </CardDescription>
-          </CardHeader>
-                <CardContent>
-                  <div className="h-[350px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                          data={categories.map(category => ({
-                            name: category.name,
-                            value: categoryCounts[category.id] || 0
-                          })).concat([{
-                            name: 'Sem categoria',
-                            value: categoryCounts['uncategorized'] || 0
-                          }])}
-                  cx="50%"
-                  cy="50%"
-                          labelLine={{
-                            stroke: '#888',
-                            strokeWidth: 1
-                          }}
-                          outerRadius={110}
-                  fill="#8884d8"
-                  dataKey="value"
-                          nameKey="name"
-                          label={({ name, percent }) => {
-                            // Limitar o comprimento do nome se for muito longo
-                            const shortName = name.length > 10 ? name.substring(0, 10) + '...' : name;
-                            return `${shortName}: ${(percent * 100).toFixed(0)}%`;
-                          }}
-                        >
-                          {categories.map((category, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                          <Cell key="cell-uncategorized" fill="#718096" />
-                </Pie>
-                        <Tooltip formatter={(value) => [`${value} produtos`, 'Quantidade']} />
-              </PieChart>
-            </ResponsiveContainer>
-                  </div>
-          </CardContent>
-        </Card>
-
-              <Card>
-          <CardHeader>
-                  <CardTitle className="flex items-center justify-between text-base">
-                    <span>Tendência de Estoque</span>
-                  </CardTitle>
-            <CardDescription>
-                    Análise da tendência de estoque nos últimos 7 dias
-            </CardDescription>
-          </CardHeader>
-                <CardContent>
-                  <div className="h-[350px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart
-                        data={chartData}
-                        margin={{ top: 20, right: 30, left: 20, bottom: 10 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#444444" />
-                        <XAxis dataKey="name" stroke="#888888" />
-                        <YAxis stroke="#888888" />
-                <Tooltip
-                          contentStyle={{ backgroundColor: '#1e1e1e', border: '1px solid #333' }} 
-                          itemStyle={{ color: '#fff' }}
-                        />
-                        <Legend wrapperStyle={{ paddingTop: '10px' }} />
-                        <Line 
-                          type="monotone" 
-                          dataKey="entradas" 
-                          name="Entradas" 
-                          stroke="#22c55e" 
-                          activeDot={{ r: 8 }} 
-                          strokeWidth={2}
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="saidas" 
-                          name="Saídas" 
-                          stroke="#3b82f6" 
-                          activeDot={{ r: 8 }} 
-                          strokeWidth={2}
-                        />
-                      </LineChart>
-            </ResponsiveContainer>
-                  </div>
-          </CardContent>
-        </Card>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-              <Card>
-          <CardHeader>
-                  <CardTitle className="flex items-center justify-between text-base">
-                    <span>Status de Estoque dos Produtos</span>
-                  </CardTitle>
-            <CardDescription>
-                    Análise da distribuição de produtos por status de estoque
-            </CardDescription>
-          </CardHeader>
-                <CardContent>
-                  <div className="h-[350px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                        data={[
-                          {
-                            name: 'Status de Estoque',
-                            crítico: criticalProducts.length,
-                            baixo: lowProducts.length,
-                            normal: products.length - lowStockCount
-                          }
-                        ]}
-                        margin={{ top: 20, right: 30, left: 20, bottom: 10 }}
-                        layout="vertical"
-                      >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#444444" />
-                        <XAxis type="number" stroke="#888888" />
-                        <YAxis dataKey="name" type="category" stroke="#888888" hide />
-                <Tooltip
-                          contentStyle={{ backgroundColor: '#1e1e1e', border: '1px solid #333' }} 
-                          itemStyle={{ color: '#fff' }}
-                        />
-                        <Legend wrapperStyle={{ paddingTop: '10px' }} />
-                        <Bar dataKey="crítico" name="Crítico" fill="#ef4444" radius={[4, 4, 4, 4]} />
-                        <Bar dataKey="baixo" name="Baixo" fill="#f59e0b" radius={[4, 4, 4, 4]} />
-                        <Bar dataKey="normal" name="Normal" fill="#22c55e" radius={[4, 4, 4, 4]} />
-              </BarChart>
-            </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-              <Card>
-          <CardHeader>
-                  <CardTitle className="flex items-center justify-between text-base">
-                    <span>Produtos Mais Movimentados</span>
-                  </CardTitle>
-            <CardDescription>
-                    Top 5 produtos com maior número de movimentações
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-                  {/* Calcular produtos mais movimentados */}
-                  {(() => {
-                    // Agrupar movimentações por produto
-                    const movementsByProduct: Record<string, { productId: string, count: number, name: string }> = {};
-                    
-                    movements.forEach(movement => {
-                      if (!movementsByProduct[movement.product_id]) {
-                        const product = products.find(p => p.id === movement.product_id);
-                        movementsByProduct[movement.product_id] = {
-                          productId: movement.product_id,
-                          count: 0,
-                          name: product ? product.name : 'Produto não encontrado'
-                        };
-                      }
-                      movementsByProduct[movement.product_id].count++;
-                    });
-                    
-                    // Converter para array e ordenar
-                    const topProducts = Object.values(movementsByProduct)
-                      .sort((a, b) => b.count - a.count)
-                      .slice(0, 5);
-                    
-                    return (
-                      <div className="h-[350px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                            data={topProducts.map(product => ({
-                              name: product.name.length > 20 ? product.name.substring(0, 20) + '...' : product.name,
-                              movimentações: product.count
-                            }))}
-                            margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" stroke="#444444" />
-                            <XAxis 
-                              dataKey="name" 
-                              stroke="#888888" 
-                              angle={-45} 
-                              textAnchor="end" 
-                              height={80} 
-                              tick={{ fontSize: 12 }}
-                            />
-                            <YAxis stroke="#888888" />
-                <Tooltip
-                              contentStyle={{ backgroundColor: '#1e1e1e', border: '1px solid #333' }} 
-                              itemStyle={{ color: '#fff' }}
-                            />
-                            <Bar dataKey="movimentações" name="Movimentações" fill="#8884d8" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-                  </div>
-                    );
-                  })()}
-          </CardContent>
-        </Card>
+        </div>
       </div>
-
-
-      </div>
-        </TabsContent>
-      </Tabs>
     </div>
   );
 };

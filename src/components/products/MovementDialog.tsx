@@ -187,131 +187,168 @@ const MovementDialog = ({ product, type, open, onOpenChange }: MovementDialogPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] p-0 gap-0 w-[95vw] overflow-hidden">
-        <DialogHeader className="p-4 sm:p-6 pb-2 sm:pb-4">
-          <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
-            <ArrowDownUp className="h-5 w-5" />
-            {type === 'entrada' ? 'Registrar Entrada' : 'Registrar Saída'}
-          </DialogTitle>
-          <DialogDescription className="text-sm">
+      <DialogContent className="sm:max-w-[500px] p-0 gap-0 w-[95vw] overflow-hidden border-none bg-background">
+        {/* Cabeçalho colorido baseado no tipo */}
+        <div className={`p-6 flex items-center gap-3 ${
+          type === 'entrada' 
+            ? 'bg-primary text-primary-foreground' 
+            : 'bg-blue-600 text-white'
+        }`}>
+          <div className={`rounded-full p-2 bg-white/20`}>
             {type === 'entrada' 
-              ? 'Registre a entrada de produtos no estoque.' 
-              : 'Registre a saída de produtos do estoque.'}
-          </DialogDescription>
-        </DialogHeader>
+              ? <ArrowDownUp className="h-5 w-5" /> 
+              : <ArrowDownUp className="h-5 w-5" />
+            }
+          </div>
+          <div>
+            <DialogTitle className="text-xl font-bold">
+              {type === 'entrada' ? 'Registrar Entrada' : 'Registrar Saída'}
+            </DialogTitle>
+            <DialogDescription className="text-sm mt-1 text-white/80">
+              {type === 'entrada' 
+                ? 'Registre a entrada de produtos no estoque.' 
+                : 'Registre a saída de produtos do estoque.'}
+            </DialogDescription>
+          </div>
+        </div>
 
+        {/* Detalhes do produto */}
         {product ? (
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-0">
-              <div className="p-4 sm:p-6 pt-2 sm:pt-4 space-y-4">
-                <div className="p-3 sm:p-4 border rounded-md bg-muted/40 flex items-start gap-3">
-                  <Package className="h-5 w-5 mt-1 text-muted-foreground shrink-0" />
-                  <div className="space-y-1">
-                    <div className="font-medium text-sm sm:text-base line-clamp-1">{product.name}</div>
-                    <div className="text-xs text-muted-foreground font-mono">{product.code}</div>
-                    {product.description && (
-                      <div className="text-xs text-muted-foreground line-clamp-2">{product.description}</div>
-                    )}
-                  </div>
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="quantity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Quantidade ({product.unit})</FormLabel>
-                      <FormControl>
-                        <Input type="number" step="0.01" min="0.01" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {type === 'saida' && (
-                  <FormField
-                    control={form.control}
-                    name="employee_id"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center">
-                          Colaborador Responsável <span className="text-destructive ml-1">*</span>
-                        </FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione o colaborador" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {activeEmployees.length > 0 ? (
-                              activeEmployees.map((employee) => (
-                                <SelectItem key={employee.id} value={employee.id}>
-                                  {employee.name} ({employee.code})
-                                </SelectItem>
-                              ))
-                            ) : (
-                              <SelectItem value="none" disabled>
-                                Não há colaboradores cadastrados
-                              </SelectItem>
-                            )}
-                          </SelectContent>
-                        </Select>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          Obrigatório para saídas de produtos
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-
-                <FormField
-                  control={form.control}
-                  name="notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Observações (opcional)</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Detalhes adicionais sobre esta movimentação" 
-                          className="resize-none"
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+          <div className="px-6 py-4 border-b flex items-center gap-3">
+            <div className="bg-muted/50 p-2 rounded-md">
+              <Package className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <div className="flex-1">
+              <p className="font-medium">{product.name}</p>
+              <div className="flex items-center flex-wrap gap-2 mt-1">
+                <span className="text-xs bg-secondary/40 dark:bg-secondary/20 px-1.5 py-0.5 rounded border border-border/50 font-mono max-w-[150px] truncate">
+                  {product.code}
+                </span>
+                <span className="text-xs px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400 font-medium">
+                  Unidade: {product.unit}
+                </span>
               </div>
-
-              <DialogFooter className="p-4 sm:p-6 border-t">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => onOpenChange(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button 
-                  type="submit" 
-                  className={type === 'entrada' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Enviando...' : type === 'entrada' ? 'Registrar Entrada' : 'Registrar Saída'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+            </div>
+          </div>
         ) : (
-          <div className="p-6 flex flex-col items-center justify-center h-[200px]">
-            <Package className="h-10 w-10 mb-4 text-muted-foreground" />
-            <p className="text-muted-foreground text-center">
-              Nenhum produto selecionado.
-            </p>
+          <div className="px-6 py-4 border-b">
+            <div className="p-3 rounded-md bg-destructive/10 text-center">
+              <span className="text-sm text-destructive font-medium">Nenhum produto selecionado</span>
+            </div>
           </div>
         )}
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="px-6 py-4">
+            <div className="space-y-5">
+              {/* Campo de quantidade */}
+              <FormField
+                control={form.control}
+                name="quantity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium">
+                      Quantidade ({product?.unit || 'unidade'})
+                    </FormLabel>
+                    <FormControl>
+                      <div className="flex rounded-md overflow-hidden border border-input focus-within:ring-2 focus-within:ring-ring/70 focus-within:border-accent/50 transition-all duration-200">
+                        <Input 
+                          type="number"
+                          min="1" 
+                          step="1" 
+                          {...field} 
+                          className="text-right border-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0 rounded-none" 
+                        />
+                        <div className="bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center px-3 text-sm font-medium text-indigo-700 dark:text-indigo-400 border-l border-input">
+                          {product?.unit || 'unidade(s)'}
+                        </div>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Campo de colaborador (apenas para saída) */}
+              {type === 'saida' && (
+                <FormField
+                  control={form.control}
+                  name="employee_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">
+                        Colaborador Responsável <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="h-[42px]">
+                            <SelectValue placeholder="Selecione um colaborador" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {activeEmployees.length === 0 ? (
+                            <SelectItem value="empty" disabled>
+                              Nenhum colaborador cadastrado
+                            </SelectItem>
+                          ) : (
+                            activeEmployees.map((employee) => (
+                              <SelectItem key={employee.id} value={employee.id}>
+                                {employee.name} {employee.code && `(${employee.code})`}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {/* Campo de observações */}
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium">
+                      Observações
+                    </FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Informações adicionais sobre esta movimentação"
+                        className="resize-none min-h-[80px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Rodapé com botão de ação */}
+            <div className="mt-8 flex justify-end">
+              <Button 
+                type="submit" 
+                disabled={isSubmitting || !product}
+                className={`w-full ${
+                  type === 'entrada' 
+                    ? '' 
+                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                }`}
+                variant={type === 'entrada' ? 'default' : 'custom-blue'}
+              >
+                {isSubmitting 
+                  ? "Processando..." 
+                  : type === 'entrada' 
+                    ? "Registrar Entrada" 
+                    : "Registrar Saída"
+                }
+              </Button>
+            </div>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

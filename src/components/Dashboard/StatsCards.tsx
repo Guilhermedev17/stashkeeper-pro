@@ -41,18 +41,18 @@ const StatCard = ({ title, value, description, icon, trend }: StatCardProps) => 
   };
 
   return (
-    <Card className="overflow-hidden card-hover border-0">
+    <Card className="overflow-hidden card-hover border-0 w-full">
       <div className={`absolute inset-0 bg-gradient-to-br ${getGradient()} opacity-[0.08] rounded-xl`}></div>
-      <CardContent className="p-6 relative">
+      <CardContent className="p-4 sm:p-6 relative flex flex-col justify-between h-full">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-medium text-foreground">{title}</h3>
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-background dark:bg-card shadow-sm">
+          <div className="flex aspect-square h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-background dark:bg-card shadow-sm">
             {getIcon()}
           </div>
         </div>
         <div className="mt-4">
           <div className="flex items-baseline gap-1">
-            <span className="text-3xl font-bold">{value}</span>
+            <span className="text-2xl sm:text-3xl font-bold">{value}</span>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">{description}</p>
         </div>
@@ -63,7 +63,7 @@ const StatCard = ({ title, value, description, icon, trend }: StatCardProps) => 
 
 export const StatsCards = () => {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full">
       <StatCard
         title="Total de Produtos"
         value="6"

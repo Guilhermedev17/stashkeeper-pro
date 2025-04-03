@@ -92,6 +92,32 @@ const Products = () => {
 
   const { categories } = useSupabaseCategories();
 
+  // Verificar parâmetros da URL ao carregar a página
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const statusParam = params.get('status');
+    
+    if (statusParam && ['all', 'normal', 'baixo', 'critico'].includes(statusParam)) {
+      setSelectedStatus(statusParam);
+    }
+    
+    const productParam = params.get('product');
+    if (productParam) {
+      const product = products.find(p => p.id === productParam);
+      if (product) {
+        setSelectedProduct(product);
+      }
+    }
+    
+    const typeParam = params.get('type');
+    if (typeParam === 'entrada' || typeParam === 'saida') {
+      setMovementType(typeParam);
+      if (productParam && selectedProduct) {
+        setIsMovementDialogOpen(true);
+      }
+    }
+  }, [products]);
+
   // Load products from Supabase
   useEffect(() => {
     if (supabaseProducts.length > 0) {
@@ -274,7 +300,7 @@ const Products = () => {
   };
 
   return (
-    <div className="px-2 sm:px-4 py-4 sm:py-6">
+    <div className="zoom-stable w-full h-full">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Produtos</h1>
@@ -289,7 +315,7 @@ const Products = () => {
         </div>
       </div>
 
-      <div className="mb-6">
+      <div className="mb-6 w-full">
         <ProductFilters
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
@@ -301,7 +327,7 @@ const Products = () => {
         />
       </div>
 
-      <div className="rounded-md border overflow-hidden">
+      <div className="rounded-md border overflow-hidden w-full">
         <ProductList
           products={filteredProducts}
           getCategoryName={getCategoryName}

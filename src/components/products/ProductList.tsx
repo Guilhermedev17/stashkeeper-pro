@@ -53,9 +53,9 @@ const ProductList: React.FC<ProductListProps> = ({
   };
   
   return (
-    <div className="rounded-md overflow-hidden">
-      <div className="overflow-x-auto">
-        <Table>
+    <div className="rounded-md overflow-hidden w-full zoom-stable">
+      <div className="overflow-x-auto w-full">
+        <Table className="w-full">
           <TableHeader className="bg-secondary/50">
             <TableRow>
               <TableHead className="font-medium w-[80px] sm:w-[100px]">Código</TableHead>
@@ -79,7 +79,7 @@ const ProductList: React.FC<ProductListProps> = ({
               </TableRow>
             ) : (
               products.map(product => (
-                <TableRow key={product.id}>
+                <TableRow key={product.id} className="hover:bg-muted/30">
                   <TableCell className="font-mono text-xs px-2 sm:px-4 py-2 sm:py-4">
                     {product.code}
                   </TableCell>

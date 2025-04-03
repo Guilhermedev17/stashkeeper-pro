@@ -72,14 +72,34 @@
     @apply border-border;
   }
   
+  html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+  }
+  
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
     font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    min-height: 100vh;
+    min-height: 100dvh;
   }
   
   h1, h2, h3, h4, h5, h6 {
     @apply font-medium tracking-tight;
+  }
+  
+  /* Melhorar o comportamento responsivo */
+  html, body, #root {
+    @apply h-full min-h-screen w-full overflow-x-hidden;
+  }
+  
+  /* Manter o layout estável com zoom */
+  @media screen and (min-width: 768px) {
+    html {
+      /* Prevenir ajuste automático de texto em iOS */
+      -webkit-text-size-adjust: 100%;
+    }
   }
 }
 
@@ -138,5 +158,36 @@
   
   .animation-delay-700 {
     animation-delay: 700ms;
+  }
+  
+  /* Utilidades para layout fluido */
+  .fluid-container {
+    @apply w-full max-w-full px-2 sm:px-4 md:px-6 mx-auto;
+  }
+  
+  .responsive-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6;
+  }
+  
+  .responsive-card {
+    @apply h-full w-full flex flex-col;
+  }
+  
+  .stretch-full {
+    @apply w-full h-full min-h-full;
+  }
+  
+  .flex-responsive {
+    @apply flex flex-col sm:flex-row;
+  }
+  
+  .chart-container {
+    @apply w-full h-full min-h-[300px];
+  }
+  
+  /* Estabilidade com zoom */
+  .zoom-stable {
+    transform-origin: 0 0;
+    width: 100%;
   }
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from '@/components/ui/button';
@@ -87,6 +87,35 @@ const Movements = () => {
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [isNewMovementDialogOpen, setIsNewMovementDialogOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<'predefined' | 'custom'>('predefined');
+
+  // Verificar parâmetros da URL ao carregar a página
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const typeParam = params.get('type');
+    
+    if (typeParam === 'entrada' || typeParam === 'saida') {
+      setMovementType(typeParam);
+      
+      // Verificar se devemos abrir o diálogo de nova movimentação
+      const openDialog = params.get('open') === 'true';
+      if (openDialog) {
+        setIsNewMovementDialogOpen(true);
+      }
+    }
+    
+    const productParam = params.get('product');
+    if (productParam) {
+      const product = products.find(p => p.id === productParam);
+      if (product) {
+        setSelectedProduct(product);
+        
+        // Se temos um produto e um tipo, abrimos o diálogo diretamente
+        if (typeParam && (typeParam === 'entrada' || typeParam === 'saida')) {
+          setIsDialogOpen(true);
+        }
+      }
+    }
+  }, [products]);
 
   const handleOpenDialog = (product: ProductItem, type: 'entrada' | 'saida') => {
     setSelectedProduct(product);
@@ -506,24 +535,6 @@ const MovementProductSelector = ({
   const [movementType, setMovementType] = useState<'entrada' | 'saida'>('entrada');
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [selectedType, setSelectedType] = useState('all');
-  const [date, setDate] = useState<Date | undefined>(undefined);
-  const [dateRange, setDateRange] = useState<'day' | 'week' | 'month' | 'year' | undefined>(undefined);
-
-  const handleDateSelect = (selectedDate: Date | undefined) => {
-    setDate(selectedDate);
-    setDateRange(undefined);
-  };
-
-  const handleDateRangeSelect = (range: 'day' | 'week' | 'month' | 'year') => {
-    setDateRange(range);
-    setDate(undefined);
-  };
-
-  const clearDateFilter = () => {
-    setDate(undefined);
-    setDateRange(undefined);
-  };
   
   const filteredProducts = products.filter(product => {
     const matchesSearch = 
@@ -545,132 +556,134 @@ const MovementProductSelector = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] p-0 gap-0 w-[95vw] max-h-[90vh] overflow-hidden">
-        <DialogHeader className="p-4 sm:p-6 pb-2">
-          <DialogTitle className="text-lg sm:text-xl">Registrar Movimentação</DialogTitle>
-          <DialogDescription className="text-sm">
-            Selecione o produto e o tipo de movimentação a ser registrada.
-          </DialogDescription>
-        </DialogHeader>
-
-        <Tabs defaultValue="entrada" onValueChange={(value) => setMovementType(value as 'entrada' | 'saida')} className="px-4 sm:px-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="entrada">Entrada</TabsTrigger>
-            <TabsTrigger value="saida">Saída</TabsTrigger>
-          </TabsList>
-        </Tabs>
-
-        <div className="p-4 sm:p-6 pt-4 space-y-4 overflow-y-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="relative sm:col-span-2">
-              <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar produto..."
-                className="pl-8"
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-              />
-            </div>
-            
-            <Select 
-              value={categoryFilter} 
-              onValueChange={setCategoryFilter}
-            >
-              <SelectTrigger className="text-xs sm:text-sm">
-                <SelectValue placeholder="Categoria" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas Categorias</SelectItem>
-                {categories.map(category => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          
-            <Select 
-          value={selectedType} 
-          onValueChange={setSelectedType}
-        >
-          <SelectTrigger className="w-full text-xs sm:text-sm">
-            <SelectValue placeholder="Filtrar por Tipo" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os Tipos</SelectItem>
-            <SelectItem value="entrada">Entradas</SelectItem>
-            <SelectItem value="saida">Saídas</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <DateRangeFilter
-              date={date}
-              dateRange={dateRange}
-              onDateSelect={handleDateSelect}
-              onDateRangeSelect={handleDateRangeSelect}
-              onClearFilter={clearDateFilter}
-              placeholder="Filtrar por Data"
-            />
+      <DialogContent className="sm:max-w-[620px] p-0 w-[95vw] max-h-[90vh] overflow-hidden bg-background border-none shadow-xl">
+        <div className="flex flex-col h-full">
+          {/* Cabeçalho */}
+          <div className="p-6 pb-3">
+            <DialogTitle className="text-xl font-bold">
+              Registrar Movimentação
+            </DialogTitle>
+            <DialogDescription className="text-sm mt-1">
+              Selecione o produto e o tipo de movimentação a ser registrada.
+            </DialogDescription>
           </div>
 
-          <div className="border rounded-md overflow-hidden">
-            <div className="max-h-[300px] overflow-y-auto">
-              <Table>
-                <TableHeader className="sticky top-0 bg-background">
-                  <TableRow>
-                    <TableHead className="px-2 sm:px-4 py-2">Produto</TableHead>
-                    <TableHead className="hidden sm:table-cell px-2 sm:px-4 py-2">Categoria</TableHead>
-                    <TableHead className="text-center w-[60px] px-2 sm:px-4 py-2">Estoque</TableHead>
-                    <TableHead className="w-[80px] px-2 sm:px-4 py-2"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+          {/* Abas de tipo de movimentação */}
+          <Tabs 
+            defaultValue="entrada" 
+            onValueChange={(value) => setMovementType(value as 'entrada' | 'saida')} 
+            className="p-0 flex-1 flex flex-col"
+          >
+            <div className="px-6 pt-2">
+              <TabsList className="grid w-full grid-cols-2 h-10 p-0.5">
+                <TabsTrigger 
+                  value="entrada" 
+                  className="text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
+                  Entrada
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="saida" 
+                  className="text-sm font-medium data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                >
+                  Saída
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            {/* Filtros e listagem de produtos */}
+            <div className="px-6 py-4 flex-1 flex flex-col overflow-hidden">
+              <div className="space-y-4 mb-4">
+                {/* Campo de busca */}
+                <div className="relative">
+                  <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por nome ou código do produto..."
+                    className="pl-9 w-full h-10"
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                  />
+                </div>
+
+                {/* Seletor de categoria */}
+                <Select 
+                  value={categoryFilter} 
+                  onValueChange={setCategoryFilter}
+                >
+                  <SelectTrigger className="w-full h-10">
+                    <SelectValue placeholder="Filtrar por categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as categorias</SelectItem>
+                    {categories.map(category => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Lista de produtos */}
+              <div className="border rounded-md overflow-hidden flex-1 min-h-[300px] bg-card">
+                <div className="h-full overflow-y-auto max-h-[350px]">
                   {filteredProducts.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center py-4 px-2 sm:px-4">
-                        Nenhum produto encontrado
-                      </TableCell>
-                    </TableRow>
+                    <div className="flex flex-col items-center justify-center h-full py-8 text-center px-4">
+                      <Package className="h-10 w-10 text-muted-foreground mb-2 opacity-50" />
+                      <p className="text-muted-foreground font-medium">Nenhum produto encontrado</p>
+                      <p className="text-xs text-muted-foreground mt-1">Tente ajustar os filtros ou adicione produtos ao estoque</p>
+                    </div>
                   ) : (
-                    filteredProducts.map(product => (
-                      <TableRow key={product.id}>
-                        <TableCell className="px-2 sm:px-4 py-2">
-                          <div className="font-medium text-sm line-clamp-1">{product.name}</div>
-                          <div className="text-xs bg-secondary/40 dark:bg-secondary/20 px-2 py-0.5 rounded border border-border/50 inline-block mt-1 font-mono">
-                            {product.code}
-                          </div>
-                          <div className="text-xs text-muted-foreground sm:hidden mt-1 line-clamp-1">
-                            {getCategoryName(product.category_id)}
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell px-2 sm:px-4 py-2">
-                          {getCategoryName(product.category_id)}
-                        </TableCell>
-                        <TableCell className="text-center px-2 sm:px-4 py-2">
-                          <span className={`px-1.5 py-0.5 rounded text-xs ${
-                            product.quantity <= product.min_quantity 
-                              ? 'bg-destructive/10 text-destructive' 
-                              : 'bg-primary/10 text-primary'
-                          }`}>
-                            {product.quantity}
-                          </span>
-                        </TableCell>
-                        <TableCell className="px-2 sm:px-4 py-2">
-                          <Button
-                            size="sm" 
-                            onClick={() => onSelectProduct(product, movementType)}
-                            className="w-full text-xs whitespace-nowrap"
-                          >
-                            Selecionar
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                    <table className="w-full">
+                      <thead className="sticky top-0 bg-muted/50 backdrop-blur-sm">
+                        <tr>
+                          <th className="text-left text-xs font-medium text-muted-foreground px-4 py-2.5 w-[50%]">Produto</th>
+                          <th className="text-center text-xs font-medium text-muted-foreground px-2 py-2.5 w-[20%]">Estoque</th>
+                          <th className="text-right text-xs font-medium text-muted-foreground px-4 py-2.5 w-[30%]"></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {filteredProducts.map(product => (
+                          <tr key={product.id} className="hover:bg-muted/50 transition-colors">
+                            <td className="px-4 py-3">
+                              <div className="flex flex-col gap-1">
+                                <div className="font-medium text-sm line-clamp-1">{product.name}</div>
+                                <div className="flex items-center flex-wrap gap-1 sm:gap-2">
+                                  <span className="text-xs px-1.5 py-0.5 rounded bg-muted border border-muted-foreground/20 font-mono inline-block max-w-[100px] truncate">
+                                    {product.code}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {getCategoryName(product.category_id)}
+                                  </span>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="text-center px-2 py-3">
+                              <div className={`inline-flex justify-center min-w-8 px-2.5 py-1 rounded-full text-sm font-medium ${
+                                product.quantity <= product.min_quantity 
+                                  ? 'bg-destructive/10 text-destructive' 
+                                  : 'bg-primary/10 text-primary'
+                              }`}>
+                                {product.quantity}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <Button
+                                variant={movementType === 'entrada' ? 'default' : 'custom-blue'}
+                                onClick={() => onSelectProduct(product, movementType)}
+                              >
+                                Selecionar
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   )}
-                </TableBody>
-              </Table>
+                </div>
+              </div>
             </div>
-          </div>
+          </Tabs>
         </div>
       </DialogContent>
     </Dialog>
