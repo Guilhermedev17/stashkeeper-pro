@@ -149,15 +149,14 @@ export function ModernAddProductDialog({
                                 <SelectValue placeholder="Selecione uma unidade" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="unidade">Unidade</SelectItem>
-                                <SelectItem value="kg">Kg</SelectItem>
-                                <SelectItem value="g">g</SelectItem>
-                                <SelectItem value="ml">ml</SelectItem>
-                                <SelectItem value="l">L</SelectItem>
-                                <SelectItem value="m">m</SelectItem>
-                                <SelectItem value="cm">cm</SelectItem>
-                                <SelectItem value="caixa">Caixa</SelectItem>
-                                <SelectItem value="pacote">Pacote</SelectItem>
+                                <SelectItem value="un">UNIDADE</SelectItem>
+                                <SelectItem value="kg">KG</SelectItem>
+                                <SelectItem value="g">GRAMAS</SelectItem>
+                                <SelectItem value="ml">ML</SelectItem>
+                                <SelectItem value="cx">CAIXA</SelectItem>
+                                <SelectItem value="pct">PACOTE</SelectItem>
+                                <SelectItem value="rl">ROLO</SelectItem>
+                                <SelectItem value="par">PAR</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>

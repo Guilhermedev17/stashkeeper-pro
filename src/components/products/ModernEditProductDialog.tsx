@@ -86,15 +86,14 @@ export function ModernEditProductDialog({
 
     // Lista de unidades disponíveis para garantir que valores personalizados também sejam suportados
     const unitOptions = [
-        { value: "unidade", label: "Unidade" },
-        { value: "kg", label: "Kg" },
-        { value: "g", label: "g" },
-        { value: "ml", label: "ml" },
-        { value: "l", label: "L" },
-        { value: "m", label: "m" },
-        { value: "cm", label: "cm" },
-        { value: "caixa", label: "Caixa" },
-        { value: "pacote", label: "Pacote" }
+        { value: "un", label: "UNIDADE" },
+        { value: "kg", label: "KG" },
+        { value: "g", label: "GRAMAS" },
+        { value: "ml", label: "ML" },
+        { value: "cx", label: "CAIXA" },
+        { value: "pct", label: "PACOTE" },
+        { value: "rl", label: "ROLO" },
+        { value: "par", label: "PAR" }
     ];
 
     // Função para obter o rótulo da unidade a partir do valor

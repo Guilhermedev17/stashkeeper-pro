@@ -78,14 +78,17 @@ const ProductList: React.FC<ProductListProps> = ({
   }, []);
 
   const getUnitAbbreviation = (unit: string) => {
-    switch (unit) {
+    switch (unit.toLowerCase()) {
       case 'unidade': return 'UN';
-      case 'L': return 'L';
       case 'kg': return 'KG';
+      case 'g':
+      case 'gramas': return 'G';
+      case 'ml': return 'ML';
+      case 'l': return 'L';
       case 'caixa': return 'CX';
       case 'pacote': return 'PCT';
       case 'rolo': return 'RL';
-      case 'metros': return 'MT';
+      case 'par': return 'PAR';
       default: return unit.toUpperCase();
     }
   };
