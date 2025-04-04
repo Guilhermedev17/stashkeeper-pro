@@ -220,25 +220,25 @@ export function ModernMovementDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[500px] p-0 gap-0 overflow-hidden border-none">
+            <DialogContent className="sm:max-w-[500px] p-0 gap-0 overflow-hidden border-none max-h-[90vh] overflow-y-auto">
                 {/* Cabeçalho colorido baseado no tipo */}
                 <div className={cn(
-                    "p-6 flex items-center gap-3",
+                    "p-4 sm:p-6 flex items-center gap-3",
                     type === 'entrada'
                         ? "bg-primary text-primary-foreground"
                         : "bg-blue-600 text-white"
                 )}>
-                    <div className="rounded-full p-2 bg-white/20">
+                    <div className="rounded-full p-1.5 sm:p-2 bg-white/20">
                         {type === 'entrada'
-                            ? <ArrowDown className="h-5 w-5" />
-                            : <ArrowUp className="h-5 w-5" />
+                            ? <ArrowDown className="h-4 w-4 sm:h-5 sm:w-5" />
+                            : <ArrowUp className="h-4 w-4 sm:h-5 sm:w-5" />
                         }
                     </div>
                     <div>
-                        <DialogTitle className="text-xl font-semibold">
+                        <DialogTitle className="text-lg sm:text-xl font-semibold">
                             Registrar {type === 'entrada' ? 'Entrada' : 'Saída'}
                         </DialogTitle>
-                        <DialogDescription className="text-sm mt-1 text-white/80">
+                        <DialogDescription className="text-xs sm:text-sm mt-1 text-white/80">
                             {type === 'entrada'
                                 ? 'Registre a entrada de produtos no estoque.'
                                 : 'Registre a saída de produtos do estoque.'}
@@ -248,13 +248,13 @@ export function ModernMovementDialog({
 
                 {/* Detalhes do produto */}
                 {product ? (
-                    <div className="px-6 py-4 border-b flex items-center gap-3 bg-background">
-                        <div className="bg-muted/50 p-2 rounded-md">
-                            <Package className="h-5 w-5 text-muted-foreground" />
+                    <div className="px-4 sm:px-6 py-3 sm:py-4 border-b flex items-center gap-2 sm:gap-3 bg-background">
+                        <div className="bg-muted/50 p-1.5 sm:p-2 rounded-md">
+                            <Package className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{product.name}</p>
-                            <div className="flex items-center gap-2 mt-1">
+                            <p className="font-medium truncate text-sm sm:text-base">{product.name}</p>
+                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-1">
                                 <Badge variant="outline" className="font-mono text-xs">
                                     {product.code}
                                 </Badge>
@@ -265,9 +265,9 @@ export function ModernMovementDialog({
                         </div>
                     </div>
                 ) : (
-                    <div className="px-6 py-4 border-b bg-background">
-                        <div className="p-3 rounded-md bg-destructive/10 text-center">
-                            <span className="text-sm text-destructive font-medium">
+                    <div className="px-4 sm:px-6 py-3 sm:py-4 border-b bg-background">
+                        <div className="p-2 sm:p-3 rounded-md bg-destructive/10 text-center">
+                            <span className="text-xs sm:text-sm text-destructive font-medium">
                                 Nenhum produto selecionado
                             </span>
                         </div>
@@ -275,14 +275,14 @@ export function ModernMovementDialog({
                 )}
 
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="p-6 bg-background space-y-6">
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="p-4 sm:p-6 bg-background space-y-4 sm:space-y-6">
                         {/* Campo de quantidade */}
                         <FormField
                             control={form.control}
                             name="quantity"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-sm font-medium">
+                                    <FormLabel className="text-xs sm:text-sm font-medium">
                                         Quantidade
                                     </FormLabel>
                                     <FormControl>
@@ -291,10 +291,11 @@ export function ModernMovementDialog({
                                                 type="number"
                                                 min="1"
                                                 step="1"
+                                                inputMode="numeric"
                                                 {...field}
-                                                className="text-right border-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0 rounded-none"
+                                                className="text-right border-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0 rounded-none text-sm"
                                             />
-                                            <div className="bg-muted flex items-center justify-center px-3 text-sm font-medium text-muted-foreground border-l">
+                                            <div className="bg-muted flex items-center justify-center px-2 sm:px-3 text-xs sm:text-sm font-medium text-muted-foreground border-l">
                                                 {product ? getFullUnitName(product.unit) : 'unidades'}
                                             </div>
                                         </div>
@@ -311,24 +312,24 @@ export function ModernMovementDialog({
                                 name="employee_id"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-sm font-medium flex items-center">
+                                        <FormLabel className="text-xs sm:text-sm font-medium flex items-center">
                                             Colaborador Responsável
                                             <span className="text-destructive ml-1">*</span>
                                         </FormLabel>
                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                                             <FormControl>
-                                                <SelectTrigger className="w-full text-sm">
+                                                <SelectTrigger className="w-full text-xs sm:text-sm">
                                                     <SelectValue placeholder="Selecione um colaborador" />
                                                 </SelectTrigger>
                                             </FormControl>
-                                            <SelectContent>
+                                            <SelectContent position="popper" className="max-h-60 overflow-auto">
                                                 {activeEmployees.length === 0 ? (
                                                     <SelectItem value="empty" disabled>
                                                         Nenhum colaborador cadastrado
                                                     </SelectItem>
                                                 ) : (
                                                     activeEmployees.map((employee) => (
-                                                        <SelectItem key={employee.id} value={employee.id} className="text-sm">
+                                                        <SelectItem key={employee.id} value={employee.id} className="text-xs sm:text-sm">
                                                             {employee.name} {employee.code && `(${employee.code})`}
                                                         </SelectItem>
                                                     ))
@@ -347,14 +348,14 @@ export function ModernMovementDialog({
                             name="notes"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-sm font-medium">
+                                    <FormLabel className="text-xs sm:text-sm font-medium">
                                         Observações
                                     </FormLabel>
                                     <FormControl>
                                         <Textarea
                                             {...field}
                                             placeholder="Informações adicionais sobre esta movimentação"
-                                            className="resize-none min-h-[80px] text-sm"
+                                            className="resize-none min-h-[60px] sm:min-h-[80px] text-xs sm:text-sm"
                                         />
                                     </FormControl>
                                     <FormMessage className="text-xs" />
@@ -362,12 +363,20 @@ export function ModernMovementDialog({
                             )}
                         />
 
-                        <div className="flex justify-end pt-2">
+                        <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => onOpenChange(false)}
+                                className="w-full sm:w-auto order-2 sm:order-1 text-xs sm:text-sm"
+                            >
+                                Cancelar
+                            </Button>
                             <Button
                                 type="submit"
                                 disabled={isSubmitting}
                                 className={cn(
-                                    "w-full",
+                                    "w-full sm:w-auto order-1 sm:order-2 text-xs sm:text-sm",
                                     type === 'entrada'
                                         ? "bg-primary hover:bg-primary/90"
                                         : "bg-blue-600 hover:bg-blue-700"

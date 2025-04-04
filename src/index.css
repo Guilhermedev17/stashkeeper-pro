@@ -393,4 +393,76 @@
       transform: translateX(100%);
     }
   }
+
+  /* Melhorias em responsividade para tabelas e layouts */
+  .mobile-scroll-container {
+    @apply overflow-x-auto -mx-4 px-4 pb-2;
+  }
+
+  .mobile-full-width {
+    width: calc(100% + 2rem);
+    margin-left: -1rem;
+    margin-right: -1rem;
+    @apply px-4;
+  }
+
+  .responsive-table {
+    @apply w-full overflow-auto;
+  }
+
+  .responsive-table table {
+    @apply w-full min-w-[640px];
+  }
+
+  .responsive-columns {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4;
+  }
+
+  /* Ajustes de elementos da UI para telas pequenas */
+  .mobile-full {
+    @apply flex flex-col sm:flex-row;
+  }
+
+  .mobile-stack {
+    @apply flex-col sm:flex-row;
+  }
+
+  .mobile-reverse {
+    @apply flex-col-reverse sm:flex-row;
+  }
+
+  .mobile-full-height {
+    @apply h-[calc(100vh-4rem)];
+  }
+
+  .responsive-p {
+    @apply px-2 py-3 sm:p-4;
+  }
+
+  .responsive-gap {
+    @apply gap-2 sm:gap-4;
+  }
+
+  /* Fix para inputs em telas pequenas */
+  input,
+  select,
+  textarea {
+    @apply max-w-full;
+    font-size: 16px !important;
+    /* Evita zoom automático em iOS */
+  }
+
+  /* Melhorias para botões em mobile */
+  .mobile-btn-group {
+    @apply w-full flex flex-col sm:flex-row sm:w-auto gap-2;
+  }
+
+  .mobile-btn-group>* {
+    @apply w-full sm:w-auto;
+  }
+
+  /* Container responsivo com padding adequado */
+  .mobile-container {
+    @apply w-full px-2 sm:px-4 md:px-6 py-2 sm:py-4;
+  }
 }

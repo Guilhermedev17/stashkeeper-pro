@@ -17,6 +17,7 @@ import ImportExcelButton from '@/components/ImportExcelButton';
 import PageWrapper from '@/components/layout/PageWrapper';
 import { ModernHeader, ModernFilters, ModernTable } from '@/components/layout/modern';
 import PageLoading from '@/components/PageLoading';
+import ResponsiveTable from '@/components/ResponsiveTable';
 
 // Interface para o EditProductDialog
 interface EditProduct {
@@ -406,12 +407,12 @@ const Products = () => {
   return (
     <PageWrapper className="flex flex-col p-0">
       <div className="flex-1 w-full overflow-auto">
-        <div className="w-full px-2 sm:px-4 py-4 sm:py-6">
+        <div className="mobile-container">
           <ModernHeader
             title="Produtos"
             subtitle="Visualize e gerencie todos os seus produtos."
             actions={
-              <>
+              <div className="mobile-btn-group">
                 <ImportExcelButton />
                 {!selectMode && (
                   <Button
@@ -423,36 +424,38 @@ const Products = () => {
                     <PlusSquare className="h-4 w-4" /> Novo Produto
                   </Button>
                 )}
-              </>
+              </div>
             }
           />
 
-          <ModernFilters>
-            <ModernProductFilters
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              categories={categories}
-              selectedCategory={selectedCategory}
-              onCategoryChange={setSelectedCategory}
-              selectedStatus={selectedStatus}
-              onStatusChange={setSelectedStatus}
-              selectMode={selectMode}
-              onToggleSelectMode={toggleSelectMode}
-            />
-          </ModernFilters>
+          <div className="responsive-gap">
+            <ModernFilters>
+              <ModernProductFilters
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                categories={categories}
+                selectedCategory={selectedCategory}
+                onCategoryChange={setSelectedCategory}
+                selectedStatus={selectedStatus}
+                onStatusChange={setSelectedStatus}
+                selectMode={selectMode}
+                onToggleSelectMode={toggleSelectMode}
+              />
+            </ModernFilters>
 
-          <ModernTable>
-            <ModernProductList
-              products={filteredProducts}
-              getCategoryName={getCategoryName}
-              onEdit={handleEditClick}
-              onDelete={handleDeleteClick}
-              onDeleteMultiple={handleDeleteMultiple}
-              onMovement={handleMovementClick}
-              selectMode={selectMode}
-              onToggleSelectMode={toggleSelectMode}
-            />
-          </ModernTable>
+            <div className="responsive-table">
+              <ModernProductList
+                products={filteredProducts}
+                getCategoryName={getCategoryName}
+                onEdit={handleEditClick}
+                onDelete={handleDeleteClick}
+                onDeleteMultiple={handleDeleteMultiple}
+                onMovement={handleMovementClick}
+                selectMode={selectMode}
+                onToggleSelectMode={toggleSelectMode}
+              />
+            </div>
+          </div>
         </div>
       </div>
 

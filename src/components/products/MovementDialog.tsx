@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { ArrowDownUp, ArrowDown, ArrowUp, Package, User } from 'lucide-react';
+import { ArrowDownUp, ArrowDown, ArrowUp, Package, User, PlusCircle, MinusCircle, Loader2, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import {
@@ -30,6 +30,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { Label } from '@/components/ui/label';
 
 export interface Product {
   id: string;
@@ -37,6 +38,8 @@ export interface Product {
   name: string;
   description: string;
   unit: string;
+  quantity: number;
+  categoryName: string;
 }
 
 // Função para obter o nome completo da unidade
@@ -66,6 +69,8 @@ const formSchema = z.object({
   quantity: z.coerce.number().positive({ message: 'A quantidade deve ser maior que zero' }),
   notes: z.string().optional(),
   employee_id: z.string().optional(),
+  reason: z.string().optional(),
+  customReason: z.string().optional(),
 });
 
 // Tipo condicional para tornar employee_id obrigatório para saídas
@@ -109,6 +114,8 @@ const MovementDialog = ({ product, type, open, onOpenChange }: MovementDialogPro
       quantity: 1,
       notes: '',
       employee_id: '',
+      reason: '',
+      customReason: '',
     },
   });
 
@@ -119,6 +126,8 @@ const MovementDialog = ({ product, type, open, onOpenChange }: MovementDialogPro
         quantity: 1,
         notes: '',
         employee_id: '',
+        reason: '',
+        customReason: '',
       });
 
       // Revalidar o formulário quando o tipo muda para aplicar a validação condicional
@@ -211,164 +220,171 @@ const MovementDialog = ({ product, type, open, onOpenChange }: MovementDialogPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px] p-0 gap-0 overflow-hidden border-none">
-        {/* Cabeçalho colorido baseado no tipo */}
-        <div className={cn(
-          "p-6 flex items-center gap-3",
-          type === 'entrada'
-            ? "bg-primary text-primary-foreground"
-            : "bg-blue-600 text-white"
-        )}>
-          <div className="rounded-full p-2 bg-white/20">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-auto p-4 sm:p-6">
+        <DialogHeader>
+          <DialogTitle className="text-lg sm:text-xl flex items-center gap-2">
             {type === 'entrada'
-              ? <ArrowDown className="h-5 w-5" />
-              : <ArrowUp className="h-5 w-5" />
+              ? <PlusCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
+              : <MinusCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-500" />
             }
-          </div>
-          <div>
-            <DialogTitle className="text-xl font-semibold">
-              Registrar {type === 'entrada' ? 'Entrada' : 'Saída'}
-            </DialogTitle>
-            <DialogDescription className="text-sm mt-1 text-white/80">
-              {type === 'entrada'
-                ? 'Registre a entrada de produtos no estoque.'
-                : 'Registre a saída de produtos do estoque.'}
-            </DialogDescription>
-          </div>
-        </div>
+            {type === 'entrada' ? 'Adicionar Estoque' : 'Remover Estoque'}
+          </DialogTitle>
+          <DialogDescription className="text-sm">
+            {type === 'entrada'
+              ? 'Registre a entrada de produtos no estoque.'
+              : 'Registre a saída de produtos do estoque.'
+            }
+          </DialogDescription>
+        </DialogHeader>
 
-        {/* Detalhes do produto */}
-        {product ? (
-          <div className="px-6 py-4 border-b flex items-center gap-3 bg-background">
-            <div className="bg-muted/50 p-2 rounded-md">
-              <Package className="h-5 w-5 text-muted-foreground" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium truncate">{product.name}</p>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge variant="outline" className="font-mono text-xs">
-                  {product.code}
-                </Badge>
-                <Badge variant="secondary" className="text-xs">
-                  {getFullUnitName(product.unit)}
-                </Badge>
+        <div className="py-2">
+          {product ? (
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center p-2 sm:p-3 rounded-md bg-muted">
+                <div className="flex-1 min-w-0 mb-2 sm:mb-0">
+                  <p className="font-medium text-foreground">{product.name}</p>
+                  <p className="text-sm text-muted-foreground">{product.description}</p>
+                  <div className="flex flex-wrap items-center gap-2 mt-1">
+                    <Badge variant="outline" className="text-xs">
+                      {product.code}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {product.categoryName}
+                    </span>
+                  </div>
+                </div>
+                <div className="w-full sm:w-auto text-left sm:text-right">
+                  <p className="text-sm text-muted-foreground">Estoque atual</p>
+                  <p className="font-medium">
+                    {product.quantity} {product.unit}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="quantity" className="text-sm font-medium">Quantidade</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="quantity"
+                      type="number"
+                      inputMode="numeric"
+                      min="0"
+                      value={form.watch('quantity')}
+                      onChange={(e) => form.setValue('quantity', parseFloat(e.target.value))}
+                      className="flex-1"
+                    />
+                    <div className="bg-muted text-muted-foreground px-3 py-2 rounded flex items-center text-sm">
+                      {product.unit}
+                    </div>
+                  </div>
+                  {form.formState.errors.quantity && (
+                    <p className="text-destructive text-xs sm:text-sm">
+                      {type === 'saida' && 'Quantidade não pode ser maior que o estoque disponível.'}
+                      {type !== 'saida' && 'Quantidade deve ser maior que zero.'}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="reason" className="text-sm font-medium">Motivo</Label>
+                  <Select
+                    value={form.watch('reason') as string}
+                    onValueChange={(value) => form.setValue('reason', value, { shouldValidate: true })}
+                  >
+                    <SelectTrigger id="reason" className="w-full">
+                      <SelectValue placeholder="Selecione um motivo" />
+                    </SelectTrigger>
+                    <SelectContent position="popper" className="max-h-60 overflow-auto">
+                      {type === 'entrada' ? (
+                        <>
+                          <SelectItem value="reposicao">Reposição de estoque</SelectItem>
+                          <SelectItem value="devolucao">Devolução</SelectItem>
+                          <SelectItem value="transferencia">Transferência entre unidades</SelectItem>
+                          <SelectItem value="estorno">Estorno</SelectItem>
+                          <SelectItem value="outro">Outro</SelectItem>
+                        </>
+                      ) : (
+                        <>
+                          <SelectItem value="venda">Venda</SelectItem>
+                          <SelectItem value="consumo">Consumo interno</SelectItem>
+                          <SelectItem value="perda">Perda/Extravio</SelectItem>
+                          <SelectItem value="devolucao">Devolução ao fornecedor</SelectItem>
+                          <SelectItem value="transferencia">Transferência entre unidades</SelectItem>
+                          <SelectItem value="outro">Outro</SelectItem>
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {(form.watch('reason') as string) === 'outro' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="customReason" className="text-sm font-medium">Especifique o motivo</Label>
+                    <Input
+                      id="customReason"
+                      value={form.watch('customReason') as string}
+                      onChange={(e) => form.setValue('customReason', e.target.value, { shouldValidate: true })}
+                      placeholder="Informe o motivo da movimentação"
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="notes" className="text-sm font-medium">Observações (opcional)</Label>
+                  <Textarea
+                    id="notes"
+                    value={form.watch('notes')}
+                    onChange={(e) => form.setValue('notes', e.target.value)}
+                    placeholder="Observações adicionais sobre esta movimentação"
+                    className="min-h-[80px] resize-none"
+                  />
+                </div>
               </div>
             </div>
-          </div>
-        ) : (
-          <div className="px-6 py-4 border-b bg-background">
-            <div className="p-3 rounded-md bg-destructive/10 text-center">
-              <span className="text-sm text-destructive font-medium">
-                Nenhum produto selecionado
-              </span>
+          ) : (
+            <div className="text-center py-4">
+              <p className="text-muted-foreground">Produto não encontrado.</p>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="p-6 bg-background space-y-6">
-            {/* Campo de quantidade */}
-            <FormField
-              control={form.control}
-              name="quantity"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-medium">
-                    Quantidade
-                  </FormLabel>
-                  <FormControl>
-                    <div className="flex rounded-md overflow-hidden border focus-within:ring-2 focus-within:ring-ring/70 transition-all duration-200">
-                      <Input
-                        type="number"
-                        min="1"
-                        step="1"
-                        {...field}
-                        className="text-right border-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0 rounded-none"
-                      />
-                      <div className="bg-muted flex items-center justify-center px-3 text-sm font-medium text-muted-foreground border-l">
-                        {product ? getFullUnitName(product.unit) : 'unidades'}
-                      </div>
-                    </div>
-                  </FormControl>
-                  <FormMessage className="text-xs" />
-                </FormItem>
-              )}
-            />
-
-            {/* Campo de colaborador (apenas para saída) */}
-            {type === 'saida' && (
-              <FormField
-                control={form.control}
-                name="employee_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium flex items-center">
-                      Colaborador Responsável
-                      <span className="text-destructive ml-1">*</span>
-                    </FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger className="w-full text-sm">
-                          <SelectValue placeholder="Selecione um colaborador" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {activeEmployees.length === 0 ? (
-                          <SelectItem value="empty" disabled>
-                            Nenhum colaborador cadastrado
-                          </SelectItem>
-                        ) : (
-                          activeEmployees.map((employee) => (
-                            <SelectItem key={employee.id} value={employee.id} className="text-sm">
-                              {employee.name} {employee.code && `(${employee.code})`}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage className="text-xs" />
-                  </FormItem>
-                )}
-              />
+        <div className="flex flex-col-reverse sm:flex-row gap-2 justify-end mt-4">
+          <Button
+            variant="outline"
+            type="button"
+            onClick={() => {
+              form.reset();
+              onOpenChange(false);
+            }}
+            className="w-full sm:w-auto"
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="button"
+            onClick={form.handleSubmit(onSubmit)}
+            disabled={!form.formState.isValid || isSubmitting}
+            className={cn(
+              "gap-1 w-full sm:w-auto",
+              type === 'entrada' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'
             )}
-
-            {/* Campo de observações */}
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-medium">
-                    Observações
-                  </FormLabel>
-                  <FormControl>
-                    <Textarea
-                      {...field}
-                      placeholder="Informações adicionais sobre esta movimentação"
-                      className="resize-none min-h-[80px] text-sm"
-                    />
-                  </FormControl>
-                  <FormMessage className="text-xs" />
-                </FormItem>
-              )}
-            />
-
-            <div className="flex justify-end pt-2">
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className={cn(
-                  "w-full",
-                  type === 'entrada'
-                    ? "bg-primary hover:bg-primary/90"
-                    : "bg-blue-600 hover:bg-blue-700"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" /> Processando...
+              </>
+            ) : (
+              <>
+                {type === 'entrada' ? (
+                  <><ArrowDownCircle className="h-4 w-4" /> Registrar Entrada</>
+                ) : (
+                  <><ArrowUpCircle className="h-4 w-4" /> Registrar Saída</>
                 )}
-              >
-                {isSubmitting ? 'Aguarde...' : `Registrar ${type === 'entrada' ? 'Entrada' : 'Saída'}`}
-              </Button>
-            </div>
-          </form>
-        </Form>
+              </>
+            )}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

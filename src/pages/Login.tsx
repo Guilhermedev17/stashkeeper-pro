@@ -85,22 +85,22 @@ const Login = () => {
         <ThemeSwitcher />
       </div>
 
-      <div className="w-full max-w-md px-8 py-12 rounded-2xl card-glass animate-scale-in shadow-xl dark:shadow-primary/5 backdrop-blur-xl border border-white/20 dark:border-white/5 relative z-10 overflow-hidden">
+      <div className="w-full max-w-md px-4 sm:px-8 py-8 sm:py-12 rounded-2xl card-glass animate-scale-in shadow-xl dark:shadow-primary/5 backdrop-blur-xl border border-white/20 dark:border-white/5 relative z-10 overflow-hidden">
         {/* Efeito de brilho interno no card */}
         <div className="absolute inset-0 animate-shine pointer-events-none"></div>
 
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gradient">
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gradient">
             StashKeeper<span className="text-primary font-bold">Pro</span>
           </h1>
-          <p className="text-muted-foreground mt-2 text-sm">
+          <p className="text-muted-foreground mt-2 text-xs sm:text-sm">
             Sistema Inteligente de Gerenciamento de Estoque
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           {!isLoginMode && (
-            <div className="space-y-2">
+            <div className="space-y-1 sm:space-y-2">
               <Label htmlFor="name" className="text-sm font-medium">Nome</Label>
               <Input
                 id="name"
@@ -115,7 +115,7 @@ const Login = () => {
             </div>
           )}
 
-          <div className="space-y-2">
+          <div className="space-y-1 sm:space-y-2">
             <Label htmlFor="email" className="text-sm font-medium">Email</Label>
             <Input
               id="email"
@@ -131,7 +131,7 @@ const Login = () => {
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1 sm:space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="password" className="text-sm font-medium">Senha</Label>
               {isLoginMode && (
@@ -154,7 +154,7 @@ const Login = () => {
 
           <Button
             type="submit"
-            className="w-full transition-all duration-300 rounded-lg bg-primary text-primary-foreground hover:shadow-md mt-8 relative overflow-hidden group"
+            className="w-full transition-all duration-300 rounded-lg bg-primary text-primary-foreground hover:shadow-md mt-6 sm:mt-8 relative overflow-hidden group"
             disabled={isLoading}
           >
             {/* Efeito de hover no botão */}
@@ -168,11 +168,11 @@ const Login = () => {
           </Button>
         </form>
 
-        <div className="mt-6 text-center">
+        <div className="mt-4 sm:mt-6 text-center">
           <Button
             variant="link"
             onClick={() => setIsLoginMode(!isLoginMode)}
-            className="text-sm"
+            className="text-xs sm:text-sm"
           >
             {isLoginMode
               ? 'Não tem uma conta? Cadastre-se'
@@ -180,7 +180,7 @@ const Login = () => {
           </Button>
         </div>
 
-        <div className="mt-4 text-center text-xs text-muted-foreground">
+        <div className="mt-3 sm:mt-4 text-center text-xs text-muted-foreground">
           <p>Para usar o sistema, crie uma conta ou entre com</p>
           <p className="mt-1">e-mail e senha de sua escolha</p>
         </div>

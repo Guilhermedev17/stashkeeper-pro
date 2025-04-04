@@ -11,7 +11,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Plus, Loader2 } from 'lucide-react';
 
 interface Category {
     id: string;
@@ -68,7 +68,7 @@ export function ModernAddProductDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-auto">
                 <DialogHeader>
                     <DialogTitle className="text-xl flex items-center gap-2">
                         <PlusCircle className="h-5 w-5 text-primary" />
@@ -193,24 +193,35 @@ export function ModernAddProductDialog({
                     </div>
                 </div>
 
-                <DialogFooter className="flex justify-end gap-2">
+                <div className="flex flex-col sm:flex-row items-end justify-end gap-2">
                     <Button
-                        type="button"
                         variant="outline"
-                        onClick={() => onOpenChange(false)}
-                        className="w-[120px]"
+                        type="button"
+                        onClick={() => {
+                            setNewProduct({
+                                code: '',
+                                name: '',
+                                description: '',
+                                category: '',
+                                unit: 'unidade',
+                                initialQty: 0,
+                                minQty: 0
+                            });
+                            onOpenChange(false);
+                        }}
+                        className="w-full sm:w-auto"
                     >
                         Cancelar
                     </Button>
                     <Button
                         type="button"
+                        className="gap-2 w-full sm:w-auto"
                         disabled={!isValid}
                         onClick={handleAdd}
-                        className="w-[160px]"
                     >
-                        Adicionar Produto
+                        <Plus className="h-4 w-4" /> Adicionar Produto
                     </Button>
-                </DialogFooter>
+                </div>
             </DialogContent>
         </Dialog>
     );

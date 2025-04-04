@@ -25,7 +25,7 @@ const ModernForm = ({
     return (
         <form
             className={cn(
-                'grid gap-4',
+                'grid gap-3 sm:gap-4 w-full',
                 className
             )}
             onSubmit={(e) => {
@@ -56,7 +56,7 @@ const FormGroup = ({
     className?: string;
 }) => {
     return (
-        <div className={cn('grid gap-2', className)}>
+        <div className={cn('grid gap-1.5 sm:gap-2', className)}>
             {children}
         </div>
     );
@@ -73,7 +73,7 @@ const FormField = ({
     className?: string;
 }) => {
     return (
-        <div className={className}>
+        <div className={cn('mb-1.5 sm:mb-2', className)}>
             {children}
         </div>
     );
@@ -91,7 +91,7 @@ const FormActions = ({
 }) => {
     return (
         <div className={cn(
-            'flex flex-row-reverse sm:justify-end gap-2 pt-2',
+            'flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2 sm:pt-4',
             className
         )}>
             {children}
