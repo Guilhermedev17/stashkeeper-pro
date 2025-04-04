@@ -82,9 +82,9 @@ const ModernProductFilters: React.FC<ModernProductFiltersProps> = ({
     // Obter a cor do status
     const getStatusColor = (status: string) => {
         switch (status) {
-            case 'normal': return 'bg-green-50 text-green-600 border-green-200';
-            case 'baixo': return 'bg-amber-50 text-amber-600 border-amber-200';
-            case 'critico': return 'bg-red-50 text-red-600 border-red-200';
+            case 'normal': return 'bg-green-50 text-green-600 border-green-200 dark:bg-green-950/20 dark:text-green-400 dark:border-green-800';
+            case 'baixo': return 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-800';
+            case 'critico': return 'bg-red-50 text-red-600 border-red-200 dark:bg-red-950/20 dark:text-red-400 dark:border-red-800';
             default: return '';
         }
     };
@@ -155,9 +155,9 @@ const ModernProductFilters: React.FC<ModernProductFiltersProps> = ({
                         <SelectGroup>
                             <SelectLabel>Status de Estoque</SelectLabel>
                             <SelectItem value="all">Todos os Status</SelectItem>
-                            <SelectItem value="normal" className="text-green-600">Normal</SelectItem>
-                            <SelectItem value="baixo" className="text-amber-600">Estoque Baixo</SelectItem>
-                            <SelectItem value="critico" className="text-red-600">Estoque Crítico</SelectItem>
+                            <SelectItem value="normal" className="text-green-600 dark:text-green-400">Normal</SelectItem>
+                            <SelectItem value="baixo" className="text-amber-600 dark:text-amber-400">Estoque Baixo</SelectItem>
+                            <SelectItem value="critico" className="text-red-600 dark:text-red-400">Estoque Crítico</SelectItem>
                         </SelectGroup>
                     </SelectContent>
                 </Select>

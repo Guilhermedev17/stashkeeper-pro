@@ -197,13 +197,13 @@ const ModernProductList: React.FC<ModernProductListProps> = ({
             );
         } else if (product.quantity <= product.min_quantity * 1.5) {
             return (
-                <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50">
+                <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800 dark:text-amber-400">
                     Baixo
                 </Badge>
             );
         } else {
             return (
-                <Badge variant="outline" className="text-green-600 border-green-300 bg-green-50">
+                <Badge variant="outline" className="text-green-600 border-green-300 bg-green-50 dark:bg-green-950/20 dark:border-green-800 dark:text-green-400">
                     Normal
                 </Badge>
             );
