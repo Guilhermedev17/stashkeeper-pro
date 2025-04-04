@@ -1,66 +1,153 @@
 # StashKeeper Pro
 
-Um sistema moderno de gerenciamento de estoque e controle de inventário desenvolvido com React, TypeScript, Tailwind CSS e integração com Supabase.
+<div align="center">
+  <img src="public/logo.svg" alt="StashKeeper Pro Logo" width="120" height="120" />
+  <h3>Sistema Avançado de Gerenciamento de Estoque</h3>
+</div>
 
-## Sobre o Projeto
+## 📋 Visão Geral
 
-StashKeeper Pro é uma aplicação web completa para gerenciamento de estoque, inventário e colaboradores. Com interface moderna e responsiva, permite controlar produtos, movimentações, categorias e muito mais.
+StashKeeper Pro é uma solução completa para gestão de inventário, produtos e colaboradores. Desenvolvida para pequenas e médias empresas, a aplicação oferece uma interface moderna, responsiva e intuitiva para controle total do seu estoque.
 
-## Recursos Principais
+![Dashboard](public/dashboard.png)
 
-- Dashboard com visão geral de métricas importantes
-- Gerenciamento completo de produtos e categorias
-- Registro de movimentações de estoque (entradas e saídas)
-- Gestão de colaboradores
-- Importação/exportação de dados via Excel
-- Tema claro/escuro
-- Interface responsiva para desktop e dispositivos móveis
+## ✨ Principais Funcionalidades
 
-## Tecnologias Utilizadas
+### Gerenciamento de Produtos
+- Cadastro detalhado com código, nome, descrição, categoria e níveis de estoque
+- Alertas automáticos para produtos com estoque baixo ou crítico
+- Filtros avançados para localização rápida de itens
+- Visualização em tabela moderna com múltiplas opções de interação
+- Seleção múltipla para operações em lote
 
-- **Frontend**: React, TypeScript, Vite, TailwindCSS, Shadcn UI
-- **Backend**: Supabase (PostgreSQL, Autenticação, Storage)
-- **Ferramentas**: Git, npm
+### Movimentações de Estoque
+- Registro de entradas e saídas com detalhamento
+- Histórico completo de movimentações por produto
+- Relatórios de consumo e reposição
 
-## Desenvolvimento Local
+### Gestão de Categorias
+- Organização hierárquica de produtos
+- Estatísticas por categoria
+- Filtros rápidos baseados em categorias
 
-Para executar o projeto localmente:
+### Importação e Exportação
+- Integração com planilhas Excel para importação em massa
+- Exportação de dados para análise externa
+- Importador inteligente com pré-visualização e validação
+
+### Gestão de Colaboradores
+- Controle de acesso por usuário
+- Histórico de ações por colaborador
+- Importação em lote de colaboradores
+
+### UI/UX Avançado
+- Design responsivo para desktop, tablet e mobile
+- Tema claro/escuro com detecção automática
+- Animações suaves para melhor experiência do usuário
+- Notificações interativas e toast messages
+
+## 🛠️ Stack Tecnológica
+
+### Frontend
+- **React 18** - Biblioteca JavaScript para construção de interfaces
+- **TypeScript** - Tipagem estática para desenvolvimento mais seguro
+- **Vite** - Build tool ultrarrápida para desenvolvimento moderno
+- **TailwindCSS** - Framework CSS utility-first para estilização rápida
+- **Shadcn UI** - Componentes acessíveis e estilizáveis
+- **React Router** - Roteamento client-side
+- **React Hook Form** - Gerenciamento de formulários com validação
+- **Lucide React** - Ícones modernos e consistentes
+- **XLSX** - Manipulação de arquivos Excel
+- **Recharts** - Biblioteca de gráficos responsivos
+
+### Backend
+- **Supabase** - Plataforma open source para:
+  - **PostgreSQL** - Banco de dados relacional
+  - **Authentication** - Sistema de autenticação segura
+  - **Storage** - Armazenamento de arquivos
+  - **Realtime** - Atualizações em tempo real
+
+### Ferramentas de Desenvolvimento
+- **ESLint** - Linting de código
+- **TypeScript** - Verificação de tipos estáticos
+- **Git** - Controle de versão
+- **Vercel** - Plataforma de deploy
+
+## 🚀 Instalação e Uso
+
+### Pré-requisitos
+- Node.js 18 ou superior
+- npm ou yarn
+
+### Desenvolvimento Local
 
 ```bash
-# Clonar o repositório
+# Clone o repositório
 git clone https://github.com/Guilhermedev17/stashkeeper-pro.git
 cd stashkeeper-pro
 
-# Instalar dependências
+# Instale as dependências
 npm install
 
-# Executar o servidor de desenvolvimento
+# Configure as variáveis de ambiente
+# Crie um arquivo .env.local com o seguinte conteúdo:
+# VITE_SUPABASE_URL=seu-url-do-supabase
+# VITE_SUPABASE_ANON_KEY=sua-chave-anon-do-supabase
+
+# Inicie o servidor de desenvolvimento
 npm run dev
 ```
 
-## Variáveis de Ambiente
+### Build para Produção
 
-Crie um arquivo `.env.local` na raiz do projeto com as seguintes variáveis:
+```bash
+# Compilar para produção
+npm run build
 
+# Visualizar a build localmente
+npm run preview
 ```
-VITE_SUPABASE_URL=seu-url-do-supabase
-VITE_SUPABASE_ANON_KEY=sua-chave-anon-do-supabase
+
+### Deploy
+
+O StashKeeper Pro pode ser facilmente implantado em serviços como Vercel, Netlify ou qualquer host que suporte aplicações React:
+
+```bash
+# Deploy na Vercel
+npm run deploy
 ```
 
-## Deploy
+## 📱 Compatibilidade
 
-Este projeto pode ser facilmente implantado na Vercel ou qualquer outro serviço de hospedagem para aplicações React.
+- ✅ Desktop (Windows, macOS, Linux)
+- ✅ Tablets (iOS, Android)
+- ✅ Smartphones (iOS, Android)
+- ✅ Navegadores modernos (Chrome, Firefox, Safari, Edge)
 
-### Deploy na Vercel
+## 🔒 Segurança
 
-1. Importe seu repositório Git na Vercel
-2. Configure as variáveis de ambiente
-3. Implante a aplicação
+- Autenticação segura via Supabase Auth
+- Controle de acesso baseado em funções
+- Validação de dados no cliente e servidor
+- Proteção contra ataques comuns (XSS, CSRF)
 
-## Licença
+## 📘 Licença
 
-Este projeto está licenciado sob a licença MIT - veja o arquivo LICENSE para mais detalhes.
+Este projeto está licenciado sob a [Licença MIT](LICENSE).
 
-## Contato
+## 👥 Contribuições
 
-Guilherme - [GitHub](https://github.com/Guilhermedev17)
+Contribuições são bem-vindas! Sinta-se à vontade para abrir issues ou enviar pull requests.
+
+## 📞 Contato e Suporte
+
+- **Desenvolvedor**: Guilherme
+- **GitHub**: [@Guilhermedev17](https://github.com/Guilhermedev17)
+- **Email**: [contato@stashkeeper.com](mailto:contato@stashkeeper.com)
+
+---
+
+<div align="center">
+  <p>Desenvolvido com ❤️ no Brasil</p>
+  <p>Copyright © 2024 StashKeeper Pro</p>
+</div>
