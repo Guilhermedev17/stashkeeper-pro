@@ -1,69 +1,66 @@
-# Welcome to your Lovable project
+# StashKeeper Pro
 
-## Project info
+Um sistema moderno de gerenciamento de estoque e controle de inventário desenvolvido com React, TypeScript, Tailwind CSS e integração com Supabase.
 
-**URL**: https://lovable.dev/projects/31c856c6-f21b-4f68-9e9b-49c1d90553e0
+## Sobre o Projeto
 
-## How can I edit this code?
+StashKeeper Pro é uma aplicação web completa para gerenciamento de estoque, inventário e colaboradores. Com interface moderna e responsiva, permite controlar produtos, movimentações, categorias e muito mais.
 
-There are several ways of editing your application.
+## Recursos Principais
 
-**Use Lovable**
+- Dashboard com visão geral de métricas importantes
+- Gerenciamento completo de produtos e categorias
+- Registro de movimentações de estoque (entradas e saídas)
+- Gestão de colaboradores
+- Importação/exportação de dados via Excel
+- Tema claro/escuro
+- Interface responsiva para desktop e dispositivos móveis
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/31c856c6-f21b-4f68-9e9b-49c1d90553e0) and start prompting.
+## Tecnologias Utilizadas
 
-Changes made via Lovable will be committed automatically to this repo.
+- **Frontend**: React, TypeScript, Vite, TailwindCSS, Shadcn UI
+- **Backend**: Supabase (PostgreSQL, Autenticação, Storage)
+- **Ferramentas**: Git, npm
 
-**Use your preferred IDE**
+## Desenvolvimento Local
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+Para executar o projeto localmente:
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+```bash
+# Clonar o repositório
+git clone https://github.com/Guilhermedev17/stashkeeper-pro.git
+cd stashkeeper-pro
 
-Follow these steps:
+# Instalar dependências
+npm install
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Executar o servidor de desenvolvimento
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Variáveis de Ambiente
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Crie um arquivo `.env.local` na raiz do projeto com as seguintes variáveis:
 
-**Use GitHub Codespaces**
+```
+VITE_SUPABASE_URL=seu-url-do-supabase
+VITE_SUPABASE_ANON_KEY=sua-chave-anon-do-supabase
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Deploy
 
-## What technologies are used for this project?
+Este projeto pode ser facilmente implantado na Vercel ou qualquer outro serviço de hospedagem para aplicações React.
 
-This project is built with .
+### Deploy na Vercel
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+1. Importe seu repositório Git na Vercel
+2. Configure as variáveis de ambiente
+3. Implante a aplicação
 
-## How can I deploy this project?
+## Licença
 
-Simply open [Lovable](https://lovable.dev/projects/31c856c6-f21b-4f68-9e9b-49c1d90553e0) and click on Share -> Publish.
+Este projeto está licenciado sob a licença MIT - veja o arquivo LICENSE para mais detalhes.
 
-## I want to use a custom domain - is that possible?
+## Contato
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+Guilherme - [GitHub](https://github.com/Guilhermedev17)
