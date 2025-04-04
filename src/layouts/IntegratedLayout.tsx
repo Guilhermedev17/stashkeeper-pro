@@ -86,7 +86,7 @@ const IntegratedLayout = () => {
                     </button>
                 </div>
 
-                <div className="py-4 flex-1 overflow-y-auto h-[calc(100vh-4rem-4rem)]">
+                <div className="py-4 flex-1 overflow-y-auto h-[calc(100vh-4rem-4rem)] stashkeeper-scrollbar">
                     <ul className="space-y-1">
                         <SidebarItem
                             to="/dashboard"
@@ -212,7 +212,7 @@ const IntegratedLayout = () => {
                 </header>
 
                 {/* Conteúdo da página - definindo altura fixa e overflow para garantir espaço consistente */}
-                <main className="flex-1 overflow-auto bg-muted/30 w-full">
+                <main className="flex-1 overflow-auto bg-muted/30 w-full stashkeeper-scrollbar">
                     <AnimatePresence mode="wait">
                         <PageTransition key={location.pathname}>
                             <Outlet />
@@ -240,7 +240,7 @@ const IntegratedLayout = () => {
                             </button>
                         </div>
 
-                        <div className="py-4 flex-1 overflow-y-auto">
+                        <div className="py-4 flex-1 overflow-y-auto stashkeeper-scrollbar">
                             <ul className="space-y-1 px-3">
                                 <MobileSidebarItem
                                     to="/dashboard"

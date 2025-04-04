@@ -22,7 +22,7 @@ interface PageWrapperProps {
 const PageWrapper = ({ children, className = '', noPadding = false }: PageWrapperProps) => {
     return (
         <div
-            className={`w-full flex flex-col flex-1 ${noPadding ? '' : 'p-2 sm:p-3 md:p-4'} ${className}`}
+            className={`w-full flex flex-col flex-1 overflow-auto stashkeeper-scrollbar ${noPadding ? '' : 'p-2 sm:p-3 md:p-4'} ${className}`}
             style={{ minHeight: '100%' }}
         >
             {children}

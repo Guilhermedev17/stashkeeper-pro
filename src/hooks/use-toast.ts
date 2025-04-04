@@ -33,21 +33,21 @@ type ActionType = typeof actionTypes
 
 type Action =
   | {
-      type: ActionType["ADD_TOAST"]
-      toast: ToasterToast
-    }
+    type: ActionType["ADD_TOAST"]
+    toast: ToasterToast
+  }
   | {
-      type: ActionType["UPDATE_TOAST"]
-      toast: Partial<ToasterToast>
-    }
+    type: ActionType["UPDATE_TOAST"]
+    toast: Partial<ToasterToast>
+  }
   | {
-      type: ActionType["DISMISS_TOAST"]
-      toastId?: ToasterToast["id"]
-    }
+    type: ActionType["DISMISS_TOAST"]
+    toastId?: ToasterToast["id"]
+  }
   | {
-      type: ActionType["REMOVE_TOAST"]
-      toastId?: ToasterToast["id"]
-    }
+    type: ActionType["REMOVE_TOAST"]
+    toastId?: ToasterToast["id"]
+  }
 
 interface State {
   toasts: ToasterToast[]
@@ -105,9 +105,9 @@ export const reducer = (state: State, action: Action): State => {
         toasts: state.toasts.map((t) =>
           t.id === toastId || toastId === undefined
             ? {
-                ...t,
-                open: false,
-              }
+              ...t,
+              open: false,
+            }
             : t
         ),
       }
@@ -161,6 +161,14 @@ function toast({ ...props }: Toast) {
     },
   })
 
+  // Se uma duração foi especificada, fechar automaticamente após esse tempo
+  if (props.duration && props.duration > 0) {
+    setTimeout(() => {
+      dismiss();
+      console.log(`Toast ${id} fechado automaticamente após ${props.duration}ms`);
+    }, props.duration);
+  }
+
   return {
     id: id,
     dismiss,
@@ -188,4 +196,14 @@ function useToast() {
   }
 }
 
-export { useToast, toast }
+// Função auxiliar para fechar automaticamente todas as notificações ativas
+// Útil para garantir que nenhuma notificação fique presa na tela
+function dismissAllToastsAfterDelay(delay = 5000) {
+  console.log("Agendando fechamento de todas as notificações em", delay, "ms");
+  setTimeout(() => {
+    dispatch({ type: "DISMISS_TOAST" });
+    console.log("Todas as notificações foram fechadas automaticamente");
+  }, delay);
+}
+
+export { useToast, toast, dismissAllToastsAfterDelay }

@@ -19,7 +19,7 @@ const ModernFilters = ({
 }: ModernFiltersProps) => {
     return (
         <div className={cn(
-            'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 mb-3 sm:mb-4 lg:mb-6 shrink-0',
+            'flex flex-col w-full mb-4 sm:mb-5 gap-3',
             className
         )}>
             {children}

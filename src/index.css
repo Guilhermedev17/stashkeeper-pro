@@ -83,9 +83,7 @@
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-ring: 229 95% 65%;
   }
-}
 
-@layer base {
   * {
     @apply border-border;
   }
@@ -97,6 +95,65 @@
     width: 100%;
     margin: 0;
     padding: 0;
+  }
+
+  /* Aplicar automaticamente estilos da scrollbar para elementos com overflow */
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background-color: transparent;
+    margin: 3px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.25);
+    border-radius: 20px;
+    transition: all 0.2s ease;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(156, 163, 175, 0.45);
+  }
+
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.25) transparent;
+  }
+
+  /* Estilos específicos para tema escuro */
+  .dark *::-webkit-scrollbar-thumb {
+    background: rgba(87, 95, 112, 0.35);
+    background: linear-gradient(180deg,
+        rgba(87, 95, 112, 0.2) 0%,
+        rgba(107, 114, 128, 0.3) 100%);
+    backdrop-filter: blur(8px);
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.05);
+  }
+
+  .dark *::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg,
+        rgba(99, 108, 126, 0.35) 0%,
+        rgba(129, 140, 248, 0.25) 100%);
+  }
+
+  /* Manter estilo especial para StashKeeper para elementos com classe específica */
+  .dark .stashkeeper-scrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg,
+        rgba(99, 102, 241, 0.2) 0%,
+        rgba(129, 140, 248, 0.25) 100%);
+    box-shadow: inset 0 0 6px rgba(129, 140, 248, 0.1);
+  }
+
+  .dark * {
+    scrollbar-color: rgba(87, 95, 112, 0.35) transparent;
   }
 
   body {
@@ -850,5 +907,55 @@
 
   .animate-typewriter {
     animation: typewriter 8s ease-in-out infinite;
+  }
+
+  /* Aplicar estilo específico do StashKeeper para componentes comuns com rolagem */
+  .dark [role="dialog"],
+  .dark [role="menu"],
+  .dark [role="listbox"],
+  .dark [role="combobox"],
+  .dark .dialog-content,
+  .dark .modal-content,
+  .dark .dropdown-content,
+  .dark [data-state] {
+    scrollbar-color: rgba(99, 102, 241, 0.3) transparent;
+  }
+
+  .dark [role="dialog"]::-webkit-scrollbar-thumb,
+  .dark [role="menu"]::-webkit-scrollbar-thumb,
+  .dark [role="listbox"]::-webkit-scrollbar-thumb,
+  .dark [role="combobox"]::-webkit-scrollbar-thumb,
+  .dark .dialog-content::-webkit-scrollbar-thumb,
+  .dark .modal-content::-webkit-scrollbar-thumb,
+  .dark .dropdown-content::-webkit-scrollbar-thumb,
+  .dark [data-state]::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg,
+        rgba(99, 102, 241, 0.2) 0%,
+        rgba(129, 140, 248, 0.25) 100%);
+    box-shadow: inset 0 0 6px rgba(129, 140, 248, 0.1);
+  }
+
+  /* Melhorar visualização da barra de rolagem horizontal em tabelas */
+  .responsive-table::-webkit-scrollbar,
+  .overflow-x-auto::-webkit-scrollbar,
+  div[data-orientation="horizontal"]::-webkit-scrollbar {
+    height: 6px;
+    border-radius: 20px;
+  }
+
+  .responsive-table::-webkit-scrollbar-thumb,
+  .overflow-x-auto::-webkit-scrollbar-thumb,
+  div[data-orientation="horizontal"]::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.4);
+    border-radius: 20px;
+  }
+
+  .dark .responsive-table::-webkit-scrollbar-thumb,
+  .dark .overflow-x-auto::-webkit-scrollbar-thumb,
+  .dark div[data-orientation="horizontal"]::-webkit-scrollbar-thumb {
+    background: linear-gradient(90deg,
+        rgba(99, 102, 241, 0.25) 0%,
+        rgba(129, 140, 248, 0.3) 100%);
+    box-shadow: inset 0 0 6px rgba(129, 140, 248, 0.1);
   }
 }

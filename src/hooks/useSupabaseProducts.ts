@@ -32,7 +32,12 @@ export const useSupabaseProducts = () => {
   const { toast } = useToast();
 
   const fetchProducts = async () => {
-    if (loading) return; // Evita múltiplas requisições simultâneas
+    if (loading) {
+      console.log("fetchProducts: Já estamos carregando, ignorando chamada duplicada");
+      return Promise.reject(new Error("Carregamento já em andamento"));
+    }
+
+    console.log("fetchProducts: Iniciando carregamento dos produtos");
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -40,9 +45,14 @@ export const useSupabaseProducts = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      
-       // Usar asserção de tipo para garantir que o TypeScript reconheça todas as propriedades
+      if (error) {
+        console.error("fetchProducts: Erro ao buscar produtos:", error);
+        throw error;
+      }
+
+      console.log(`fetchProducts: Carregados ${data?.length || 0} produtos`);
+
+      // Usar asserção de tipo para garantir que o TypeScript reconheça todas as propriedades
       setProducts((data || []).map(item => {
         // Definir explicitamente o tipo do item retornado pelo Supabase
         const typedItem = item as {
@@ -56,7 +66,7 @@ export const useSupabaseProducts = () => {
           unit?: string;
           created_at: string;
         };
-        
+
         // Garantir que todas as propriedades estejam presentes, incluindo 'unit'
         return {
           id: typedItem.id,
@@ -70,6 +80,10 @@ export const useSupabaseProducts = () => {
           created_at: typedItem.created_at
         } as Product;
       }));
+
+      setLoading(false);
+      console.log("fetchProducts: Carregamento concluído com sucesso");
+      return Promise.resolve(data);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar produtos';
       setError(errorMessage);
@@ -78,8 +92,9 @@ export const useSupabaseProducts = () => {
         description: errorMessage,
         variant: 'destructive',
       });
-    } finally {
       setLoading(false);
+      console.error("fetchProducts: Falha no carregamento:", errorMessage);
+      return Promise.reject(err);
     }
   };
 
@@ -103,9 +118,9 @@ export const useSupabaseProducts = () => {
         .single();
 
       if (error) throw error;
-      
+
       setProducts(prevProducts => [data as Product, ...prevProducts]);
-      
+
       // Exibir notificação apenas se não estiver no modo silencioso
       if (!options?.silent) {
         toast({
@@ -114,14 +129,14 @@ export const useSupabaseProducts = () => {
           variant: 'success'
         });
       }
-      
+
       return { success: true, data };
     } catch (err) {
       let errorMessage = err instanceof Error ? err.message : 'Erro ao adicionar produto';
       if (errorMessage.includes('duplicate key value')) {
         errorMessage = 'Código já está em uso';
       }
-      
+
       // Exibir notificação de erro apenas se não estiver no modo silencioso
       if (!options?.silent) {
         toast({
@@ -130,7 +145,7 @@ export const useSupabaseProducts = () => {
           variant: 'destructive',
         });
       }
-      
+
       return { success: false, error: errorMessage };
     }
   };
@@ -145,13 +160,13 @@ export const useSupabaseProducts = () => {
         .single();
 
       if (error) throw error;
-      
-      setProducts(prevProducts => 
-        prevProducts.map(product => 
+
+      setProducts(prevProducts =>
+        prevProducts.map(product =>
           product.id === id ? { ...product, ...data } as Product : product
         )
       );
-      
+
       // Exibir notificação apenas se não estiver no modo silencioso
       if (!options?.silent) {
         toast({
@@ -160,11 +175,11 @@ export const useSupabaseProducts = () => {
           variant: 'success'
         });
       }
-      
+
       return { success: true, data };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao atualizar produto';
-      
+
       // Exibir notificação de erro apenas se não estiver no modo silencioso
       if (!options?.silent) {
         toast({
@@ -173,7 +188,7 @@ export const useSupabaseProducts = () => {
           variant: 'destructive',
         });
       }
-      
+
       return { success: false, error: errorMessage };
     }
   };
@@ -186,11 +201,11 @@ export const useSupabaseProducts = () => {
         .match({ id });
 
       if (error) throw error;
-      
-      setProducts(prevProducts => 
+
+      setProducts(prevProducts =>
         prevProducts.filter(product => product.id !== id)
       );
-      
+
       // Exibir notificação apenas se não estiver no modo silencioso
       if (!options?.silent) {
         toast({
@@ -199,11 +214,11 @@ export const useSupabaseProducts = () => {
           variant: 'success'
         });
       }
-      
+
       return { success: true };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao remover produto';
-      
+
       // Exibir notificação de erro apenas se não estiver no modo silencioso
       if (!options?.silent) {
         toast({
@@ -212,7 +227,7 @@ export const useSupabaseProducts = () => {
           variant: 'destructive',
         });
       }
-      
+
       return { success: false, error: errorMessage };
     }
   };
@@ -234,8 +249,8 @@ export const useSupabaseProducts = () => {
       const product = products.find(p => p.id === movement.product_id);
       if (!product) throw new Error('Produto não encontrado');
 
-      const newQuantity = movement.type === 'entrada' 
-        ? product.quantity + movement.quantity 
+      const newQuantity = movement.type === 'entrada'
+        ? product.quantity + movement.quantity
         : product.quantity - movement.quantity;
 
       if (newQuantity < 0) throw new Error('Quantidade insuficiente em estoque');
@@ -248,20 +263,20 @@ export const useSupabaseProducts = () => {
       if (updateError) throw updateError;
 
       // 3. Atualizar a lista de produtos local
-      setProducts(prevProducts => 
-        prevProducts.map(p => 
-          p.id === movement.product_id 
-            ? { ...p, quantity: newQuantity } 
+      setProducts(prevProducts =>
+        prevProducts.map(p =>
+          p.id === movement.product_id
+            ? { ...p, quantity: newQuantity }
             : p
         )
       );
-      
+
       toast({
         title: movement.type === 'entrada' ? 'Entrada registrada' : 'Saída registrada',
         description: `Movimentação registrada com sucesso.`,
         variant: 'success'
       });
-      
+
       return { success: true, data: movementData };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao registrar movimentação';
@@ -280,23 +295,23 @@ export const useSupabaseProducts = () => {
     // Configurar subscriber para atualizações em tempo real
     const subscription = supabase
       .channel('products_changes')
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'products' 
-        }, 
+      .on('postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'products'
+        },
         (payload: RealtimePostgresChangesPayload<Product>) => {
           if (payload.eventType === 'INSERT') {
             setProducts(prev => [payload.new as Product, ...prev]);
           } else if (payload.eventType === 'DELETE') {
             setProducts(prev => prev.filter(product => product.id !== payload.old.id));
           } else if (payload.eventType === 'UPDATE') {
-            setProducts(prev => prev.map(product => 
+            setProducts(prev => prev.map(product =>
               product.id === payload.new.id ? payload.new as Product : product
             ));
           }
-      })
+        })
       .subscribe();
 
     return () => {
