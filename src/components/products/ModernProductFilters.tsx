@@ -91,8 +91,8 @@ const ModernProductFilters: React.FC<ModernProductFiltersProps> = ({
 
     return (
         <div className="space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
-                <div className="relative sm:col-span-6 lg:col-span-5">
+            <div className="flex flex-wrap items-center gap-3">
+                <div className="relative min-w-[280px] max-w-full sm:max-w-[420px]">
                     <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                         <Search className="h-4 w-4 text-muted-foreground" />
                     </div>
@@ -100,75 +100,85 @@ const ModernProductFilters: React.FC<ModernProductFiltersProps> = ({
                         placeholder="Buscar por nome, código ou descrição..."
                         value={searchTerm}
                         onChange={(e) => onSearchChange(e.target.value)}
-                        className="pl-10 pr-10"
+                        className="pl-10 pr-10 h-10 border-input/70 shadow-sm dark:bg-secondary/30 focus:border-primary/40 focus-visible:ring-1 focus-visible:ring-primary/30"
                     />
                     {searchTerm && (
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="absolute inset-y-0 right-0 h-full px-3 py-0"
+                            className="absolute inset-y-0 right-0 h-full px-3 py-0 hover:bg-transparent"
                             onClick={() => onSearchChange('')}
                         >
-                            <X className="h-4 w-4 text-muted-foreground" />
+                            <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
                         </Button>
                     )}
                 </div>
 
-                <div className="flex items-center sm:col-span-6 lg:col-span-7 gap-2">
-                    <Select
-                        value={selectedCategory}
-                        onValueChange={onCategoryChange}
+                <Select
+                    value={selectedCategory}
+                    onValueChange={onCategoryChange}
+                >
+                    <SelectTrigger
+                        className="h-10 w-[170px] border-input/70 shadow-sm dark:bg-secondary/30 focus:border-primary/40 hover:border-primary/30"
                     >
-                        <SelectTrigger className="h-10 min-w-[135px]">
-                            <div className="flex items-center gap-2 text-sm">
-                                <Package className="h-4 w-4 flex-shrink-0" />
-                                <SelectValue placeholder="Categoria" />
-                            </div>
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                <SelectLabel>Categorias</SelectLabel>
-                                <SelectItem value="all">Todas as Categorias</SelectItem>
-                                {categories.map(category => (
-                                    <SelectItem key={category.id} value={category.id}>
-                                        {category.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
+                        <div className="flex items-center gap-2 text-sm">
+                            <Package className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                            <SelectValue placeholder="Categoria" />
+                        </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectGroup>
+                            <SelectLabel>Categorias</SelectLabel>
+                            <SelectItem value="all">Todas as Categorias</SelectItem>
+                            {categories.map(category => (
+                                <SelectItem key={category.id} value={category.id}>
+                                    {category.name}
+                                </SelectItem>
+                            ))}
+                        </SelectGroup>
+                    </SelectContent>
+                </Select>
 
-                    <Select
-                        value={selectedStatus}
-                        onValueChange={onStatusChange}
-                    >
-                        <SelectTrigger className={cn(
-                            "h-10 min-w-[135px]",
+                <Select
+                    value={selectedStatus}
+                    onValueChange={onStatusChange}
+                >
+                    <SelectTrigger
+                        className={cn(
+                            "h-10 w-[140px] border-input/70 shadow-sm dark:bg-secondary/30 focus:border-primary/40 hover:border-primary/30",
                             selectedStatus !== 'all' && getStatusColor(selectedStatus)
-                        )}>
-                            <SelectValue placeholder="Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                <SelectLabel>Status de Estoque</SelectLabel>
-                                <SelectItem value="all">Todos os Status</SelectItem>
-                                <SelectItem value="normal" className="text-green-600">Normal</SelectItem>
-                                <SelectItem value="baixo" className="text-amber-600">Estoque Baixo</SelectItem>
-                                <SelectItem value="critico" className="text-red-600">Estoque Crítico</SelectItem>
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
-
-                    <Button
-                        variant={selectMode ? "default" : "outline"}
-                        onClick={onToggleSelectMode}
-                        className="h-10 flex items-center justify-center gap-1.5 px-3"
-                        title={selectMode ? "Cancelar seleção" : "Selecionar múltiplos produtos"}
+                        )}
                     >
+                        <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectGroup>
+                            <SelectLabel>Status de Estoque</SelectLabel>
+                            <SelectItem value="all">Todos os Status</SelectItem>
+                            <SelectItem value="normal" className="text-green-600">Normal</SelectItem>
+                            <SelectItem value="baixo" className="text-amber-600">Estoque Baixo</SelectItem>
+                            <SelectItem value="critico" className="text-red-600">Estoque Crítico</SelectItem>
+                        </SelectGroup>
+                    </SelectContent>
+                </Select>
+
+                <Button
+                    variant={selectMode ? "default" : "outline"}
+                    onClick={onToggleSelectMode}
+                    className={cn(
+                        "h-10 flex items-center justify-center gap-1.5 px-4 w-[130px] border-input/70 shadow-sm",
+                        !selectMode && "dark:bg-secondary/30 hover:border-primary/30",
+                        selectMode && "border-primary/30 bg-primary/10 hover:bg-primary/20"
+                    )}
+                    title={selectMode ? "Cancelar seleção" : "Selecionar múltiplos produtos"}
+                >
+                    {selectMode ? (
+                        <X className="h-4 w-4 flex-shrink-0" />
+                    ) : (
                         <CheckSquare className="h-4 w-4 flex-shrink-0" />
-                        <span className="hidden sm:inline">{selectMode ? "Cancelar" : "Selecionar"}</span>
-                    </Button>
-                </div>
+                    )}
+                    <span className="text-sm">{selectMode ? "Cancelar" : "Selecionar"}</span>
+                </Button>
             </div>
 
             {/* Mostrar filtros ativos como badges */}

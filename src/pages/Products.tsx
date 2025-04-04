@@ -200,6 +200,63 @@ const Products = () => {
     loadData();
   }, [loading]);
 
+  // Adicionar listener para o evento de importação concluída
+  useEffect(() => {
+    // Handler para atualizar produtos quando o evento de importação concluída é disparado
+    const handleImportComplete = () => {
+      console.log('Evento excel-import-complete recebido na página Products, atualizando produtos...');
+
+      // Forçar atualização dos produtos
+      console.log('Products: Chamando fetchProducts() diretamente');
+      fetchProducts()
+        .then(() => {
+          console.log('Products: fetchProducts concluído com sucesso');
+          // Forçar atualização da UI
+          setProducts(prevProducts => {
+            console.log('Products: Forçando atualização do estado dos produtos');
+            return [...prevProducts];
+          });
+        })
+        .catch(err => {
+          console.error('Products: Erro ao atualizar produtos:', err);
+        });
+    };
+
+    // Registrar o listener para o evento personalizado
+    window.addEventListener('excel-import-complete', handleImportComplete);
+
+    // Limpar o listener quando o componente for desmontado
+    return () => {
+      window.removeEventListener('excel-import-complete', handleImportComplete);
+    };
+  }, [fetchProducts]);
+
+  // Listener para novo evento global stashkeeper-product-update
+  useEffect(() => {
+    // Handler para atualizar produtos quando o evento global é disparado
+    const handleGlobalUpdate = () => {
+      console.log('Products: Evento stashkeeper-product-update recebido, atualizando produtos...');
+
+      // Limpar a cache do Supabase e buscar dados atualizados
+      console.log('Products: Forçando atualização completa dos produtos');
+      fetchProducts()
+        .then(() => {
+          console.log('Products: Atualização global concluída com sucesso');
+        })
+        .catch(err => {
+          console.error('Products: Erro na atualização global:', err);
+        });
+    };
+
+    // Registrar o listener para o evento global
+    window.addEventListener('stashkeeper-product-update', handleGlobalUpdate);
+
+    // Limpar o listener quando o componente for desmontado
+    return () => {
+      window.removeEventListener('stashkeeper-product-update', handleGlobalUpdate);
+    };
+  }, [fetchProducts]);
+
   const handleAddProduct = async () => {
     console.log("handleAddProduct chamado - iniciando adição de produto");
     try {
@@ -413,37 +470,37 @@ const Products = () => {
             subtitle="Visualize e gerencie todos os seus produtos."
             actions={
               <div className="mobile-btn-group">
-                <ImportExcelButton />
                 {!selectMode && (
-                  <Button
-                    type="button"
-                    onClick={() => setIsAddDialogOpen(true)}
-                    className="gap-2"
-                    title="Adicionar novo produto"
-                  >
-                    <PlusSquare className="h-4 w-4" /> Novo Produto
-                  </Button>
+                  <>
+                    <ImportExcelButton />
+                    <Button
+                      type="button"
+                      onClick={() => setIsAddDialogOpen(true)}
+                      className="gap-2"
+                      title="Adicionar novo produto"
+                    >
+                      <PlusSquare className="h-4 w-4" /> Novo Produto
+                    </Button>
+                  </>
                 )}
               </div>
             }
           />
 
           <div className="responsive-gap">
-            <ModernFilters>
-              <ModernProductFilters
-                searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
-                categories={categories}
-                selectedCategory={selectedCategory}
-                onCategoryChange={setSelectedCategory}
-                selectedStatus={selectedStatus}
-                onStatusChange={setSelectedStatus}
-                selectMode={selectMode}
-                onToggleSelectMode={toggleSelectMode}
-              />
-            </ModernFilters>
+            <ModernProductFilters
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+              selectedStatus={selectedStatus}
+              onStatusChange={setSelectedStatus}
+              selectMode={selectMode}
+              onToggleSelectMode={toggleSelectMode}
+            />
 
-            <div className="responsive-table">
+            <div className="responsive-table mt-4">
               <ModernProductList
                 products={filteredProducts}
                 getCategoryName={getCategoryName}

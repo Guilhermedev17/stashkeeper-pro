@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Package, MoreHorizontal, Edit, Trash2, ArrowDown, ArrowUp, CheckSquare, Square, Trash, AlertTriangle } from 'lucide-react';
+import { Package, MoreHorizontal, Edit, Trash2, ArrowDown, ArrowUp, CheckSquare, Square, Trash, AlertTriangle, X } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -149,6 +149,44 @@ const ModernProductList: React.FC<ModernProductListProps> = ({
         }
     }, [selectMode]);
 
+    // Renderizar barra de ações de seleção
+    const renderSelectionActions = () => {
+        if (!selectMode || selectedProducts.length === 0) return null;
+
+        return (
+            <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-background border border-input shadow-lg rounded-full py-2 px-4 flex items-center gap-3 z-50">
+                <div className="flex items-center gap-2">
+                    <div className="bg-primary h-6 w-6 flex items-center justify-center rounded-full text-primary-foreground text-xs font-medium">
+                        {selectedProducts.length}
+                    </div>
+                    <span className="text-sm">selecionado{selectedProducts.length > 1 ? 's' : ''}</span>
+                </div>
+                <div className="h-4 w-px bg-border"></div>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                        setSelectedProducts([]);
+                        setSelectAll(false);
+                    }}
+                    className="text-xs h-8 px-2"
+                >
+                    <X className="h-3.5 w-3.5 mr-1" />
+                    Limpar
+                </Button>
+                <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={confirmDeleteSelected}
+                    className="h-8 px-3 text-xs"
+                >
+                    <Trash2 className="h-3.5 w-3.5 mr-1" />
+                    Excluir
+                </Button>
+            </div>
+        );
+    };
+
     const getStatusBadge = (product: Product) => {
         if (product.quantity <= product.min_quantity) {
             return (
@@ -192,8 +230,10 @@ const ModernProductList: React.FC<ModernProductListProps> = ({
                         className={cn(
                             "overflow-hidden",
                             selectedProducts.includes(product.id) ? "bg-primary/5 border-primary" : "",
-                            product.quantity <= product.min_quantity ? "border-red-200" : ""
+                            product.quantity <= product.min_quantity ? "border-red-200" : "",
+                            selectMode && "cursor-pointer hover:bg-muted/50"
                         )}
+                        onClick={() => selectMode && toggleSelectProduct(product.id)}
                     >
                         <CardContent className="p-0">
                             <div className="p-3">
@@ -217,6 +257,7 @@ const ModernProductList: React.FC<ModernProductListProps> = ({
                                             checked={selectedProducts.includes(product.id)}
                                             onCheckedChange={() => toggleSelectProduct(product.id)}
                                             className="mt-1"
+                                            onClick={e => e.stopPropagation()}
                                         />
                                     ) : (
                                         getStatusBadge(product)
@@ -245,44 +286,43 @@ const ModernProductList: React.FC<ModernProductListProps> = ({
                                 </div>
 
                                 {!selectMode && (
-                                    <div className="flex justify-end gap-1 mt-3 border-t pt-3">
+                                    <div className="flex justify-end gap-1 mt-3 border-t pt-3" onClick={e => e.stopPropagation()}>
                                         <Button
                                             variant="outline"
                                             size="sm"
                                             onClick={() => onMovement(product, 'entrada')}
-                                            className="gap-1 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-700 dark:hover:text-green-300"
+                                            className="h-8 gap-1 text-xs text-green-600 border-green-200"
                                         >
                                             <ArrowDown className="h-3.5 w-3.5" />
-                                            <span>Entrada</span>
+                                            Entrada
                                         </Button>
                                         <Button
                                             variant="outline"
                                             size="sm"
                                             onClick={() => onMovement(product, 'saida')}
-                                            className="gap-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-700 dark:hover:text-red-300"
+                                            className="h-8 gap-1 text-xs text-red-600 border-red-200"
                                         >
                                             <ArrowUp className="h-3.5 w-3.5" />
-                                            <span>Saída</span>
+                                            Saída
                                         </Button>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="sm">
-                                                    <MoreHorizontal className="h-3.5 w-3.5" />
+                                                <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                                                    <MoreHorizontal className="h-4 w-4" />
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                                                <DropdownMenuSeparator />
                                                 <DropdownMenuItem onClick={() => onEdit(product)}>
                                                     <Edit className="mr-2 h-4 w-4" />
-                                                    Editar
+                                                    <span>Editar</span>
                                                 </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
                                                 <DropdownMenuItem
-                                                    className="text-destructive focus:text-destructive"
+                                                    className="text-red-600 focus:text-red-50 focus:bg-red-600"
                                                     onClick={() => onDelete(product)}
                                                 >
                                                     <Trash2 className="mr-2 h-4 w-4" />
-                                                    Excluir
+                                                    <span>Excluir</span>
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
@@ -296,187 +336,146 @@ const ModernProductList: React.FC<ModernProductListProps> = ({
         );
     };
 
-    // Renderizar visualização em tabela para desktop
+    // Renderizar tabela para desktop
     const renderDesktopTable = () => {
         if (products.length === 0) {
             return (
-                <div className="flex flex-col items-center justify-center p-16 text-muted-foreground dark:text-gray-400">
-                    <Package className="h-12 w-12 mb-4 text-gray-400 dark:text-gray-500" />
-                    <p className="text-lg font-medium text-gray-600 dark:text-gray-300">Nenhum produto encontrado</p>
-                    <p className="text-sm mt-1 text-gray-500 dark:text-gray-400">Use os filtros para buscar um produto específico</p>
+                <div className="flex flex-col items-center justify-center p-8 text-muted-foreground dark:text-gray-400">
+                    <Package className="h-10 w-10 mb-3 text-gray-400 dark:text-gray-500" />
+                    <p className="font-medium text-gray-600 dark:text-gray-300">Nenhum produto encontrado</p>
+                    <p className="text-xs mt-1 text-gray-500 dark:text-gray-400">Use os filtros para buscar um produto específico</p>
                 </div>
             );
         }
 
         return (
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        {selectMode && (
-                            <TableHead className="w-10">
-                                <Checkbox
-                                    checked={selectAll}
-                                    onCheckedChange={toggleSelectAll}
-                                />
-                            </TableHead>
-                        )}
-                        <TableHead className="max-w-[120px]">Código</TableHead>
-                        <TableHead>Nome</TableHead>
-                        <TableHead>Categoria</TableHead>
-                        <TableHead className="text-center">Quantidade</TableHead>
-                        <TableHead className="text-center">Mínimo</TableHead>
-                        <TableHead className="text-center">Status</TableHead>
-                        <TableHead className="text-right">Ações</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {products.map(product => (
-                        <TableRow
-                            key={product.id}
-                            className={cn(
-                                selectedProducts.includes(product.id) && "bg-primary/5 dark:bg-primary/15",
-                                product.quantity <= product.min_quantity && "bg-red-50/50 dark:bg-red-950/40"
-                            )}
-                        >
-                            {selectMode && (
-                                <TableCell className="p-2">
+            <div className="rounded-md border overflow-hidden">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="w-[40px]">
+                                {selectMode ? (
                                     <Checkbox
-                                        checked={selectedProducts.includes(product.id)}
-                                        onCheckedChange={() => toggleSelectProduct(product.id)}
+                                        checked={selectAll}
+                                        onCheckedChange={toggleSelectAll}
+                                        aria-label="Selecionar todos"
                                     />
-                                </TableCell>
-                            )}
-                            <TableCell className="font-mono text-sm">{product.code}</TableCell>
-                            <TableCell className="font-medium">{product.name}</TableCell>
-                            <TableCell>{getCategoryName(product.category_id)}</TableCell>
-                            <TableCell className={cn(
-                                "text-center",
-                                product.quantity <= product.min_quantity ? "text-red-600 dark:text-red-300 font-semibold" :
-                                    product.quantity <= product.min_quantity * 1.5 ? "text-amber-600 dark:text-amber-300" : ""
-                            )}>
-                                {product.quantity} {getUnitAbbreviation(product.unit)}
-                            </TableCell>
-                            <TableCell className="text-center">
-                                {product.min_quantity} {getUnitAbbreviation(product.unit)}
-                            </TableCell>
-                            <TableCell className="text-center">
-                                {getStatusBadge(product)}
-                            </TableCell>
-                            <TableCell className="text-right">
-                                <div className="flex justify-end gap-1">
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        title="Registrar entrada"
-                                        onClick={() => onMovement(product, 'entrada')}
-                                        className="text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-700 dark:hover:text-green-300"
-                                    >
-                                        <ArrowDown className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        title="Registrar saída"
-                                        onClick={() => onMovement(product, 'saida')}
-                                        className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-700 dark:hover:text-red-300"
-                                    >
-                                        <ArrowUp className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        title="Editar produto"
-                                        onClick={() => onEdit(product)}
-                                    >
-                                        <Edit className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        title="Excluir produto"
-                                        onClick={() => onDelete(product)}
-                                        className="text-destructive hover:bg-destructive/10"
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            </TableCell>
+                                ) : (
+                                    <span className="sr-only">Status</span>
+                                )}
+                            </TableHead>
+                            <TableHead className="w-[100px]">Código</TableHead>
+                            <TableHead>Nome</TableHead>
+                            <TableHead>Categoria</TableHead>
+                            <TableHead className="text-center">Estoque</TableHead>
+                            <TableHead className="text-center">Mínimo</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Ações</TableHead>
                         </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
+                    </TableHeader>
+                    <TableBody>
+                        {products.map(product => (
+                            <TableRow
+                                key={product.id}
+                                className={cn(
+                                    selectedProducts.includes(product.id) ? "bg-primary/5" : "",
+                                    selectMode && "cursor-pointer hover:bg-muted/50"
+                                )}
+                                onClick={() => selectMode && toggleSelectProduct(product.id)}
+                            >
+                                <TableCell className="w-[40px]" onClick={e => selectMode && e.stopPropagation()}>
+                                    {selectMode ? (
+                                        <Checkbox
+                                            checked={selectedProducts.includes(product.id)}
+                                            onCheckedChange={() => toggleSelectProduct(product.id)}
+                                            aria-label={`Selecionar ${product.name}`}
+                                        />
+                                    ) : (
+                                        <div className="w-4"></div>
+                                    )}
+                                </TableCell>
+                                <TableCell className="font-mono text-xs">{product.code}</TableCell>
+                                <TableCell className="font-medium">{product.name}</TableCell>
+                                <TableCell className="text-muted-foreground">{getCategoryName(product.category_id)}</TableCell>
+                                <TableCell className="text-center">
+                                    <span className={cn(
+                                        product.quantity <= product.min_quantity ? "text-red-600" :
+                                            product.quantity <= product.min_quantity * 1.5 ? "text-amber-600" : ""
+                                    )}>
+                                        {product.quantity} {getUnitAbbreviation(product.unit)}
+                                    </span>
+                                </TableCell>
+                                <TableCell className="text-center">{product.min_quantity} {getUnitAbbreviation(product.unit)}</TableCell>
+                                <TableCell>{getStatusBadge(product)}</TableCell>
+                                <TableCell className="text-right" onClick={e => e.stopPropagation()}>
+                                    {!selectMode && (
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" className="h-8 w-8 p-0" title="Opções">
+                                                    <span className="sr-only">Abrir menu</span>
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                                                <DropdownMenuItem onClick={() => onEdit(product)}>
+                                                    <Edit className="mr-2 h-4 w-4" />
+                                                    <span>Editar</span>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => onMovement(product, 'entrada')}>
+                                                    <ArrowDown className="mr-2 h-4 w-4" />
+                                                    <span>Registrar Entrada</span>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => onMovement(product, 'saida')}>
+                                                    <ArrowUp className="mr-2 h-4 w-4" />
+                                                    <span>Registrar Saída</span>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem
+                                                    className="text-red-600 focus:text-red-50 focus:bg-red-600"
+                                                    onClick={() => onDelete(product)}
+                                                >
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    <span>Excluir</span>
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    )}
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
         );
     };
 
     return (
-        <div className="relative">
-            {selectMode && selectedProducts.length > 0 && (
-                <div className="absolute top-0 left-0 w-full">
-                    <Alert variant="default" className="bg-primary text-primary-foreground shadow-md">
-                        <div className="flex items-center justify-between w-full">
-                            <div className="flex items-center">
-                                <CheckSquare className="h-4 w-4 mr-2" />
-                                <AlertTitle className="mr-2">{selectedProducts.length} {selectedProducts.length === 1 ? 'produto selecionado' : 'produtos selecionados'}</AlertTitle>
-                            </div>
-                            <div className="flex gap-2">
-                                <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={confirmDeleteSelected}
-                                    className="bg-white text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                                >
-                                    <Trash className="h-4 w-4 mr-1" />
-                                    Excluir
-                                </Button>
-                                {onToggleSelectMode && (
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={onToggleSelectMode}
-                                        className="bg-white text-primary border-white hover:bg-white/90"
-                                    >
-                                        Cancelar
-                                    </Button>
-                                )}
-                            </div>
-                        </div>
-                    </Alert>
-                </div>
-            )}
-
-            <div className={cn(
-                "transition-all",
-                selectMode && selectedProducts.length > 0 ? "pt-[64px]" : ""
-            )}>
-                {isMobileView ? renderMobileCards() : renderDesktopTable()}
-            </div>
+        <>
+            {isMobileView ? renderMobileCards() : renderDesktopTable()}
+            {renderSelectionActions()}
 
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>
-                            Excluir {selectedProducts.length} {selectedProducts.length === 1 ? 'produto' : 'produtos'}
-                        </AlertDialogTitle>
+                        <AlertDialogTitle>Excluir produtos selecionados</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Esta ação não pode ser desfeita. Isso excluirá permanentemente
-                            {selectedProducts.length === 1
-                                ? ' o produto selecionado.'
-                                : ` ${selectedProducts.length} produtos selecionados.`
-                            }
+                            Tem certeza que deseja excluir os {selectedProducts.length} produtos selecionados?
+                            Esta ação não pode ser desfeita.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleDeleteSelected}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            className="bg-red-600 text-white hover:bg-red-700"
                         >
                             Excluir
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </div>
+        </>
     );
 };
 

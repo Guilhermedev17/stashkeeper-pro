@@ -26,15 +26,29 @@ const ImportExcelButton = ({ className }: ImportExcelButtonProps) => {
 
   // Função para atualizar a lista de produtos e fechar o diálogo
   const handleImportComplete = useCallback(() => {
-    console.log("Atualizando produtos após importação");
-    
-    // Atualizar os produtos
-    fetchProducts();
-    
-    // Disparar um evento personalizado para notificar outros componentes
-    const event = new CustomEvent('excel-import-complete');
-    window.dispatchEvent(event);
-    
+    console.log("ImportExcelButton: handleImportComplete foi chamado");
+
+    // Primeiro, atualizar os produtos diretamente
+    console.log("ImportExcelButton: Chamando fetchProducts() para atualizar dados");
+    fetchProducts()
+      .then(() => {
+        console.log("ImportExcelButton: fetchProducts() concluído com sucesso");
+
+        // Após fetchProducts, disparar o evento para garantir que a página atualize
+        setTimeout(() => {
+          console.log("ImportExcelButton: Disparando evento excel-import-complete");
+          const event = new CustomEvent('excel-import-complete');
+          window.dispatchEvent(event);
+        }, 100);
+      })
+      .catch(err => {
+        console.error("ImportExcelButton: Erro ao atualizar produtos:", err);
+
+        // Mesmo se falhar, ainda disparamos o evento para que outros componentes possam tentar atualizar
+        const event = new CustomEvent('excel-import-complete');
+        window.dispatchEvent(event);
+      });
+
     // NÃO fechamos o diálogo automaticamente para mostrar os resultados
     // O usuário deve fechar manualmente para ver o resumo da importação
   }, [fetchProducts]);
@@ -45,7 +59,7 @@ const ImportExcelButton = ({ className }: ImportExcelButtonProps) => {
       console.warn("Importador Excel já está aberto");
       return;
     }
-    
+
     console.log("Abrindo diálogo de importação");
     setIsDialogOpen(true);
     // Não definimos GLOBAL_IMPORTER_OPEN aqui pois o ExcelImporter irá defini-lo
@@ -62,19 +76,19 @@ const ImportExcelButton = ({ className }: ImportExcelButtonProps) => {
 
   return (
     <>
-      <Button 
-        onClick={openDialog} 
-        className={`gap-2 ${className || ''}`}
+      <Button
+        onClick={openDialog}
+        className={`gap-1.5 h-10 ${className || ''}`}
         variant="outline"
         title="Importar produtos via Excel"
       >
-        <FileSpreadsheet className="h-4 w-4" />
-        <span>Importar Excel</span>
+        <FileSpreadsheet className="h-4 w-4 flex-shrink-0" />
+        <span className="text-sm">Importar Produtos</span>
       </Button>
-      
+
       {isDialogOpen && (
-        <ExcelImporter 
-          onClose={handleClose} 
+        <ExcelImporter
+          onClose={handleClose}
           onImportComplete={handleImportComplete}
         />
       )}

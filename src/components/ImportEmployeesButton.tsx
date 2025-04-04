@@ -64,12 +64,12 @@ const ImportEmployeesButton = ({ className }: ImportEmployeesButtonProps) => {
     <>
       <Button
         onClick={openDialog}
-        className={`gap-2 ${className || ''}`}
+        className={`gap-1.5 h-10 ${className || ''}`}
         variant="outline"
         title="Importar colaboradores via Excel"
       >
-        <FileSpreadsheet className="size-4" />
-        <span>Importar Excel</span>
+        <FileSpreadsheet className="h-4 w-4 flex-shrink-0" />
+        <span className="text-sm">Importar Colaboradores</span>
       </Button>
 
       {isDialogOpen && (

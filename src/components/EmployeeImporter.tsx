@@ -8,9 +8,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import * as XLSX from 'xlsx';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 // Variável global para controlar se o importador já está aberto
 let GLOBAL_EMPLOYEE_IMPORTER_OPEN = false;
@@ -375,80 +376,82 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
   );
 
   return (
-    <Dialog open={true} onOpenChange={(open) => {
-      if (!open) handleClose();
-    }}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto p-0">
-        <div className="flex justify-between items-center p-4 border-b">
-          <div className="flex items-center gap-2">
-            <FileSpreadsheet className="size-5 text-primary" />
-            <h2 className="text-xl font-bold">Importador de Colaboradores via Excel</h2>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleClose}
-            className="size-4 rounded-full"
+    <Dialog
+      open={true}
+      onOpenChange={(open) => !open && handleClose()}
+    >
+      <DialogContent className="sm:max-w-[800px] h-auto max-h-[90vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Importador de Colaboradores via Excel</DialogTitle>
+          <DialogDescription>
+            Importe seus colaboradores a partir de um arquivo Excel
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-hidden relative">
+          <div
+            className={cn(
+              "transition-all duration-300 ease-in-out h-full overflow-auto",
+              importStep === 'select' ? "block" : "hidden"
+            )}
           >
-            <X className="size-4" />
-          </Button>
-        </div>
-
-        <div className="p-4">
-          <p className="text-sm text-muted-foreground mb-6">
-            Importe dados de colaboradores de um arquivo Excel com código e nome
-          </p>
-
-          {importStep === 'select' && (
-            <div className="space-y-8">
-              <div className="space-y-3">
-                <div className="grid w-full items-center gap-1.5">
-                  <label
-                    htmlFor="file-upload"
-                    className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/30 transition-colors"
-                  >
-                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      <FileSpreadsheet className="size-8 text-primary/70 mb-2" />
-                      <p className="mb-1 text-sm text-muted-foreground">
-                        <span className="font-semibold">Clique para selecionar</span> ou arraste o arquivo
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        XLSX, XLS (MAX. 10MB)
-                      </p>
-                    </div>
-                    {selectedFile && (
-                      <div className="flex items-center gap-2 py-2 px-3 bg-secondary/50 rounded-md text-sm mt-2">
-                        <Check className="size-4 text-green-500" />
-                        <span className="truncate max-w-[280px]">{selectedFile.name}</span>
+            <div className="p-4">
+              <div className="space-y-8">
+                <div className="space-y-3">
+                  <Label htmlFor="file" className="text-base font-medium">Arquivo Excel</Label>
+                  <div className="grid w-full items-center gap-1.5">
+                    <Label
+                      htmlFor="file-upload"
+                      className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/30 transition-colors"
+                    >
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <FileSpreadsheet className="w-10 h-10 text-primary/70 mb-3" />
+                        <p className="mb-2 text-sm text-muted-foreground">
+                          <span className="font-semibold">Clique para selecionar</span> ou arraste o arquivo
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          XLSX, XLS (MAX. 10MB)
+                        </p>
                       </div>
-                    )}
-                    <input
-                      id="file-upload"
-                      type="file"
-                      accept=".xlsx,.xls"
-                      className="hidden"
-                      onChange={handleFileChange}
-                    />
-                  </label>
+                      {selectedFile && (
+                        <div className="flex items-center gap-2 py-2 px-3 bg-secondary/50 rounded-md text-sm mt-2">
+                          <Check className="w-4 h-4 text-green-500" />
+                          <span className="truncate max-w-[280px]">{selectedFile.name}</span>
+                        </div>
+                      )}
+                      <input
+                        id="file-upload"
+                        type="file"
+                        accept=".xlsx,.xls"
+                        className="hidden"
+                        onChange={handleFileChange}
+                      />
+                    </Label>
+                  </div>
                 </div>
+
+                <Alert className="bg-secondary/50 border-secondary">
+                  <Info className="h-5 w-5 text-primary/80" />
+                  <AlertTitle className="text-base font-medium">Como importar seus colaboradores</AlertTitle>
+                  <AlertDescription className="mt-1 text-sm">
+                    <p className="mb-2">Use sua planilha Excel com informações de colaboradores:</p>
+                    <ul className="space-y-1.5 list-disc pl-5">
+                      <li>Prepare uma planilha com código e nome dos colaboradores</li>
+                      <li>Faça o upload do arquivo Excel</li>
+                      <li>Confirme os colaboradores que deseja importar</li>
+                    </ul>
+                  </AlertDescription>
+                </Alert>
               </div>
-
-              <Alert className="bg-secondary/50 border-secondary">
-                <Info className="size-5 text-primary/80" />
-                <AlertTitle className="text-base font-medium">Como importar seus colaboradores</AlertTitle>
-                <AlertDescription className="mt-1 text-sm">
-                  <p className="mb-2">Use sua planilha Excel com informações de colaboradores:</p>
-                  <ul className="space-y-1.5 list-disc pl-5">
-                    <li>Prepare uma planilha com <strong>código</strong> e <strong>nome</strong> dos colaboradores</li>
-                    <li>Faça o upload do arquivo e revise os dados</li>
-                    <li>Confirme os colaboradores que deseja importar</li>
-                  </ul>
-                </AlertDescription>
-              </Alert>
             </div>
-          )}
+          </div>
 
-          {importStep === 'preview' && (
+          <div
+            className={cn(
+              "transition-all duration-300 ease-in-out h-full overflow-auto",
+              importStep === 'preview' ? "block" : "hidden"
+            )}
+          >
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-2 border-b">
                 <h3 className="text-lg font-medium">Pré-visualização dos dados</h3>
@@ -518,8 +521,7 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
                             <td className="px-3 py-1.5 font-medium">{item.code}</td>
                             <td className="px-3 py-1.5 max-w-[220px]">
                               <div
-                                className="truncate hover:whitespace-normal"
-                                title={item.name}
+                                className="truncate"
                               >
                                 {item.name}
                               </div>
@@ -560,9 +562,14 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
                 </AlertDescription>
               </Alert>
             </div>
-          )}
+          </div>
 
-          {importStep === 'result' && (
+          <div
+            className={cn(
+              "transition-all duration-300 ease-in-out h-full overflow-auto",
+              importStep === 'result' ? "block" : "hidden"
+            )}
+          >
             <div className="space-y-6">
               <div className="flex items-center justify-between border-b pb-3">
                 <h3 className="text-xl font-medium">Importação concluída</h3>
@@ -624,10 +631,10 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
                 </AlertDescription>
               </Alert>
             </div>
-          )}
+          </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-between p-4 border-t">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-end p-4 border-t">
           {importStep === 'select' && (
             <>
               <Button variant="outline" onClick={handleClose} className="w-full sm:w-auto order-2 sm:order-1">Cancelar</Button>
@@ -637,7 +644,7 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
                 className="gap-2 w-full sm:w-auto order-1 sm:order-2"
               >
                 {isUploading ? "Processando..." : "Continuar"}
-                <Upload className="size-4" />
+                <Upload className="h-4 w-4" />
               </Button>
             </>
           )}
@@ -651,7 +658,7 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
                 className="gap-2 w-full sm:w-auto order-1 sm:order-2"
               >
                 {isUploading ? "Importando..." : "Confirmar Importação"}
-                <Check className="size-4" />
+                <Check className="h-4 w-4" />
               </Button>
             </>
           )}
