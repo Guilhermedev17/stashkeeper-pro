@@ -86,6 +86,7 @@ const Dashboard = () => {
   const [categoryData, setCategoryData] = useState<any[]>([]);
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('status');
 
   useEffect(() => {
     // Conta produtos por categoria
@@ -245,6 +246,23 @@ const Dashboard = () => {
     { name: 'Baixo', value: stockSummary.low, color: '#f59e0b' },
     { name: 'Crítico', value: stockSummary.critical, color: '#ef4444' }
   ].filter(item => item.value > 0);
+
+  // Dados de distribuição por categoria
+  const categoryDistributionData = categories
+    .map(category => {
+      const count = products.filter(p => p.category_id === category.id).length;
+      return {
+        name: category.name,
+        value: count,
+        color: `hsl(${Math.floor(Math.random() * 360)}, 70%, 50%)`
+      };
+    })
+    .filter(item => item.value > 0)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 6); // Limitar a 6 categorias para melhor visualização
+
+  // Dados a serem exibidos no gráfico com base na aba ativa
+  const chartDisplayData = activeTab === 'categories' ? categoryDistributionData : stockData;
 
   // Recupera o nome do usuário para exibição personalizada
   const userName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Usuário';
@@ -574,10 +592,16 @@ const Dashboard = () => {
                 <div className="flex justify-between items-center mb-3 sm:mb-4">
                   <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Distribuição do Estoque</h3>
                   <div className="flex items-center rounded bg-blue-50 dark:bg-blue-900/30 p-1">
-                    <button className="px-2 py-1 text-xs text-blue-800 dark:text-blue-300 bg-blue-100 dark:bg-blue-800/50 rounded">
+                    <button
+                      onClick={() => setActiveTab('categories')}
+                      className={`px-2 py-1 text-xs rounded ${activeTab === 'categories' ? 'text-blue-800 dark:text-blue-300 bg-blue-100 dark:bg-blue-800/50' : 'text-blue-600 dark:text-blue-400'}`}
+                    >
                       Categorias
                     </button>
-                    <button className="px-2 py-1 text-xs text-blue-600 dark:text-blue-400">
+                    <button
+                      onClick={() => setActiveTab('status')}
+                      className={`px-2 py-1 text-xs rounded ${activeTab === 'status' ? 'text-blue-800 dark:text-blue-300 bg-blue-100 dark:bg-blue-800/50' : 'text-blue-600 dark:text-blue-400'}`}
+                    >
                       Status
                     </button>
                   </div>
@@ -588,7 +612,7 @@ const Dashboard = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={stockData}
+                        data={chartDisplayData}
                         cx="50%"
                         cy="50%"
                         innerRadius={50}
@@ -596,7 +620,7 @@ const Dashboard = () => {
                         paddingAngle={3}
                         dataKey="value"
                       >
-                        {stockData.map((entry, index) => (
+                        {chartDisplayData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
@@ -616,7 +640,7 @@ const Dashboard = () => {
 
                 {/* Legenda do gráfico */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                  {stockData.map((item, index) => (
+                  {chartDisplayData.map((item, index) => (
                     <div key={index} className="flex items-center">
                       <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: item.color }}></div>
                       <div>

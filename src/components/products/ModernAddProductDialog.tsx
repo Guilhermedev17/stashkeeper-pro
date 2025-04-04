@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,10 +50,25 @@ export function ModernAddProductDialog({
         name: '',
         description: '',
         category: '',
-        unit: 'unidade',
+        unit: '',
         initialQty: 0,
         minQty: 0
     });
+
+    // Limpar o formulário quando o diálogo for aberto
+    useEffect(() => {
+        if (open) {
+            setNewProduct({
+                code: '',
+                name: '',
+                description: '',
+                category: '',
+                unit: '',
+                initialQty: 0,
+                minQty: 0
+            });
+        }
+    }, [open]);
 
     const handleChange = (field: keyof NewProduct, value: string | number) => {
         setNewProduct((prev) => ({ ...prev, [field]: value }));
@@ -64,7 +79,14 @@ export function ModernAddProductDialog({
         onOpenChange(false);
     };
 
-    const isValid = newProduct.code.trim() !== '' && newProduct.name.trim() !== '';
+    const isValid = newProduct.code.trim() !== '' &&
+        newProduct.name.trim() !== '' &&
+        newProduct.unit.trim() !== '';
+
+    // Renderização condicional para campos numéricos
+    const displayNumberField = (value: number) => {
+        return value === 0 ? '' : value;
+    };
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -169,10 +191,11 @@ export function ModernAddProductDialog({
                             <Input
                                 id="initialQty"
                                 type="number"
-                                value={newProduct.initialQty}
-                                onChange={(e) => handleChange('initialQty', Number(e.target.value))}
+                                value={displayNumberField(newProduct.initialQty)}
+                                onChange={(e) => handleChange('initialQty', e.target.value === '' ? 0 : Number(e.target.value))}
                                 className="w-full"
                                 min="0"
+                                placeholder="0"
                             />
                         </div>
 
@@ -183,10 +206,11 @@ export function ModernAddProductDialog({
                             <Input
                                 id="minQty"
                                 type="number"
-                                value={newProduct.minQty}
-                                onChange={(e) => handleChange('minQty', Number(e.target.value))}
+                                value={displayNumberField(newProduct.minQty)}
+                                onChange={(e) => handleChange('minQty', e.target.value === '' ? 0 : Number(e.target.value))}
                                 className="w-full"
                                 min="0"
+                                placeholder="0"
                             />
                         </div>
                     </div>
@@ -202,7 +226,7 @@ export function ModernAddProductDialog({
                                 name: '',
                                 description: '',
                                 category: '',
-                                unit: 'unidade',
+                                unit: '',
                                 initialQty: 0,
                                 minQty: 0
                             });

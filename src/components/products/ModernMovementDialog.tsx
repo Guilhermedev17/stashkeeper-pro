@@ -44,6 +44,7 @@ const formSchema = z.object({
     quantity: z.coerce.number().positive({ message: 'A quantidade deve ser maior que zero' }),
     notes: z.string().optional(),
     employee_id: z.string().optional(),
+    unitType: z.string().default('default'), // Nova propriedade para a unidade de medida
 });
 
 // Tipo condicional para tornar employee_id obrigatório para saídas
@@ -91,6 +92,52 @@ const getFullUnitName = (unitCode: string): string => {
     return unitMap[unitCode.toLowerCase()] || unitCode;
 };
 
+// Função para obter as unidades relacionadas para conversão
+const getRelatedUnits = (unit: string): { value: string, label: string, conversionFactor: number }[] => {
+    const unitLower = unit.toLowerCase();
+
+    // Unidades de peso
+    if (unitLower === 'kg') {
+        return [
+            { value: 'default', label: 'kg (padrão)', conversionFactor: 1 },
+            { value: 'g', label: 'g (gramas)', conversionFactor: 1000 }
+        ];
+    }
+    else if (unitLower === 'g') {
+        return [
+            { value: 'default', label: 'g (padrão)', conversionFactor: 1 },
+            { value: 'kg', label: 'kg (quilogramas)', conversionFactor: 0.001 }
+        ];
+    }
+
+    // Unidades de volume
+    else if (unitLower === 'l') {
+        return [
+            { value: 'default', label: 'L (padrão)', conversionFactor: 1 },
+            { value: 'ml', label: 'ml (mililitros)', conversionFactor: 1000 }
+        ];
+    }
+    else if (unitLower === 'ml') {
+        return [
+            { value: 'default', label: 'ml (padrão)', conversionFactor: 1 },
+            { value: 'l', label: 'L (litros)', conversionFactor: 0.001 }
+        ];
+    }
+
+    // Unidades para rolos/etiquetas
+    else if (unitLower === 'rl') {
+        return [
+            { value: 'default', label: 'Rolo (padrão)', conversionFactor: 1 },
+            { value: 'un', label: 'Etiquetas', conversionFactor: 100 } // Assumindo 100 etiquetas por rolo
+        ];
+    }
+
+    // Para outras unidades, retorna apenas a padrão
+    return [
+        { value: 'default', label: `${unit} (padrão)`, conversionFactor: 1 }
+    ];
+};
+
 /**
  * Diálogo modernizado para registrar movimentações de entrada e saída de produtos.
  * Suporta adição de detalhes como quantidade, responsável e observações.
@@ -107,6 +154,8 @@ export function ModernMovementDialog({
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [activeEmployees, setActiveEmployees] = useState<any[]>([]);
+    const [unitOptions, setUnitOptions] = useState<{ value: string, label: string, conversionFactor: number }[]>([]);
+    const [selectedConversionFactor, setSelectedConversionFactor] = useState(1);
 
     // Resolver atualizado quando o tipo muda
     const resolver = zodResolver(createFormSchema(type));
@@ -118,6 +167,7 @@ export function ModernMovementDialog({
             quantity: 1,
             notes: '',
             employee_id: '',
+            unitType: 'default'
         },
     });
 
@@ -128,10 +178,18 @@ export function ModernMovementDialog({
                 quantity: 1,
                 notes: '',
                 employee_id: '',
+                unitType: 'default'
             });
 
             // Revalidar o formulário quando o tipo muda para aplicar a validação condicional
             form.clearErrors();
+
+            // Definir opções de unidade baseadas no produto selecionado
+            if (product) {
+                const options = getRelatedUnits(product.unit);
+                setUnitOptions(options);
+                setSelectedConversionFactor(options[0]?.conversionFactor || 1);
+            }
         }
     }, [open, form, product, type]);
 
@@ -146,13 +204,18 @@ export function ModernMovementDialog({
         setIsSubmitting(true);
 
         try {
+            // Converter quantidade para a unidade padrão do produto
+            const finalQuantity = values.unitType === 'default'
+                ? values.quantity
+                : values.quantity / selectedConversionFactor;
+
             // 1. Registra a movimentação
             const { error: movementError } = await supabase
                 .from('movements')
                 .insert({
                     product_id: product.id,
                     type: type,
-                    quantity: values.quantity,
+                    quantity: finalQuantity,
                     notes: values.notes || null,
                     employee_id: type === 'saida' ? values.employee_id : null,
                 });
@@ -171,8 +234,8 @@ export function ModernMovementDialog({
             // 3. Calcula a nova quantidade
             const currentQuantity = productData.quantity || 0;
             const newQuantity = type === 'entrada'
-                ? currentQuantity + values.quantity
-                : currentQuantity - values.quantity;
+                ? currentQuantity + finalQuantity
+                : currentQuantity - finalQuantity;
 
             // Verifica se há quantidade suficiente para saída
             if (type === 'saida' && newQuantity < 0) {
@@ -194,12 +257,18 @@ export function ModernMovementDialog({
                 employeeName = employee ? employee.name : '';
             }
 
+            // Obtém o nome da unidade usada para exibição
+            const selectedUnit = unitOptions.find(opt => opt.value === values.unitType);
+            const displayUnitLabel = selectedUnit
+                ? selectedUnit.label.split(' ')[0].toUpperCase()
+                : product.unit.toUpperCase();
+
             // Exibe mensagem de sucesso e fecha o diálogo
             toast({
                 title: `${type === 'entrada' ? 'Entrada' : 'Saída'} registrada com sucesso`,
                 description: type === 'entrada'
-                    ? `Entrada de ${values.quantity} ${getFullUnitName(product.unit)} de ${product.name} registrada.`
-                    : `Saída de ${values.quantity} ${getFullUnitName(product.unit)} de ${product.name} registrada para ${employeeName}.`,
+                    ? `Entrada de ${values.quantity} ${getFullUnitName(product.unit).toUpperCase()} de ${product.name} registrada.`
+                    : `Saída de ${values.quantity} ${displayUnitLabel} de ${product.name} registrada para ${employeeName}.`,
                 variant: 'default',
             });
 
@@ -289,15 +358,39 @@ export function ModernMovementDialog({
                                         <div className="flex rounded-md overflow-hidden border focus-within:ring-2 focus-within:ring-ring/70 transition-all duration-200">
                                             <Input
                                                 type="number"
-                                                min="1"
-                                                step="1"
-                                                inputMode="numeric"
+                                                min="0.001"
+                                                step="any"
+                                                inputMode="decimal"
                                                 {...field}
                                                 className="text-right border-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0 rounded-none text-sm"
                                             />
-                                            <div className="bg-muted flex items-center justify-center px-2 sm:px-3 text-xs sm:text-sm font-medium text-muted-foreground border-l">
-                                                {product ? getFullUnitName(product.unit) : 'unidades'}
-                                            </div>
+                                            {type === 'saida' && unitOptions.length > 1 ? (
+                                                <Select
+                                                    onValueChange={(value) => {
+                                                        form.setValue('unitType', value);
+                                                        const selectedOption = unitOptions.find(opt => opt.value === value);
+                                                        if (selectedOption) {
+                                                            setSelectedConversionFactor(selectedOption.conversionFactor);
+                                                        }
+                                                    }}
+                                                    defaultValue="default"
+                                                >
+                                                    <SelectTrigger className="min-w-[80px] w-[90px] border-0 border-l border-input rounded-none focus:ring-0">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {unitOptions.map(option => (
+                                                            <SelectItem key={option.value} value={option.value} className="text-xs">
+                                                                {option.label.split(' ')[0].toUpperCase()}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            ) : (
+                                                <div className="bg-muted flex items-center justify-center px-2 sm:px-3 text-xs sm:text-sm font-medium text-muted-foreground border-l">
+                                                    {product ? getFullUnitName(product.unit).toUpperCase() : 'UNIDADES'}
+                                                </div>
+                                            )}
                                         </div>
                                     </FormControl>
                                     <FormMessage className="text-xs" />
