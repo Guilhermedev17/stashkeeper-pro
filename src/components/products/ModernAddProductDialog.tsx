@@ -1,0 +1,219 @@
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { PlusCircle } from 'lucide-react';
+
+interface Category {
+    id: string;
+    name: string;
+}
+
+interface NewProduct {
+    code: string;
+    name: string;
+    description: string;
+    category: string;
+    unit: string;
+    initialQty: number;
+    minQty: number;
+}
+
+interface ModernAddProductDialogProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    categories: Category[];
+    onAdd: (product: NewProduct) => void;
+}
+
+/**
+ * Diálogo modernizado para adicionar novos produtos ao sistema.
+ * Inclui formulário com campos necessários e validação básica.
+ */
+export function ModernAddProductDialog({
+    open,
+    onOpenChange,
+    categories,
+    onAdd,
+}: ModernAddProductDialogProps) {
+    const [newProduct, setNewProduct] = useState<NewProduct>({
+        code: '',
+        name: '',
+        description: '',
+        category: '',
+        unit: 'unidade',
+        initialQty: 0,
+        minQty: 0
+    });
+
+    const handleChange = (field: keyof NewProduct, value: string | number) => {
+        setNewProduct((prev) => ({ ...prev, [field]: value }));
+    };
+
+    const handleAdd = () => {
+        onAdd(newProduct);
+        onOpenChange(false);
+    };
+
+    const isValid = newProduct.code.trim() !== '' && newProduct.name.trim() !== '';
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                    <DialogTitle className="text-xl flex items-center gap-2">
+                        <PlusCircle className="h-5 w-5 text-primary" />
+                        Adicionar Produto
+                    </DialogTitle>
+                </DialogHeader>
+
+                <div className="grid gap-5 py-4">
+                    <div className="grid gap-3">
+                        <Label htmlFor="code" className="text-sm font-medium">
+                            Código
+                        </Label>
+                        <Input
+                            id="code"
+                            value={newProduct.code}
+                            onChange={(e) => handleChange('code', e.target.value)}
+                            placeholder="Código do produto"
+                            className="w-full"
+                        />
+                    </div>
+
+                    <div className="grid gap-3">
+                        <Label htmlFor="name" className="text-sm font-medium">
+                            Nome
+                        </Label>
+                        <Input
+                            id="name"
+                            value={newProduct.name}
+                            onChange={(e) => handleChange('name', e.target.value)}
+                            placeholder="Nome do produto"
+                            className="w-full"
+                        />
+                    </div>
+
+                    <div className="grid gap-3">
+                        <Label htmlFor="description" className="text-sm font-medium">
+                            Descrição
+                        </Label>
+                        <Textarea
+                            id="description"
+                            value={newProduct.description}
+                            onChange={(e) => handleChange('description', e.target.value)}
+                            placeholder="Descrição do produto"
+                            className="w-full min-h-[80px]"
+                        />
+                    </div>
+
+                    <div className="grid gap-3">
+                        <Label htmlFor="category" className="text-sm font-medium">
+                            Categoria
+                        </Label>
+                        <Select
+                            value={newProduct.category}
+                            onValueChange={(value) => handleChange('category', value)}
+                        >
+                            <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Selecione uma categoria" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {categories.map((category) => (
+                                    <SelectItem key={category.id} value={category.id}>
+                                        {category.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="grid gap-3">
+                        <Label htmlFor="unit" className="text-sm font-medium">
+                            Unidade
+                        </Label>
+                        <Select
+                            value={newProduct.unit}
+                            onValueChange={(value) => handleChange('unit', value)}
+                        >
+                            <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Selecione uma unidade" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="unidade">Unidade</SelectItem>
+                                <SelectItem value="kg">Kg</SelectItem>
+                                <SelectItem value="g">g</SelectItem>
+                                <SelectItem value="ml">ml</SelectItem>
+                                <SelectItem value="l">L</SelectItem>
+                                <SelectItem value="m">m</SelectItem>
+                                <SelectItem value="cm">cm</SelectItem>
+                                <SelectItem value="caixa">Caixa</SelectItem>
+                                <SelectItem value="pacote">Pacote</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-3">
+                            <Label htmlFor="initialQty" className="text-sm font-medium">
+                                Quantidade Inicial
+                            </Label>
+                            <Input
+                                id="initialQty"
+                                type="number"
+                                value={newProduct.initialQty}
+                                onChange={(e) => handleChange('initialQty', Number(e.target.value))}
+                                className="w-full"
+                                min="0"
+                            />
+                        </div>
+
+                        <div className="grid gap-3">
+                            <Label htmlFor="minQty" className="text-sm font-medium">
+                                Quantidade Mínima
+                            </Label>
+                            <Input
+                                id="minQty"
+                                type="number"
+                                value={newProduct.minQty}
+                                onChange={(e) => handleChange('minQty', Number(e.target.value))}
+                                className="w-full"
+                                min="0"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <DialogFooter className="flex justify-end gap-2">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => onOpenChange(false)}
+                        className="w-[120px]"
+                    >
+                        Cancelar
+                    </Button>
+                    <Button
+                        type="button"
+                        disabled={!isValid}
+                        onClick={handleAdd}
+                        className="w-[160px]"
+                    >
+                        Adicionar Produto
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+export default ModernAddProductDialog; 

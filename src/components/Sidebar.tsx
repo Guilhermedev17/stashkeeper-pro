@@ -15,6 +15,10 @@ import {
   ArrowDownUp,
   ChevronLeft,
   Users,
+  Sparkles,
+  Layout,
+  Calendar,
+  Palette
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -51,6 +55,32 @@ const Sidebar = ({ showMobile, setShowMobile, showDesktop = true, setShowDesktop
           >
             <Home className="mr-3 h-4 w-4" />
             <span>Dashboard</span>
+          </NavLink>
+          <NavLink
+            to="/new-dashboard"
+            className={({ isActive }) =>
+              cn(
+                'flex items-center rounded-lg px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all',
+                isActive && 'bg-primary/10 text-primary font-semibold shadow-sm'
+              )
+            }
+            onClick={closeMobileMenu}
+          >
+            <Sparkles className="mr-3 h-4 w-4" />
+            <span>Dashboard Moderno</span>
+          </NavLink>
+          <NavLink
+            to="/integrated"
+            className={({ isActive }) =>
+              cn(
+                'flex items-center rounded-lg px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all',
+                isActive && 'bg-primary/10 text-primary font-semibold shadow-sm'
+              )
+            }
+            onClick={closeMobileMenu}
+          >
+            <Layout className="mr-3 h-4 w-4" />
+            <span>Interface Integrada</span>
           </NavLink>
           <NavLink
             to="/products"
@@ -142,6 +172,19 @@ const Sidebar = ({ showMobile, setShowMobile, showDesktop = true, setShowDesktop
           >
             <Settings className="mr-3 h-4 w-4" />
             <span>Configurações</span>
+          </NavLink>
+          <NavLink
+            to="/design-system"
+            className={({ isActive }) =>
+              cn(
+                'flex items-center rounded-lg px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all',
+                isActive && 'bg-primary/10 text-primary font-semibold shadow-sm'
+              )
+            }
+            onClick={closeMobileMenu}
+          >
+            <Palette className="mr-3 h-4 w-4" />
+            <span>Design System</span>
           </NavLink>
         </div>
       </div>

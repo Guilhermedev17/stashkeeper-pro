@@ -24,29 +24,29 @@ const StatCard = ({ title, value, description, icon, trend }: StatCardProps) => 
         return null;
     }
   };
-  
+
   const getGradient = () => {
     switch (icon) {
       case "products":
-        return "from-primary/80 to-primary/10";
+        return "from-primary/80 to-primary/10 dark:from-primary/30 dark:to-primary/5";
       case "low":
-        return "from-orange-500/80 to-orange-500/10";
+        return "from-orange-500/80 to-orange-500/10 dark:from-orange-500/30 dark:to-orange-500/5";
       case "in":
-        return "from-green-500/80 to-green-500/10";
+        return "from-green-500/80 to-green-500/10 dark:from-green-500/30 dark:to-green-500/5";
       case "out":
-        return "from-blue-500/80 to-blue-500/10";
+        return "from-blue-500/80 to-blue-500/10 dark:from-blue-500/30 dark:to-blue-500/5";
       default:
-        return "from-primary/80 to-primary/10";
+        return "from-primary/80 to-primary/10 dark:from-primary/30 dark:to-primary/5";
     }
   };
 
   return (
-    <Card className="overflow-hidden card-hover border-0 w-full">
-      <div className={`absolute inset-0 bg-gradient-to-br ${getGradient()} opacity-[0.08] rounded-xl`}></div>
+    <Card className="overflow-hidden card-hover border dark:border-gray-800 w-full">
+      <div className={`absolute inset-0 bg-gradient-to-br ${getGradient()} opacity-[0.08] dark:opacity-[0.15] rounded-xl`}></div>
       <CardContent className="p-4 sm:p-6 relative flex flex-col justify-between h-full">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-medium text-foreground">{title}</h3>
-          <div className="flex aspect-square h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-background dark:bg-card shadow-sm">
+          <div className="flex aspect-square h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-background dark:bg-card/90 shadow-sm dark:shadow-black/10 border dark:border-gray-800">
             {getIcon()}
           </div>
         </div>

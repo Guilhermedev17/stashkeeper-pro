@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { ArrowDownUp, Package } from 'lucide-react';
+import { ArrowDownUp, ArrowDown, ArrowUp, Package, User } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,6 +28,8 @@ import { useSupabaseMovements } from '@/hooks/useSupabaseMovements';
 import { useSupabaseEmployees } from '@/hooks/useSupabaseEmployees';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 export interface Product {
   id: string;
@@ -36,6 +38,28 @@ export interface Product {
   description: string;
   unit: string;
 }
+
+// Função para obter o nome completo da unidade
+const getFullUnitName = (unitCode: string): string => {
+  const unitMap: Record<string, string> = {
+    'un': 'unidades',
+    'kg': 'quilogramas',
+    'g': 'gramas',
+    'mg': 'miligramas',
+    'l': 'litros',
+    'ml': 'mililitros',
+    'm': 'metros',
+    'cm': 'centímetros',
+    'mm': 'milímetros',
+    'cx': 'caixas',
+    'pct': 'pacotes',
+    'rl': 'rolos',
+    'par': 'pares',
+    'conj': 'conjuntos'
+  };
+
+  return unitMap[unitCode.toLowerCase()] || unitCode;
+};
 
 // Define o schema de validação para o formulário
 const formSchema = z.object({
@@ -73,11 +97,11 @@ const MovementDialog = ({ product, type, open, onOpenChange }: MovementDialogPro
   const { employees } = useSupabaseEmployees();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeEmployees, setActiveEmployees] = useState([]);
+  const [activeEmployees, setActiveEmployees] = useState<any[]>([]);
 
   // Resolver atualizado quando o tipo muda
   const resolver = zodResolver(createFormSchema(type));
-  
+
   // Inicializa o formulário
   const form = useForm<FormValues>({
     resolver,
@@ -96,7 +120,7 @@ const MovementDialog = ({ product, type, open, onOpenChange }: MovementDialogPro
         notes: '',
         employee_id: '',
       });
-      
+
       // Revalidar o formulário quando o tipo muda para aplicar a validação condicional
       form.clearErrors();
     }
@@ -111,7 +135,7 @@ const MovementDialog = ({ product, type, open, onOpenChange }: MovementDialogPro
     if (!product) return;
 
     setIsSubmitting(true);
-    
+
     try {
       // 1. Registra a movimentação
       const { error: movementError } = await supabase
@@ -134,13 +158,13 @@ const MovementDialog = ({ product, type, open, onOpenChange }: MovementDialogPro
         .single();
 
       if (productFetchError) throw productFetchError;
-      
+
       // 3. Calcula a nova quantidade
       const currentQuantity = productData.quantity || 0;
-      const newQuantity = type === 'entrada' 
-        ? currentQuantity + values.quantity 
+      const newQuantity = type === 'entrada'
+        ? currentQuantity + values.quantity
         : currentQuantity - values.quantity;
-      
+
       // Verifica se há quantidade suficiente para saída
       if (type === 'saida' && newQuantity < 0) {
         throw new Error('Quantidade insuficiente em estoque');
@@ -165,11 +189,11 @@ const MovementDialog = ({ product, type, open, onOpenChange }: MovementDialogPro
       toast({
         title: `${type === 'entrada' ? 'Entrada' : 'Saída'} registrada com sucesso`,
         description: type === 'entrada'
-          ? `Entrada de ${values.quantity} ${product.unit} de ${product.name} registrada.`
-          : `Saída de ${values.quantity} ${product.unit} de ${product.name} registrada para ${employeeName}.`,
+          ? `Entrada de ${values.quantity} ${getFullUnitName(product.unit)} de ${product.name} registrada.`
+          : `Saída de ${values.quantity} ${getFullUnitName(product.unit)} de ${product.name} registrada para ${employeeName}.`,
         variant: 'default',
       });
-      
+
       // Atualiza os dados
       fetchProducts();
       fetchMovements();
@@ -187,26 +211,27 @@ const MovementDialog = ({ product, type, open, onOpenChange }: MovementDialogPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] p-0 gap-0 w-[95vw] overflow-hidden border-none bg-background">
+      <DialogContent className="sm:max-w-[480px] p-0 gap-0 overflow-hidden border-none">
         {/* Cabeçalho colorido baseado no tipo */}
-        <div className={`p-6 flex items-center gap-3 ${
-          type === 'entrada' 
-            ? 'bg-primary text-primary-foreground' 
-            : 'bg-blue-600 text-white'
-        }`}>
-          <div className={`rounded-full p-2 bg-white/20`}>
-            {type === 'entrada' 
-              ? <ArrowDownUp className="h-5 w-5" /> 
-              : <ArrowDownUp className="h-5 w-5" />
+        <div className={cn(
+          "p-6 flex items-center gap-3",
+          type === 'entrada'
+            ? "bg-primary text-primary-foreground"
+            : "bg-blue-600 text-white"
+        )}>
+          <div className="rounded-full p-2 bg-white/20">
+            {type === 'entrada'
+              ? <ArrowDown className="h-5 w-5" />
+              : <ArrowUp className="h-5 w-5" />
             }
           </div>
           <div>
-            <DialogTitle className="text-xl font-bold">
-              {type === 'entrada' ? 'Registrar Entrada' : 'Registrar Saída'}
+            <DialogTitle className="text-xl font-semibold">
+              Registrar {type === 'entrada' ? 'Entrada' : 'Saída'}
             </DialogTitle>
             <DialogDescription className="text-sm mt-1 text-white/80">
-              {type === 'entrada' 
-                ? 'Registre a entrada de produtos no estoque.' 
+              {type === 'entrada'
+                ? 'Registre a entrada de produtos no estoque.'
                 : 'Registre a saída de produtos do estoque.'}
             </DialogDescription>
           </div>
@@ -214,137 +239,132 @@ const MovementDialog = ({ product, type, open, onOpenChange }: MovementDialogPro
 
         {/* Detalhes do produto */}
         {product ? (
-          <div className="px-6 py-4 border-b flex items-center gap-3">
+          <div className="px-6 py-4 border-b flex items-center gap-3 bg-background">
             <div className="bg-muted/50 p-2 rounded-md">
               <Package className="h-5 w-5 text-muted-foreground" />
             </div>
-            <div className="flex-1">
-              <p className="font-medium">{product.name}</p>
-              <div className="flex items-center flex-wrap gap-2 mt-1">
-                <span className="text-xs bg-secondary/40 dark:bg-secondary/20 px-1.5 py-0.5 rounded border border-border/50 font-mono max-w-[150px] truncate">
+            <div className="flex-1 min-w-0">
+              <p className="font-medium truncate">{product.name}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge variant="outline" className="font-mono text-xs">
                   {product.code}
-                </span>
-                <span className="text-xs px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400 font-medium">
-                  Unidade: {product.unit}
-                </span>
+                </Badge>
+                <Badge variant="secondary" className="text-xs">
+                  {getFullUnitName(product.unit)}
+                </Badge>
               </div>
             </div>
           </div>
         ) : (
-          <div className="px-6 py-4 border-b">
+          <div className="px-6 py-4 border-b bg-background">
             <div className="p-3 rounded-md bg-destructive/10 text-center">
-              <span className="text-sm text-destructive font-medium">Nenhum produto selecionado</span>
+              <span className="text-sm text-destructive font-medium">
+                Nenhum produto selecionado
+              </span>
             </div>
           </div>
         )}
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="px-6 py-4">
-            <div className="space-y-5">
-              {/* Campo de quantidade */}
-              <FormField
-                control={form.control}
-                name="quantity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium">
-                      Quantidade ({product?.unit || 'unidade'})
-                    </FormLabel>
-                    <FormControl>
-                      <div className="flex rounded-md overflow-hidden border border-input focus-within:ring-2 focus-within:ring-ring/70 focus-within:border-accent/50 transition-all duration-200">
-                        <Input 
-                          type="number"
-                          min="1" 
-                          step="1" 
-                          {...field} 
-                          className="text-right border-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0 rounded-none" 
-                        />
-                        <div className="bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center px-3 text-sm font-medium text-indigo-700 dark:text-indigo-400 border-l border-input">
-                          {product?.unit || 'unidade(s)'}
-                        </div>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Campo de colaborador (apenas para saída) */}
-              {type === 'saida' && (
-                <FormField
-                  control={form.control}
-                  name="employee_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium">
-                        Colaborador Responsável <span className="text-destructive">*</span>
-                      </FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="h-[42px]">
-                            <SelectValue placeholder="Selecione um colaborador" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {activeEmployees.length === 0 ? (
-                            <SelectItem value="empty" disabled>
-                              Nenhum colaborador cadastrado
-                            </SelectItem>
-                          ) : (
-                            activeEmployees.map((employee) => (
-                              <SelectItem key={employee.id} value={employee.id}>
-                                {employee.name} {employee.code && `(${employee.code})`}
-                              </SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-
-              {/* Campo de observações */}
-              <FormField
-                control={form.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium">
-                      Observações
-                    </FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Informações adicionais sobre esta movimentação"
-                        className="resize-none min-h-[80px]"
+          <form onSubmit={form.handleSubmit(onSubmit)} className="p-6 bg-background space-y-6">
+            {/* Campo de quantidade */}
+            <FormField
+              control={form.control}
+              name="quantity"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium">
+                    Quantidade
+                  </FormLabel>
+                  <FormControl>
+                    <div className="flex rounded-md overflow-hidden border focus-within:ring-2 focus-within:ring-ring/70 transition-all duration-200">
+                      <Input
+                        type="number"
+                        min="1"
+                        step="1"
                         {...field}
+                        className="text-right border-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0 rounded-none"
                       />
-                    </FormControl>
-                    <FormMessage />
+                      <div className="bg-muted flex items-center justify-center px-3 text-sm font-medium text-muted-foreground border-l">
+                        {product ? getFullUnitName(product.unit) : 'unidades'}
+                      </div>
+                    </div>
+                  </FormControl>
+                  <FormMessage className="text-xs" />
+                </FormItem>
+              )}
+            />
+
+            {/* Campo de colaborador (apenas para saída) */}
+            {type === 'saida' && (
+              <FormField
+                control={form.control}
+                name="employee_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium flex items-center">
+                      Colaborador Responsável
+                      <span className="text-destructive ml-1">*</span>
+                    </FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="w-full text-sm">
+                          <SelectValue placeholder="Selecione um colaborador" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {activeEmployees.length === 0 ? (
+                          <SelectItem value="empty" disabled>
+                            Nenhum colaborador cadastrado
+                          </SelectItem>
+                        ) : (
+                          activeEmployees.map((employee) => (
+                            <SelectItem key={employee.id} value={employee.id} className="text-sm">
+                              {employee.name} {employee.code && `(${employee.code})`}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage className="text-xs" />
                   </FormItem>
                 )}
               />
-            </div>
+            )}
 
-            {/* Rodapé com botão de ação */}
-            <div className="mt-8 flex justify-end">
-              <Button 
-                type="submit" 
-                disabled={isSubmitting || !product}
-                className={`w-full ${
-                  type === 'entrada' 
-                    ? '' 
-                    : 'bg-blue-600 hover:bg-blue-700 text-white'
-                }`}
-                variant={type === 'entrada' ? 'default' : 'custom-blue'}
+            {/* Campo de observações */}
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium">
+                    Observações
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      placeholder="Informações adicionais sobre esta movimentação"
+                      className="resize-none min-h-[80px] text-sm"
+                    />
+                  </FormControl>
+                  <FormMessage className="text-xs" />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex justify-end pt-2">
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className={cn(
+                  "w-full",
+                  type === 'entrada'
+                    ? "bg-primary hover:bg-primary/90"
+                    : "bg-blue-600 hover:bg-blue-700"
+                )}
               >
-                {isSubmitting 
-                  ? "Processando..." 
-                  : type === 'entrada' 
-                    ? "Registrar Entrada" 
-                    : "Registrar Saída"
-                }
+                {isSubmitting ? 'Aguarde...' : `Registrar ${type === 'entrada' ? 'Entrada' : 'Saída'}`}
               </Button>
             </div>
           </form>

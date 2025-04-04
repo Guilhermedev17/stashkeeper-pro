@@ -27,8 +27,8 @@ interface ProductFiltersProps {
   selectMode?: boolean;
 }
 
-const ProductFilters: React.FC<ProductFiltersProps> = ({ 
-  searchTerm, 
+const ProductFilters: React.FC<ProductFiltersProps> = ({
+  searchTerm,
   onSearchChange,
   categories,
   selectedCategory,
@@ -49,17 +49,17 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
           className="pl-8 w-full"
         />
       </div>
-      
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 col-span-1">
+
+      <div className="grid grid-cols-3 sm:grid-cols-3 gap-3 col-span-1">
         <Select
           value={selectedCategory}
           onValueChange={onCategoryChange}
         >
-          <SelectTrigger className="w-full text-xs sm:text-sm">
+          <SelectTrigger className="w-full h-10">
             <SelectValue placeholder="Categoria" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todas Categorias</SelectItem>
+            <SelectItem value="all">Todas as Categorias</SelectItem>
             {categories.map(category => (
               <SelectItem key={category.id} value={category.id}>
                 {category.name}
@@ -67,30 +67,30 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
             ))}
           </SelectContent>
         </Select>
-        
+
         <Select
           value={selectedStatus}
           onValueChange={onStatusChange}
         >
-          <SelectTrigger className="w-full text-xs sm:text-sm">
+          <SelectTrigger className="w-full h-10">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos Status</SelectItem>
+            <SelectItem value="all">Todos os Status</SelectItem>
             <SelectItem value="normal">Normal</SelectItem>
             <SelectItem value="baixo">Baixo</SelectItem>
             <SelectItem value="critico">Crítico</SelectItem>
           </SelectContent>
         </Select>
-        
+
         {!selectMode && onToggleSelectMode && (
-          <Button 
+          <Button
             variant="outline"
             onClick={onToggleSelectMode}
-            className="flex items-center justify-center gap-2 text-xs sm:text-sm h-10"
+            className="flex items-center justify-center gap-2 h-10 w-full"
             title="Selecionar múltiplos produtos"
           >
-            <CheckSquare className="h-4 w-4" />
+            <CheckSquare className="h-4 w-4 flex-shrink-0" />
             <span className="hidden xs:inline-block">Selecionar</span>
           </Button>
         )}

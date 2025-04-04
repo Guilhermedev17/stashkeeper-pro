@@ -6,12 +6,12 @@ import { useSupabaseMovements } from '@/hooks/useSupabaseMovements';
 import { useSupabaseCategories } from '@/hooks/useSupabaseCategories';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { 
-  RefreshCw, 
-  Package as PackageIcon, 
-  AlertTriangle, 
-  TrendingDown, 
-  TrendingUp, 
+import {
+  RefreshCw,
+  Package as PackageIcon,
+  AlertTriangle,
+  TrendingDown,
+  TrendingUp,
   ArrowRight,
   Percent,
   PackageOpen,
@@ -19,24 +19,41 @@ import {
   ArrowUp,
   ArrowDownUp,
   Share2,
-  BarChart2
+  BarChart2,
+  AlertCircle,
+  Plus,
+  Flame,
+  ChevronRight,
+  Layers,
+  Zap,
+  HelpCircle,
+  Calendar,
+  BarChart4,
+  CircleDollarSign,
+  Mail,
+  RefreshCcw,
+  CheckSquare2
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { 
-  ResponsiveContainer, 
-  PieChart, 
-  Pie, 
-  Cell, 
-  Tooltip, 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
+import {
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
   Legend,
   LineChart,
-  Line
+  Line,
+  AreaChart,
+  Area
 } from 'recharts';
+import PageWrapper from '@/components/layout/PageWrapper';
+import PageLoading from '@/components/PageLoading';
 
 export interface Product {
   id: string;
@@ -64,14 +81,15 @@ const Dashboard = () => {
   const { movements, loading: loadingMovements, fetchMovements } = useSupabaseMovements();
   const { categories } = useSupabaseCategories();
   const { user } = useAuth();
-  const [categoryCounts, setCategoryCounts] = useState<{[key: string]: number}>({});
+  const [categoryCounts, setCategoryCounts] = useState<{ [key: string]: number }>({});
   const [unitData, setUnitData] = useState<any[]>([]);
   const [categoryData, setCategoryData] = useState<any[]>([]);
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Conta produtos por categoria
-    const counts: {[key: string]: number} = {};
+    const counts: { [key: string]: number } = {};
     products.forEach(product => {
       if (product.category_id) {
         counts[product.category_id] = (counts[product.category_id] || 0) + 1;
@@ -96,36 +114,36 @@ const Dashboard = () => {
       const bPercentage = b.quantity / b.min_quantity;
       return aPercentage - bPercentage; // Ordena do mais crítico para o menos crítico
     });
-  
+
   // Produtos críticos (abaixo do mínimo)
   const criticalProducts = products.filter(p => p.quantity <= p.min_quantity);
-  
+
   // Produtos com estoque baixo (até 30% acima do mínimo)
   const lowProducts = products.filter(p => p.quantity > p.min_quantity && p.quantity <= p.min_quantity * 1.3);
-  
+
   // Cria uma lista com produtos críticos e baixos para mostrar
   let displayProducts: typeof products = [];
-  
+
   // Adiciona todos os produtos críticos
   if (criticalProducts.length > 0) {
     displayProducts = displayProducts.concat(criticalProducts);
   }
-  
+
   // Se ainda não atingiu 5 produtos, adiciona alguns com estoque baixo
   if (displayProducts.length < 5 && lowProducts.length > 0) {
     const remainingCount = 5 - displayProducts.length;
     displayProducts = displayProducts.concat(lowProducts.slice(0, remainingCount));
   }
-  
+
   // Ordenar por nível de criticidade (mais crítico primeiro)
   displayProducts.sort((a, b) => {
     const aPercentage = a.quantity / a.min_quantity;
     const bPercentage = b.quantity / b.min_quantity;
     return aPercentage - bPercentage;
   });
-  
+
   // Dados para gráfico de movimentações por dia
-  const movementsByDay = movements.reduce((acc: {[key: string]: {entradas: number, saidas: number}}, movement) => {
+  const movementsByDay = movements.reduce((acc: { [key: string]: { entradas: number, saidas: number } }, movement) => {
     const date = new Date(movement.created_at).toISOString().split('T')[0];
     if (!acc[date]) {
       acc[date] = {
@@ -133,26 +151,26 @@ const Dashboard = () => {
         saidas: 0
       };
     }
-    
+
     if (movement.type === 'entrada') {
       acc[date].entradas += 1;
-          } else {
+    } else {
       acc[date].saidas += 1;
     }
-    
+
     return acc;
   }, {});
-  
+
   // Converte para o formato que o gráfico espera
   const chartData = Object.keys(movementsByDay).sort().slice(-7).map(date => {
     const formattedDate = new Date(date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-        return {
+    return {
       name: formattedDate,
       entradas: movementsByDay[date].entradas,
       saidas: movementsByDay[date].saidas
-        };
-      });
-  
+    };
+  });
+
   // Estatísticas gerais
   const totalProducts = products.length;
   const totalEntradas = movements.filter(m => m.type === 'entrada').reduce((acc, m) => acc + m.quantity, 0);
@@ -160,16 +178,16 @@ const Dashboard = () => {
   const criticalCount = products.filter(p => p.quantity <= p.min_quantity).length;
   const lowStockCount = products.filter(p => p.quantity <= p.min_quantity * 1.3).length;
   const totalCategories = categories.length;
-  
+
   // Cálculo de movimentações recentes (últimos 7 dias)
   const last7Days = new Date();
   last7Days.setDate(last7Days.getDate() - 7);
-  
+
   const recentMovementsData = movements
     .filter(m => new Date(m.created_at) >= last7Days)
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 5);
-  
+
   // Encontra os detalhes dos produtos das movimentações recentes
   const recentMovementsWithProducts = recentMovementsData.map(movement => {
     const product = products.find(p => p.id === movement.product_id);
@@ -181,418 +199,526 @@ const Dashboard = () => {
     };
   });
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+  // Dados para gráfico de movimentações ao longo do tempo
+  const last30Days = Array.from({ length: 30 }, (_, i) => {
+    const date = new Date();
+    date.setDate(date.getDate() - (29 - i));
+    return date.toISOString().split('T')[0];
+  });
 
-  const userName = user?.user_metadata?.name || user?.email || 'Usuário';
+  const movementsByDayLong = last30Days.map(day => {
+    const dayData = {
+      date: day,
+      entradas: 0,
+      saidas: 0
+    };
 
-  return (
-    <div className="zoom-stable w-full h-full">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground text-sm sm:text-base">
-            Visão geral e ações necessárias para o estoque.
-          </p>
+    movements.forEach(movement => {
+      const moveDate = new Date(movement.created_at).toISOString().split('T')[0];
+      if (moveDate === day) {
+        if (movement.type === 'entrada') {
+          dayData.entradas += movement.quantity;
+        } else {
+          dayData.saidas += movement.quantity;
+        }
+      }
+    });
+
+    return dayData;
+  });
+
+  const chartDataLong = movementsByDayLong.map(day => ({
+    name: new Date(day.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+    Entradas: day.entradas,
+    Saídas: day.saidas
+  }));
+
+  // Análise dos dados de estoque
+  const stockSummary = {
+    healthy: products.filter(p => p.quantity > p.min_quantity * 1.3).length,
+    low: lowProducts.length,
+    critical: criticalProducts.length
+  };
+
+  const stockData = [
+    { name: 'Saudável', value: stockSummary.healthy, color: '#10b981' },
+    { name: 'Baixo', value: stockSummary.low, color: '#f59e0b' },
+    { name: 'Crítico', value: stockSummary.critical, color: '#ef4444' }
+  ].filter(item => item.value > 0);
+
+  // Recupera o nome do usuário para exibição personalizada
+  const userName = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Usuário';
+
+  // Dia da semana e data atual para exibição
+  const today = new Date();
+  const formattedDate = today.toLocaleDateString('pt-BR', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
+  // Calcula quantidade de entradas e saídas nos últimos 7 dias
+  const entriesLastWeek = movements
+    .filter(m => m.type === 'entrada' && new Date(m.created_at) >= last7Days)
+    .reduce((sum, m) => sum + m.quantity, 0);
+
+  const exitsLastWeek = movements
+    .filter(m => m.type === 'saida' && new Date(m.created_at) >= last7Days)
+    .reduce((sum, m) => sum + m.quantity, 0);
+
+  // Simular carregamento de dados ao entrar na página
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+
+      // Iniciar o tempo para medir quanto leva para carregar os dados
+      const startTime = performance.now();
+
+      // Operações de carregamento (já existentes na página)
+      // Aqui dependemos dos estados do useEffect, mas não precisamos alterá-los
+
+      // Quando todas as operações de carregamento terminarem, verificamos o tempo
+      const endTime = performance.now();
+      const loadTime = endTime - startTime;
+
+      // Garantir tempo mínimo de carregamento para evitar flash 
+      // Se os dados carregarem muito rápido, mostramos o loading por pelo menos 350ms
+      // Se os dados demorarem mais que isso, não adicionamos atraso adicional
+      const minLoadingTime = 350;
+      const remainingTime = Math.max(0, minLoadingTime - loadTime);
+
+      if (remainingTime > 0) {
+        await new Promise(resolve => setTimeout(resolve, remainingTime));
+      }
+
+      setIsLoading(false);
+    };
+
+    loadData();
+  }, []);
+
+  // Renderizar state de loading
+  if (isLoading) {
+    return (
+      <PageWrapper className="flex flex-col p-0">
+        <div className="flex-1 w-full overflow-auto">
+          <div className="w-full px-2 sm:px-4 py-4 sm:py-6">
+            {/* Cabeçalho da página */}
+            <div className="mb-4 sm:mb-6 flex justify-between">
+              <div>
+                <h1 className="text-xl font-semibold text-gray-700 dark:text-gray-100 mb-1">Olá, {userName}</h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Bem-vindo ao seu painel de controle de estoque</p>
+              </div>
+            </div>
+
+            <PageLoading message="Carregando seu dashboard..." />
+          </div>
         </div>
-      </div>
+      </PageWrapper>
+    );
+  }
 
-      <div className="space-y-6 w-full">
-        {/* Cards de ações imediatas */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 w-full">
-          <Card className="hover:shadow-lg transition-all duration-300 border-destructive/10 hover:bg-destructive/5">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium">Ações Necessárias</CardTitle>
-              <div className="h-8 w-8 rounded-full bg-destructive/10 flex items-center justify-center">
-                <AlertTriangle className="h-4 w-4 text-destructive" />
-              </div>
-          </CardHeader>
-          <CardContent>
-              <div className="text-3xl font-bold">{lowStockCount}</div>
-            <p className="text-xs text-muted-foreground">
-                Produtos precisando de reposição
-            </p>
-          </CardContent>
-        </Card>
-        
-          <Card className="hover:shadow-lg transition-all duration-300 border-blue-500/10 hover:bg-blue-500/5">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium">Taxa de Saída</CardTitle>
-              <div className="h-8 w-8 rounded-full bg-blue-500/10 flex items-center justify-center">
-            <ArrowUp className="h-4 w-4 text-blue-500" />
-              </div>
-          </CardHeader>
-          <CardContent>
-              <div className="text-3xl font-bold">
-                {movements.filter(m => m.type === 'saida' && new Date(m.created_at) >= last7Days).length}
-              </div>
-            <p className="text-xs text-muted-foreground">
-                Saídas nos últimos 7 dias
-            </p>
-          </CardContent>
-        </Card>
-        
-          <Card className="hover:shadow-lg transition-all duration-300 border-green-500/10 hover:bg-green-500/5">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium">Taxa de Entradas</CardTitle>
-              <div className="h-8 w-8 rounded-full bg-green-500/10 flex items-center justify-center">
-                <ArrowDown className="h-4 w-4 text-green-500" />
-              </div>
-          </CardHeader>
-          <CardContent>
-              <div className="text-3xl font-bold">
-                {movements.filter(m => m.type === 'entrada' && new Date(m.created_at) >= last7Days).length}
-              </div>
-            <p className="text-xs text-muted-foreground">
-                Entradas nos últimos 7 dias
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+  // Renderização normal quando não está em carregamento
+  return (
+    <PageWrapper className="flex flex-col p-0">
+      {/* Área de conteúdo rolável - ajustando espaçamentos laterais */}
+      <div className="flex-1 w-full overflow-auto">
+        <div className="w-full px-2 sm:px-4 py-4 sm:py-6">
+          {/* Cabeçalho da página */}
+          <div className="mb-4 sm:mb-6 flex justify-between">
+            <div>
+              <h1 className="text-xl font-semibold text-gray-700 dark:text-gray-100 mb-1">Olá, {userName}</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Bem-vindo ao seu painel de controle de estoque</p>
+            </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 w-full">
-          <Card className="h-full border-destructive/10 hover:shadow-lg transition-all duration-300">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-destructive" />
-                  <span>Estoque Crítico - Ação Imediata</span>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => window.location.href = '/movements?type=entrada&open=true'}
+                className="flex items-center px-3 py-1.5 text-sm bg-blue-50 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300 rounded-md hover:bg-blue-100 dark:hover:bg-blue-800/60 transition-colors"
+              >
+                <Plus size={16} className="mr-1" />
+                <span>Entrada</span>
+              </button>
+              <button
+                onClick={() => window.location.href = '/movements?type=saida&open=true'}
+                className="flex items-center px-3 py-1.5 text-sm bg-orange-50 dark:bg-orange-900/50 text-orange-600 dark:text-orange-300 rounded-md hover:bg-orange-100 dark:hover:bg-orange-800/60 transition-colors"
+              >
+                <ArrowRight size={16} className="mr-1" />
+                <span>Saída</span>
+              </button>
+              <span className="text-xs font-medium bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 py-1 px-2 rounded-md">
+                StashKeeper Pro
+              </span>
+            </div>
+          </div>
+
+          {/* Cards de resumo */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+            <div className="bg-white dark:bg-card p-3 sm:p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-900">
+              <div className="flex justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Total de Produtos</p>
+                  <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{totalProducts}</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Em {totalCategories} categorias</p>
                 </div>
-              </CardTitle>
-              <CardDescription className="text-xs text-muted-foreground">
-                Produtos abaixo do nível mínimo que necessitam reposição urgente
-            </CardDescription>
-          </CardHeader>
-            <CardContent>
-              {criticalProducts.length > 0 ? (
-                <div className="space-y-2.5">
-                  {criticalProducts.slice(0, 5).map((product) => {
-                    const percentage = Math.round((product.quantity / product.min_quantity) * 100);
-                    
-                    return (
-                      <div 
-                        key={product.id} 
-                        className="flex items-start gap-3 p-3 rounded-md transform hover:scale-[1.01] hover:shadow-md transition-all duration-200 bg-destructive/5 border border-destructive/20"
-                      >
-                        <div className="flex-shrink-0 text-destructive">
-                          <AlertTriangle className="h-5 w-5" />
-                        </div>
-                        <div className="space-y-1 flex-1">
-                          <div className="flex justify-between items-center">
-                            <p className="text-sm font-medium line-clamp-1">{product.code || ''}{product.code && product.name ? ' - ' : ''}{product.name}</p>
-                            <Badge 
-                              variant="outline" 
-                              className="text-[10px] py-0.5 px-2 bg-destructive/10 text-destructive border-destructive/30"
-                            >
-                              Crítico
-                            </Badge>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <p className="text-xs text-muted-foreground">
-                              <span className="text-destructive font-medium">{product.quantity}</span> / {product.min_quantity} {product.unit}
-                            </p>
-                            <Badge 
-                              variant="outline" 
-                              className="text-[10px] py-0 px-2 rounded-full bg-destructive/10 text-destructive border-destructive/30"
-                            >
-                              {percentage}%
-                            </Badge>
-                          </div>
-                          
-                          <div className="mt-2 pt-1">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="gap-1 mt-2 border-destructive/20 text-destructive hover:bg-destructive/5 hover:text-destructive" 
-                              onClick={() => window.location.href = `/movements?product=${product.id}&type=entrada`}
-                            >
-                              <span>Registrar Entrada</span>
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  
-                  {criticalProducts.length > 5 && (
-                    <div className="pt-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="gap-1 w-full justify-center border-destructive/20 text-destructive hover:bg-destructive/5 hover:text-destructive" 
-                        onClick={() => window.location.href = '/products?status=critico'}
-                      >
-                        <span>Ver todos produtos críticos ({criticalProducts.length})</span>
-                        <ArrowRight className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  )}
+                <div className="bg-blue-100 dark:bg-blue-900/30 h-10 w-10 sm:h-12 sm:w-12 rounded-full flex items-center justify-center">
+                  <PackageIcon size={18} className="text-blue-600 dark:text-blue-400" />
                 </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-10 text-center">
-                  <div className="bg-green-500/10 rounded-full p-3 mb-3">
-                    <PackageOpen className="h-6 w-6 text-green-500" />
-                  </div>
-                  <p className="text-sm font-medium">Nenhum produto com estoque crítico</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Todos os produtos estão com estoque acima do nível mínimo
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-card p-3 sm:p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-900">
+              <div className="flex justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Ações Necessárias</p>
+                  <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{criticalCount}</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{lowStockCount} produtos com estoque baixo</p>
+                </div>
+                <div className="bg-red-100 dark:bg-red-900/30 h-10 w-10 sm:h-12 sm:w-12 rounded-full flex items-center justify-center">
+                  <AlertCircle size={18} className="text-red-600 dark:text-red-400" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-card p-3 sm:p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-900">
+              <div className="flex justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Entradas (7 dias)</p>
+                  <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{entriesLastWeek}</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    {movements.filter(m => m.type === 'entrada' && new Date(m.created_at) >= last7Days).length} movimentações
                   </p>
                 </div>
-              )}
-          </CardContent>
-        </Card>
-
-          <Card className="h-full border-amber-500/10 hover:shadow-lg transition-all duration-300">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <ArrowDownUp className="h-4 w-4 text-blue-500" />
-                  <span>Movimentações Recentes</span>
+                <div className="bg-green-100 dark:bg-green-900/30 h-10 w-10 sm:h-12 sm:w-12 rounded-full flex items-center justify-center">
+                  <ArrowDown size={18} className="text-green-600 dark:text-green-400" />
                 </div>
-              </CardTitle>
-              <CardDescription className="text-xs text-muted-foreground">
-                Últimas movimentações de estoque realizadas no sistema
-            </CardDescription>
-          </CardHeader>
-            <CardContent>
-              {recentMovementsWithProducts.length > 0 ? (
-                <div className="space-y-3">
-                  {recentMovementsWithProducts.map((movement) => (
-                    <div key={movement.id} className="flex items-center p-2 rounded-md hover:bg-accent/50 transition-colors">
-                      <div className={`w-6 h-6 rounded-full mr-3 flex items-center justify-center ${
-                        movement.type === 'entrada' ? 'bg-green-500/10' : 'bg-blue-500/10'
-                      }`}>
-                        {movement.type === 'entrada' ? 
-                          <ArrowDown className="h-3.5 w-3.5 text-green-500" /> : 
-                          <ArrowUp className="h-3.5 w-3.5 text-blue-500" />
-                        }
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-card p-3 sm:p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-900">
+              <div className="flex justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Saídas (7 dias)</p>
+                  <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{exitsLastWeek}</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    {movements.filter(m => m.type === 'saida' && new Date(m.created_at) >= last7Days).length} movimentações
+                  </p>
+                </div>
+                <div className="bg-orange-100 dark:bg-orange-900/30 h-10 w-10 sm:h-12 sm:w-12 rounded-full flex items-center justify-center">
+                  <ArrowUp size={18} className="text-orange-600 dark:text-orange-400" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Layout principal */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+            {/* Coluna da esquerda */}
+            <div className="lg:col-span-2 space-y-3 sm:space-y-4">
+              {/* Gráfico de movimentações */}
+              <div className="bg-white dark:bg-card p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-900">
+                <div className="flex justify-between items-center mb-3 sm:mb-4">
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Fluxo de Estoque</h3>
+                  <div className="flex space-x-2 text-xs">
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 rounded-full bg-blue-500 mr-1"></div>
+                      <span className="dark:text-gray-300">Entradas</span>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 rounded-full bg-orange-500 mr-1"></div>
+                      <span className="dark:text-gray-300">Saídas</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="h-72 sm:h-80 md:h-96">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={chartDataLong}
+                      margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                    >
+                      <defs>
+                        <linearGradient id="colorEntradas" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
+                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="colorSaidas" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#f97316" stopOpacity={0.2} />
+                          <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        vertical={false}
+                        stroke="#f1f5f9"
+                        className="dark:stroke-gray-800"
+                      />
+                      <XAxis
+                        dataKey="name"
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fontSize: 12, fill: '#64748b' }}
+                        className="dark:text-gray-400"
+                      />
+                      <YAxis
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fontSize: 12, fill: '#64748b' }}
+                        className="dark:text-gray-400"
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          background: 'var(--background)',
+                          border: 'none',
+                          borderRadius: '0.5rem',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                          fontSize: '0.75rem'
+                        }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="Entradas"
+                        stroke="#3b82f6"
+                        fillOpacity={1}
+                        fill="url(#colorEntradas)"
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="Saídas"
+                        stroke="#f97316"
+                        fillOpacity={1}
+                        fill="url(#colorSaidas)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Alertas e notificações */}
+              <div className="bg-white dark:bg-card p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-900">
+                <div className="flex justify-between items-center mb-3 sm:mb-4">
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Alertas do Sistema</h3>
+                  <button
+                    onClick={() => window.location.href = '/products?status=critico'}
+                    className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 flex items-center"
+                  >
+                    Ver todos
+                    <ArrowRight size={14} className="ml-1" />
+                  </button>
+                </div>
+
+                {criticalProducts.length > 0 ? (
+                  <div className="space-y-3 mb-2">
+                    {criticalProducts.slice(0, 3).map(product => {
+                      const percentage = Math.round((product.quantity / product.min_quantity) * 100);
+
+                      return (
+                        <div key={product.id} className="flex items-start gap-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                          <div className="bg-red-100 dark:bg-red-800/50 rounded-full p-2 mt-1">
+                            <Flame size={18} className="text-red-600 dark:text-red-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex justify-between items-start">
+                              <div className="space-y-1">
+                                <h4 className="font-medium text-gray-900 dark:text-gray-50 truncate">{product.name}</h4>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                  {product.code && <span>Código: {product.code} • </span>}
+                                  <span className="text-red-700 dark:text-red-400 font-medium">{product.quantity}/{product.min_quantity}</span> {product.unit}
+                                </p>
+                              </div>
+                              <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-red-100 text-red-800 dark:bg-red-800/50 dark:text-red-200 rounded-full">
+                                {percentage}%
+                              </span>
+                            </div>
+                            <div className="w-full h-1.5 bg-red-100 dark:bg-red-800/30 rounded-full mt-2 overflow-hidden">
+                              <div
+                                className="h-full bg-red-500 dark:bg-red-600 rounded-full"
+                                style={{ width: `${Math.min(percentage, 100)}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {criticalProducts.length > 3 && (
+                      <div className="text-center py-2">
+                        <button
+                          onClick={() => window.location.href = '/products?status=critico'}
+                          className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                        >
+                          + {criticalProducts.length - 3} produtos críticos
+                        </button>
                       </div>
-                      <div className="flex-1 space-y-1">
-                        <p className="text-sm font-medium leading-none flex items-center gap-1">
-                          {movement.productName}
-                          <Badge 
-                            variant="outline" 
-                            className={`text-[10px] ml-1 py-0 px-2 h-4 ${
-                              movement.type === 'entrada' ? 'bg-green-500/10 text-green-600 border-green-500/30' : 'bg-blue-500/10 text-blue-600 border-blue-500/30'
-                            }`}
-                          >
-                            {movement.type === 'entrada' ? 'Entrada' : 'Saída'}
-                          </Badge>
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {movement.quantity} {movement.unit} em {new Date(movement.created_at).toLocaleDateString('pt-BR')}
-                        </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center p-6 text-center">
+                    <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-full mb-3">
+                      <CheckSquare2 className="h-6 w-6 text-green-600 dark:text-green-400" />
+                    </div>
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Tudo em ordem!</h4>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Seu estoque está saudável e não há produtos em estado crítico.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Coluna da direita */}
+            <div className="space-y-3 sm:space-y-4">
+              {/* Distribuição por categoria */}
+              <div className="bg-white dark:bg-card p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-900">
+                <div className="flex justify-between items-center mb-3 sm:mb-4">
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Distribuição do Estoque</h3>
+                  <div className="flex items-center rounded bg-blue-50 dark:bg-blue-900/30 p-1">
+                    <button className="px-2 py-1 text-xs text-blue-800 dark:text-blue-300 bg-blue-100 dark:bg-blue-800/50 rounded">
+                      Categorias
+                    </button>
+                    <button className="px-2 py-1 text-xs text-blue-600 dark:text-blue-400">
+                      Status
+                    </button>
+                  </div>
+                </div>
+
+                {/* Gráfico de pizza em primeiro plano */}
+                <div className="relative mb-3 h-48 sm:h-56 md:h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={stockData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={70}
+                        paddingAngle={3}
+                        dataKey="value"
+                      >
+                        {stockData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value) => [`${value} produtos`, '']}
+                        contentStyle={{
+                          background: 'var(--background)',
+                          border: 'none',
+                          borderRadius: '0.5rem',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                          fontSize: '0.75rem'
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Legenda do gráfico */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                  {stockData.map((item, index) => (
+                    <div key={index} className="flex items-center">
+                      <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: item.color }}></div>
+                      <div>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">{item.name}</span>
+                        <p className="text-sm font-medium dark:text-gray-200">{item.value}</p>
                       </div>
                     </div>
                   ))}
-                  <div className="flex justify-between pt-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="gap-1 w-[48%] justify-center border-blue-500/20 text-blue-600 hover:bg-blue-500/5 hover:text-blue-700" 
-                      onClick={() => window.location.href = '/movements?type=saida&open=true'}
-                    >
-                      <span>Registrar Saída</span>
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="gap-1 w-[48%] justify-center border-green-500/20 text-green-600 hover:bg-green-500/5 hover:text-green-700" 
-                      onClick={() => window.location.href = '/movements?type=entrada&open=true'}
-                    >
-                      <span>Registrar Entrada</span>
-                    </Button>
-                  </div>
                 </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-10 text-center">
-                  <div className="bg-blue-500/10 rounded-full p-3 mb-3">
-                    <ArrowDownUp className="h-6 w-6 text-blue-500" />
-                  </div>
-                  <p className="text-sm font-medium">Nenhuma movimentação recente</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Registre entradas e saídas para visualizar aqui
-                  </p>
-                  <div className="flex justify-between pt-4 w-full max-w-xs">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="w-[48%]"
-                      onClick={() => window.location.href = '/movements?type=saida&open=true'}
-                    >
-                      Registrar Saída
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      className="w-[48%]"
-                      onClick={() => window.location.href = '/movements?type=entrada&open=true'}
-                    >
-                      Registrar Entrada
-                    </Button>
-                  </div>
-                </div>
-              )}
-          </CardContent>
-        </Card>
-      </div>
+              </div>
 
-        <div className="grid grid-cols-1 gap-4 md:gap-6 w-full">
-          <Card className="h-full border-primary/10 hover:shadow-lg transition-all duration-300">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <PackageIcon className="h-4 w-4 text-primary" />
-                  <span>Ações Recomendadas</span>
+              {/* Movimentações recentes */}
+              <div className="bg-white dark:bg-card p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-900">
+                <div className="flex justify-between items-center mb-3 sm:mb-4">
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Movimentações Recentes</h3>
+                  <button
+                    onClick={() => window.location.href = '/movements'}
+                    className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 flex items-center"
+                  >
+                    Ver histórico
+                    <ArrowRight size={14} className="ml-1" />
+                  </button>
                 </div>
-              </CardTitle>
-              <CardDescription className="text-xs text-muted-foreground">
-                Ações sugeridas com base na situação atual do estoque
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-                {criticalProducts.length > 0 && (
-                  <div className="flex items-start gap-3 p-3 rounded-md bg-destructive/5 border border-destructive/20">
-                    <div className="flex-shrink-0 text-destructive">
-                      <AlertTriangle className="h-5 w-5" />
+
+                {!movements || movements.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center p-8 text-center">
+                    <div className="rounded-full bg-gray-100 dark:bg-gray-800 p-3 mb-3">
+                      <Calendar size={24} className="text-gray-400 dark:text-gray-400" />
                     </div>
-                    <div className="space-y-1 flex-1">
-                      <p className="text-sm font-medium">Repor produtos em nível crítico</p>
-                      <p className="text-xs text-muted-foreground">
-                        Existem {criticalProducts.length} produtos abaixo do estoque mínimo
-                      </p>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="gap-1 mt-2 border-destructive/20 text-destructive hover:bg-destructive/5 hover:text-destructive" 
-                        onClick={() => window.location.href = '/products?status=critico'}
-                      >
-                        <span>Ver produtos críticos</span>
-                        <ArrowRight className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
+                    <h4 className="font-medium text-gray-900 dark:text-gray-200 mb-1">Nenhuma movimentação recente</h4>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
+                      Registre entradas e saídas para visualizar o histórico de movimentação.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="divide-y dark:divide-gray-800">
+                    {recentMovementsWithProducts.map((movement) => (
+                      <div key={movement.id} className="py-3 first:pt-0 last:pb-0">
+                        <div className="flex gap-3">
+                          <div className={`flex-shrink-0 mt-1 w-8 h-8 rounded-full flex items-center justify-center ${movement.type === 'entrada'
+                            ? 'bg-green-100 dark:bg-green-900/30'
+                            : 'bg-orange-100 dark:bg-orange-900/30'
+                            }`}>
+                            {movement.type === 'entrada' ?
+                              <ArrowDown size={14} className="text-green-600 dark:text-green-400" /> :
+                              <ArrowUp size={14} className="text-orange-600 dark:text-orange-400" />
+                            }
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex justify-between">
+                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                                {movement.productName}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                {new Date(movement.created_at).toLocaleDateString('pt-BR')}
+                              </p>
+                            </div>
+                            <div className="flex items-center mt-0.5">
+                              <span className={`inline-flex items-center mr-2 px-1.5 py-0.5 text-xs rounded ${movement.type === 'entrada'
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
+                                : 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300'
+                                }`}>
+                                {movement.type === 'entrada' ? 'Entrada' : 'Saída'}
+                              </span>
+                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                                {movement.quantity} {movement.unit}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
-                
-                {lowProducts.length > 0 && (
-                  <div className="flex items-start gap-3 p-3 rounded-md bg-amber-500/5 border border-amber-500/20">
-                    <div className="flex-shrink-0 text-amber-500">
-                      <AlertTriangle className="h-5 w-5" />
-                    </div>
-                    <div className="space-y-1 flex-1">
-                      <p className="text-sm font-medium">Planejar reposição de produtos com estoque baixo</p>
-                      <p className="text-xs text-muted-foreground">
-                        {lowProducts.length} produtos estão com estoque abaixo do ideal
-                      </p>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="gap-1 mt-2 border-amber-500/20 text-amber-600 hover:bg-amber-500/5 hover:text-amber-700" 
-                        onClick={() => window.location.href = '/products?status=baixo'}
-                      >
-                        <span>Ver produtos com estoque baixo</span>
-                        <ArrowRight className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
-                
-                {movements.length === 0 && (
-                  <div className="flex items-start gap-3 p-3 rounded-md bg-blue-500/5 border border-blue-500/20">
-                    <div className="flex-shrink-0 text-blue-500">
-                      <ArrowDownUp className="h-5 w-5" />
-                    </div>
-                    <div className="space-y-1 flex-1">
-                      <p className="text-sm font-medium">Registrar movimentações de estoque</p>
-                      <p className="text-xs text-muted-foreground">
-                        Nenhuma movimentação encontrada - registre entradas e saídas
-                      </p>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="gap-1 mt-2 border-blue-500/20 text-blue-600 hover:bg-blue-500/5 hover:text-blue-700" 
-                        onClick={() => window.location.href = '/movements'}
-                      >
-                        <span>Ir para movimentações</span>
-                        <ArrowRight className="h-3.5 w-3.5" />
-                      </Button>
-                </div>
+              </div>
+
+              {/* Card de dicas rápidas */}
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 relative overflow-hidden">
+                <div className="absolute w-24 h-24 bg-blue-200 dark:bg-blue-800/30 rounded-full -right-6 -top-6 opacity-50"></div>
+                <div className="absolute w-16 h-16 bg-indigo-200 dark:bg-indigo-800/30 rounded-full right-12 top-12 opacity-30"></div>
+
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3 relative">Dicas Rápidas</h3>
+                <ul className="space-y-2 text-sm relative ml-5">
+                  <li className="flex items-start">
+                    <div className="absolute -ml-5 mt-1 text-blue-500 dark:text-blue-400">•</div>
+                    <span className="text-gray-600 dark:text-gray-300">Use a barra de pesquisa para encontrar produtos rapidamente.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <div className="absolute -ml-5 mt-1 text-blue-500 dark:text-blue-400">•</div>
+                    <span className="text-gray-600 dark:text-gray-300">Registre movimentações assim que ocorrerem para manter o estoque atualizado.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <div className="absolute -ml-5 mt-1 text-blue-500 dark:text-blue-400">•</div>
+                    <span className="text-gray-600 dark:text-gray-300">Verifique os produtos com estoque crítico regularmente.</span>
+                  </li>
+                </ul>
+              </div>
             </div>
-                )}
-                
-                {products.length === 0 && (
-                  <div className="flex items-start gap-3 p-3 rounded-md bg-primary/5 border border-primary/20">
-                    <div className="flex-shrink-0 text-primary">
-                      <PackageIcon className="h-5 w-5" />
-                    </div>
-                    <div className="space-y-1 flex-1">
-                      <p className="text-sm font-medium">Cadastrar produtos no sistema</p>
-                      <p className="text-xs text-muted-foreground">
-                        Nenhum produto encontrado - comece cadastrando seus itens
-                      </p>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="gap-1 mt-2 border-primary/20 text-primary hover:bg-primary/5 hover:text-primary" 
-                        onClick={() => window.location.href = '/products'}
-                      >
-                        <span>Cadastrar produtos</span>
-                        <ArrowRight className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
-                
-                {categories.length === 0 && products.length > 0 && (
-                  <div className="flex items-start gap-3 p-3 rounded-md bg-purple-500/5 border border-purple-500/20">
-                    <div className="flex-shrink-0 text-purple-500">
-                      <Percent className="h-5 w-5" />
-                    </div>
-                    <div className="space-y-1 flex-1">
-                      <p className="text-sm font-medium">Organizar produtos em categorias</p>
-                      <p className="text-xs text-muted-foreground">
-                        Crie categorias para melhor organização do estoque
-                      </p>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="gap-1 mt-2 border-purple-500/20 text-purple-600 hover:bg-purple-500/5 hover:text-purple-700" 
-                        onClick={() => window.location.href = '/settings'}
-                      >
-                        <span>Ir para configurações</span>
-                        <ArrowRight className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
-                
-                {criticalProducts.length === 0 && lowProducts.length === 0 && products.length > 0 && movements.length > 0 && (
-                  <div className="flex items-start gap-3 p-3 rounded-md bg-green-500/5 border border-green-500/20">
-                    <div className="flex-shrink-0 text-green-500">
-                      <RefreshCw className="h-5 w-5" />
-                    </div>
-                    <div className="space-y-1 flex-1">
-                      <p className="text-sm font-medium">Estoque em níveis saudáveis</p>
-                      <p className="text-xs text-muted-foreground">
-                        Todos os produtos estão com níveis adequados de estoque
-                      </p>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="gap-1 mt-2 border-green-500/20 text-green-600 hover:bg-green-500/5 hover:text-green-700" 
-                        onClick={() => window.location.href = '/reports'}
-                      >
-                        <span>Ver relatórios detalhados</span>
-                        <ArrowRight className="h-3.5 w-3.5" />
-                      </Button>
-                  </div>
-                </div>
-                )}
-            </div>
-          </CardContent>
-        </Card>
+          </div>
         </div>
       </div>
-    </div>
+    </PageWrapper>
   );
 };
 

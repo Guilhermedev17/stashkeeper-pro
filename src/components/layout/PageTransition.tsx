@@ -9,10 +9,11 @@ interface PageTransitionProps {
 const PageTransition = ({ children, isLoading = false }: PageTransitionProps) => {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.15, ease: 'easeInOut' }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+      className="h-full w-full"
     >
       {isLoading ? (
         <div className="w-full h-[50vh] flex items-center justify-center">

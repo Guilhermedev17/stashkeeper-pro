@@ -22,7 +22,7 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
       if (isLoginMode) {
         // Login flow
@@ -43,14 +43,14 @@ const Login = () => {
             },
           },
         });
-        
+
         if (error) throw error;
-        
+
         toast({
           title: 'Conta criada com sucesso',
           description: 'Verifique seu email para confirmar seu cadastro.',
         });
-        
+
         // Switch back to login mode
         setIsLoginMode(true);
       }
@@ -71,12 +71,24 @@ const Login = () => {
       {/* Background decorative elements */}
       <div className="absolute w-[500px] h-[500px] rounded-full bg-primary/10 blur-3xl -top-64 -right-64 animate-pulse-subtle"></div>
       <div className="absolute w-[400px] h-[400px] rounded-full bg-primary/10 blur-3xl -bottom-32 -left-32 animate-pulse-subtle animation-delay-700"></div>
-      
+
+      {/* Novas partículas flutuantes */}
+      <div className="absolute w-16 h-16 rounded-full bg-blue-400/10 blur-xl top-1/4 left-1/4 animate-float"></div>
+      <div className="absolute w-24 h-24 rounded-full bg-indigo-400/10 blur-xl bottom-1/3 right-1/3 animate-float-reverse animation-delay-700"></div>
+      <div className="absolute w-20 h-20 rounded-full bg-primary/5 blur-xl top-2/3 left-1/3 animate-float animation-delay-1500"></div>
+      <div className="absolute w-12 h-12 rounded-full bg-blue-300/10 blur-lg top-1/2 right-1/4 animate-float-reverse animation-delay-2000"></div>
+
+      {/* Efeito de brilho animado */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-30 animate-pulse-subtle"></div>
+
       <div className="absolute top-4 right-4 z-10">
         <ThemeSwitcher />
       </div>
-      
-      <div className="w-full max-w-md px-8 py-12 rounded-2xl card-glass animate-scale-in shadow-xl dark:shadow-primary/5 backdrop-blur-xl border border-white/20 dark:border-white/5 relative z-10">
+
+      <div className="w-full max-w-md px-8 py-12 rounded-2xl card-glass animate-scale-in shadow-xl dark:shadow-primary/5 backdrop-blur-xl border border-white/20 dark:border-white/5 relative z-10 overflow-hidden">
+        {/* Efeito de brilho interno no card */}
+        <div className="absolute inset-0 animate-shine pointer-events-none"></div>
+
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gradient">
             StashKeeper<span className="text-primary font-bold">Pro</span>
@@ -85,7 +97,7 @@ const Login = () => {
             Sistema Inteligente de Gerenciamento de Estoque
           </p>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="space-y-6">
           {!isLoginMode && (
             <div className="space-y-2">
@@ -102,7 +114,7 @@ const Login = () => {
               />
             </div>
           )}
-          
+
           <div className="space-y-2">
             <Label htmlFor="email" className="text-sm font-medium">Email</Label>
             <Input
@@ -118,7 +130,7 @@ const Login = () => {
               prefix={<Mail className="h-4 w-4 text-muted-foreground" />}
             />
           </div>
-          
+
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="password" className="text-sm font-medium">Senha</Label>
@@ -139,31 +151,35 @@ const Login = () => {
               prefix={<KeyRound className="h-4 w-4 text-muted-foreground" />}
             />
           </div>
-          
-          <Button 
-            type="submit" 
-            className="w-full transition-all duration-300 rounded-lg bg-primary text-primary-foreground hover:shadow-md mt-8"
+
+          <Button
+            type="submit"
+            className="w-full transition-all duration-300 rounded-lg bg-primary text-primary-foreground hover:shadow-md mt-8 relative overflow-hidden group"
             disabled={isLoading}
           >
-            {isLoading 
-              ? (isLoginMode ? 'Entrando...' : 'Criando conta...') 
-              : (isLoginMode ? 'Entrar' : 'Criar conta')}
-            {!isLoading && <ArrowRight className="ml-2 h-4 w-4" />}
+            {/* Efeito de hover no botão */}
+            <span className="absolute inset-0 w-full h-full bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+            <span className="relative flex items-center justify-center">
+              {isLoading
+                ? (isLoginMode ? 'Entrando...' : 'Criando conta...')
+                : (isLoginMode ? 'Entrar' : 'Criar conta')}
+              {!isLoading && <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />}
+            </span>
           </Button>
         </form>
-        
+
         <div className="mt-6 text-center">
-          <Button 
-            variant="link" 
+          <Button
+            variant="link"
             onClick={() => setIsLoginMode(!isLoginMode)}
             className="text-sm"
           >
-            {isLoginMode 
-              ? 'Não tem uma conta? Cadastre-se' 
+            {isLoginMode
+              ? 'Não tem uma conta? Cadastre-se'
               : 'Já tem uma conta? Faça login'}
           </Button>
         </div>
-        
+
         <div className="mt-4 text-center text-xs text-muted-foreground">
           <p>Para usar o sistema, crie uma conta ou entre com</p>
           <p className="mt-1">e-mail e senha de sua escolha</p>

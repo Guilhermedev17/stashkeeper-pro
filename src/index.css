@@ -12,7 +12,8 @@
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 229 99% 56%; /* Bright blue */
+    --primary: 229 99% 56%;
+    /* Bright blue */
     --primary-foreground: 0 0% 98%;
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
@@ -24,9 +25,9 @@
     --destructive-foreground: 0 0% 98%;
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
-    --ring: 229 99% 56%; 
+    --ring: 229 99% 56%;
     --radius: 0.75rem;
-    
+
     /* Sidebar variables */
     --sidebar: 0 0% 98%;
     --sidebar-foreground: 240 10% 3.9%;
@@ -37,33 +38,50 @@
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
+    /* Fundo principal quase preto */
+    --background: 240 10% 5%;
+    --foreground: 0 0% 96%;
+
+    /* Cards em tom muito escuro */
+    --card: 240 10% 8%;
     --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
+
+    /* Popover em tom muito escuro */
+    --popover: 240 10% 6%;
     --popover-foreground: 0 0% 98%;
-    --primary: 229 99% 56%; /* Bright blue */
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 3.7% 15.9%;
+
+    /* Cor primária mais vibrante para destaque */
+    --primary: 229 95% 65%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Elementos secundários em tons muito escuros */
+    --secondary: 240 6% 12%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
+
+    /* Elementos silenciados em tons muito escuros */
+    --muted: 240 5% 10%;
+    --muted-foreground: 240 5% 80%;
+
+    /* Acentos em tons muito escuros */
+    --accent: 240 6% 15%;
     --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
+
+    /* Tom destrutivo mais vibrante */
+    --destructive: 0 85% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 229 99% 65%;
-    
-    /* Sidebar variables */
-    --sidebar: 240 10% 3.9%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-accent: 240 3.7% 15.9%;
+
+    /* Bordas e inputs mais visíveis no tema escuro */
+    --border: 240 5% 14%;
+    --input: 240 5% 14%;
+    --ring: 229 95% 65%;
+
+    /* Sidebar em tom quase preto */
+    --sidebar: 240 10% 4%;
+    --sidebar-foreground: 0 0% 96%;
+    --sidebar-border: 240 6% 12%;
+    --sidebar-accent: 240 6% 12%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-ring: 229 99% 65%;
+    --sidebar-ring: 229 95% 65%;
   }
 }
 
@@ -71,29 +89,38 @@
   * {
     @apply border-border;
   }
-  
-  html {
-    font-size: 16px;
-    -webkit-text-size-adjust: 100%;
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
   }
-  
+
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
     font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
-    min-height: 100vh;
-    min-height: 100dvh;
+    overflow-x: hidden;
   }
-  
-  h1, h2, h3, h4, h5, h6 {
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-medium tracking-tight;
   }
-  
+
   /* Melhorar o comportamento responsivo */
-  html, body, #root {
-    @apply h-full min-h-screen w-full overflow-x-hidden;
+  #root {
+    display: flex;
+    flex-direction: column;
   }
-  
+
   /* Manter o layout estável com zoom */
   @media screen and (min-width: 768px) {
     html {
@@ -109,9 +136,11 @@
     scrollbar-width: none;
     overflow-y: scroll;
   }
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
   .card-scrollbar-hide {
     -ms-overflow-style: none !important;
     scrollbar-width: thin !important;
@@ -119,75 +148,249 @@
     max-height: 100% !important;
     overflow-x: hidden !important;
   }
+
   .card-scrollbar-hide::-webkit-scrollbar {
     width: 6px !important;
     height: 6px !important;
     background-color: transparent !important;
   }
+
   .card-scrollbar-hide::-webkit-scrollbar-track {
     background-color: hsl(var(--muted)) !important;
   }
+
   .card-scrollbar-hide::-webkit-scrollbar-thumb {
     background-color: hsl(var(--muted-foreground)) !important;
     border-radius: 3px !important;
   }
+
   .glass-effect {
     @apply bg-white/10 backdrop-blur-lg border border-white/20 dark:bg-black/20 dark:border-white/10;
   }
-  
+
   /* Novas utilidades */
   .text-gradient {
     @apply bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent;
   }
-  
+
   .card-hover {
-    @apply transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1;
+    @apply transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1 dark:hover:shadow-primary/10;
   }
-  
+
   .card-glass {
     @apply bg-white/70 dark:bg-card/70 backdrop-blur-md border border-white/20 dark:border-white/5;
   }
-  
+
   .btn-gradient {
     @apply bg-gradient-to-r from-primary to-primary/80 text-white hover:opacity-90 transition-opacity;
   }
-  
+
+  /* Novas utilidades para tema escuro */
+  .dark-card {
+    @apply bg-card border-border;
+  }
+
+  .dark-hover {
+    @apply hover:bg-muted/30;
+  }
+
+  .dark-active {
+    @apply active:bg-muted/50;
+  }
+
   .animation-delay-300 {
     animation-delay: 300ms;
   }
-  
+
   .animation-delay-700 {
     animation-delay: 700ms;
   }
-  
+
+  .animation-delay-1500 {
+    animation-delay: 1500ms;
+  }
+
+  .animation-delay-2000 {
+    animation-delay: 2000ms;
+  }
+
+  /* Animações para a tela de login */
+  @keyframes float {
+    0% {
+      transform: translateY(0px) translateX(0px);
+    }
+
+    50% {
+      transform: translateY(-20px) translateX(10px);
+    }
+
+    100% {
+      transform: translateY(0px) translateX(0px);
+    }
+  }
+
+  @keyframes float-reverse {
+    0% {
+      transform: translateY(0px) translateX(0px);
+    }
+
+    50% {
+      transform: translateY(20px) translateX(-10px);
+    }
+
+    100% {
+      transform: translateY(0px) translateX(0px);
+    }
+  }
+
+  @keyframes pulse-subtle {
+    0% {
+      opacity: 0.5;
+    }
+
+    50% {
+      opacity: 0.7;
+    }
+
+    100% {
+      opacity: 0.5;
+    }
+  }
+
+  @keyframes scale-in {
+    0% {
+      transform: scale(0.9);
+      opacity: 0;
+    }
+
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes shine {
+    0% {
+      background-position: -100% 0;
+    }
+
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  .animate-float {
+    animation: float 8s ease-in-out infinite;
+  }
+
+  .animate-float-reverse {
+    animation: float-reverse 9s ease-in-out infinite;
+  }
+
+  .animate-pulse-subtle {
+    animation: pulse-subtle 6s ease-in-out infinite;
+  }
+
+  .animate-scale-in {
+    animation: scale-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+
+  .animate-shine {
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.08) 50%,
+        transparent 100%);
+    background-size: 200% 100%;
+    animation: shine 3s infinite;
+  }
+
   /* Utilidades para layout fluido */
   .fluid-container {
     @apply w-full max-w-full px-2 sm:px-4 md:px-6 mx-auto;
   }
-  
+
   .responsive-grid {
     @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6;
   }
-  
+
   .responsive-card {
     @apply h-full w-full flex flex-col;
   }
-  
+
   .stretch-full {
     @apply w-full h-full min-h-full;
   }
-  
+
   .flex-responsive {
     @apply flex flex-col sm:flex-row;
   }
-  
+
   .chart-container {
     @apply w-full h-full min-h-[300px];
   }
-  
+
   /* Estabilidade com zoom */
   .zoom-stable {
     transform-origin: 0 0;
     width: 100%;
+  }
+
+  /* Animações para transição de rotas */
+  .page-enter {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  .page-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 250ms, transform 250ms;
+  }
+
+  .page-exit {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .page-exit-active {
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 250ms, transform 250ms;
+  }
+
+  /* Efeito de shimmer para skeletons */
+  .skeleton-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .skeleton-shimmer::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(90deg,
+        rgba(255, 255, 255, 0) 0,
+        rgba(255, 255, 255, 0.1) 20%,
+        rgba(255, 255, 255, 0.2) 60%,
+        rgba(255, 255, 255, 0));
+    animation: shimmer 2s infinite;
+  }
+
+  .dark .skeleton-shimmer::after {
+    background-image: linear-gradient(90deg,
+        rgba(10, 10, 15, 0) 0,
+        rgba(30, 30, 60, 0.1) 20%,
+        rgba(30, 30, 60, 0.2) 60%,
+        rgba(10, 10, 15, 0));
+  }
+
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
   }
 }

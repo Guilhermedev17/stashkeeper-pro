@@ -27,14 +27,14 @@ const ImportEmployeesButton = ({ className }: ImportEmployeesButtonProps) => {
   // Função para atualizar a lista de colaboradores e fechar o diálogo
   const handleImportComplete = useCallback(() => {
     console.log("Atualizando colaboradores após importação");
-    
+
     // Atualizar os colaboradores
     fetchEmployees();
-    
+
     // Disparar um evento personalizado para notificar outros componentes
     const event = new CustomEvent('employee-import-complete');
     window.dispatchEvent(event);
-    
+
     // NÃO fechamos o diálogo automaticamente para mostrar os resultados
     // O usuário deve fechar manualmente para ver o resumo da importação
   }, [fetchEmployees]);
@@ -45,7 +45,7 @@ const ImportEmployeesButton = ({ className }: ImportEmployeesButtonProps) => {
       console.warn("Importador de colaboradores já está aberto");
       return;
     }
-    
+
     console.log("Abrindo diálogo de importação de colaboradores");
     setIsDialogOpen(true);
     // Não definimos GLOBAL_EMPLOYEE_IMPORTER_OPEN aqui pois o EmployeeImporter irá defini-lo
@@ -62,19 +62,19 @@ const ImportEmployeesButton = ({ className }: ImportEmployeesButtonProps) => {
 
   return (
     <>
-      <Button 
-        onClick={openDialog} 
+      <Button
+        onClick={openDialog}
         className={`gap-2 ${className || ''}`}
         variant="outline"
         title="Importar colaboradores via Excel"
       >
-        <FileSpreadsheet className="h-4 w-4" />
+        <FileSpreadsheet className="size-4" />
         <span>Importar Excel</span>
       </Button>
-      
+
       {isDialogOpen && (
-        <EmployeeImporter 
-          onClose={handleClose} 
+        <EmployeeImporter
+          onClose={handleClose}
           onImportComplete={handleImportComplete}
         />
       )}

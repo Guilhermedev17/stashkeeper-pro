@@ -4,13 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowDown, ArrowUp, CalendarDays, Clock, Download, FileText, Search, User, Calendar as CalendarIcon } from 'lucide-react';
+import { ArrowDown, ArrowUp, CalendarDays, Clock, Download, FileText, Search, User } from 'lucide-react';
 import { useSupabaseMovements } from '@/hooks/useSupabaseMovements';
-import DateRangeFilter from '@/components/ui/DateRangeFilter';
-import CustomDateRangePicker from '@/components/ui/CustomDateRangePicker';
-import { addDays, startOfToday, startOfWeek, startOfMonth, startOfYear, isWithinInterval } from 'date-fns';
+import ModernDateRangeFilter, { DateFilterRange } from '@/components/ui/ModernDateRangeFilter';
+import { addDays, startOfToday, startOfWeek, startOfMonth, startOfYear, isWithinInterval, format, startOfDay, endOfDay } from 'date-fns';
 import { cn } from "@/lib/utils";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ModernHeader } from '@/components/layout/modern';
+import PageWrapper from '@/components/layout/PageWrapper';
+import PageLoading from '@/components/PageLoading';
 
 interface HistoryItem {
   id: string;
@@ -28,15 +29,19 @@ interface HistoryItem {
 const History = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
-  const [dateRange, setDateRange] = useState<'day' | 'week' | 'month' | 'year' | undefined>();
-  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
-  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-  const [activeFilter, setActiveFilter] = useState<'predefined' | 'custom'>('predefined');
-  
+
+  // Estados para o novo filtro de datas
+  const [selectedDateRange, setSelectedDateRange] = useState<DateFilterRange>('thisMonth');
+  const [customDateRange, setCustomDateRange] = useState<{
+    from?: Date;
+    to?: Date;
+  }>({});
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+
   const { movements, loading } = useSupabaseMovements();
   const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
-  
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
     if (movements.length > 0) {
       const items = movements.map(m => ({
@@ -56,62 +61,140 @@ const History = () => {
       setHistoryItems([]);
     }
   }, [movements]);
-  
+
+  // Adicionar efeito de carregamento inicial
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+
+      // Iniciar o tempo para medir quanto leva para carregar os dados
+      const startTime = performance.now();
+
+      // Esperar pelo menos que os movimentos sejam carregados
+      if (loading) {
+        await new Promise(resolve => {
+          const checkInterval = setInterval(() => {
+            if (!loading) {
+              clearInterval(checkInterval);
+              resolve(true);
+            }
+          }, 50);
+        });
+      }
+
+      // Quando todas as operações de carregamento terminarem, verificamos o tempo
+      const endTime = performance.now();
+      const loadTime = endTime - startTime;
+
+      // Garantir tempo mínimo de carregamento para evitar flash
+      // Se os dados carregarem muito rápido, mostramos o loading por pelo menos 400ms
+      // Se os dados demorarem mais que isso, não adicionamos atraso adicional
+      const minLoadingTime = 400;
+      const remainingTime = Math.max(0, minLoadingTime - loadTime);
+
+      if (remainingTime > 0) {
+        await new Promise(resolve => setTimeout(resolve, remainingTime));
+      }
+
+      setIsLoading(false);
+    };
+
+    loadData();
+  }, [loading]);
+
+  // Handler para o filtro de datas
+  const handleDateRangeSelect = (range: DateFilterRange, dates?: { from?: Date; to?: Date }) => {
+    setSelectedDateRange(range);
+
+    if (range === 'custom' && dates) {
+      setCustomDateRange({
+        from: dates.from,
+        to: dates.to
+      });
+    } else if (range === 'specificDate' && dates?.from) {
+      setSelectedDate(dates.from);
+    }
+  };
+
+  // Handler para seleção direta de data única
+  const handleDateSelect = (date: Date) => {
+    setSelectedDate(date);
+  };
+
   const filteredHistory = historyItems.filter(item => {
-    const matchSearch = 
+    const matchSearch =
       item.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.productCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (item.notes && item.notes.toLowerCase().includes(searchTerm.toLowerCase()));
-    
+
     const matchType = typeFilter === 'all' || item.type === typeFilter;
-    
+
     let matchDate = true;
     const itemDate = new Date(item.date);
 
-    // Filtro por intervalo personalizado
-    if (startDate && endDate) {
-      // Ajustar endDate para incluir o final do dia
-      const adjustedEndDate = new Date(endDate);
-      adjustedEndDate.setHours(23, 59, 59, 999);
-      
-      matchDate = itemDate >= startDate && itemDate <= adjustedEndDate;
+    // Filtragem com base no DateFilterRange selecionado
+    if (selectedDateRange === 'custom' && customDateRange.from && customDateRange.to) {
+      // Filtro por intervalo personalizado
+      const start = startOfDay(customDateRange.from);
+      const end = endOfDay(customDateRange.to);
+      matchDate = itemDate >= start && itemDate <= end;
     }
-    // Filtro por data específica
-    else if (selectedDate) {
-      matchDate = itemDate.toDateString() === selectedDate.toDateString();
-    } 
-    // Filtro por intervalo predefinido
-    else if (dateRange) {
-      const today = startOfToday();
+    else if (selectedDateRange === 'specificDate') {
+      // Filtro por data específica
+      const start = startOfDay(selectedDate);
+      const end = endOfDay(selectedDate);
+      matchDate = itemDate >= start && itemDate <= end;
+    }
+    else {
+      // Filtros predefinidos
+      const today = new Date();
       let start: Date;
-      let end = new Date();
+      let end = endOfDay(today);
 
-      switch (dateRange) {
-        case 'day':
-          start = today;
+      switch (selectedDateRange) {
+        case 'today':
+          start = startOfDay(today);
           break;
-        case 'week':
-          start = startOfWeek(today, { weekStartsOn: 1 });
+        case 'yesterday':
+          start = startOfDay(addDays(today, -1));
+          end = endOfDay(addDays(today, -1));
           break;
-        case 'month':
+        case 'thisWeek':
+          start = startOfWeek(today, { locale: { options: { weekStartsOn: 1 } } });
+          break;
+        case 'lastWeek':
+          start = startOfWeek(addDays(today, -7), { locale: { options: { weekStartsOn: 1 } } });
+          end = endOfDay(addDays(start, 6));
+          break;
+        case 'thisMonth':
           start = startOfMonth(today);
           break;
-        case 'year':
+        case 'lastMonth':
+          start = startOfMonth(addDays(startOfMonth(today), -1));
+          end = endOfDay(addDays(startOfMonth(today), -1));
+          break;
+        case 'last30Days':
+          start = startOfDay(addDays(today, -29));
+          break;
+        case 'last90Days':
+          start = startOfDay(addDays(today, -89));
+          break;
+        case 'thisYear':
           start = startOfYear(today);
           break;
         default:
-          start = today;
+          start = startOfMonth(today); // Default para thisMonth
       }
 
-      matchDate = isWithinInterval(itemDate, { start, end });
+      matchDate = itemDate >= start && itemDate <= end;
     }
-    
+
     return matchSearch && matchType && matchDate;
   });
-  
+
   const groupedHistory: Record<string, HistoryItem[]> = {};
-  
+
   filteredHistory.forEach(item => {
     const dateStr = item.date.toLocaleDateString('pt-BR');
     if (!groupedHistory[dateStr]) {
@@ -120,29 +203,44 @@ const History = () => {
     groupedHistory[dateStr].push(item);
   });
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Histórico</h1>
-          <p className="text-muted-foreground text-sm sm:text-base">
-            Visualize todo o histórico de movimentações do almoxarifado.
-          </p>
+  // Renderizar estado de carregamento
+  if (isLoading) {
+    return (
+      <div className="h-full p-4 md:p-6">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">Histórico</h1>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
+              Veja o histórico de atividades e alterações no estoque
+            </p>
+          </div>
         </div>
-        
-        <div className="flex gap-2 w-full sm:w-auto">
-          <Button variant="outline" className="gap-1.5 flex-1 sm:flex-auto justify-center">
-            <Download className="h-4 w-4" />
-            <span className="hidden xs:inline">Exportar</span>
-          </Button>
-          <Button variant="outline" className="gap-1.5 flex-1 sm:flex-auto justify-center">
-            <FileText className="h-4 w-4" />
-            <span className="hidden xs:inline">PDF</span>
-          </Button>
-        </div>
+
+        <PageLoading message="Carregando histórico..." />
       </div>
-      
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+    );
+  }
+
+  return (
+    <PageWrapper>
+      <ModernHeader
+        title="Histórico"
+        subtitle="Visualize todo o histórico de movimentações do almoxarifado."
+        actions={
+          <div className="flex gap-2">
+            <Button variant="outline" className="gap-1.5">
+              <Download className="h-4 w-4" />
+              <span className="hidden xs:inline">Exportar</span>
+            </Button>
+            <Button variant="outline" className="gap-1.5">
+              <FileText className="h-4 w-4" />
+              <span className="hidden xs:inline">PDF</span>
+            </Button>
+          </div>
+        }
+      />
+
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mt-6">
         <div className="relative col-span-1 sm:col-span-4 md:col-span-2">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -153,7 +251,7 @@ const History = () => {
             onChange={e => setSearchTerm(e.target.value)}
           />
         </div>
-        
+
         <div className="grid grid-cols-2 col-span-1 sm:col-span-4 md:col-span-2 gap-2">
           <div className="col-span-1">
             <Select value={typeFilter} onValueChange={setTypeFilter}>
@@ -167,96 +265,23 @@ const History = () => {
               </SelectContent>
             </Select>
           </div>
-          
-          <div className="col-span-1 flex items-center gap-2">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button 
-                  variant={dateRange ? "default" : "outline"}
-                  size="sm" 
-                  className="gap-1 flex-1"
-                >
-                  <CalendarIcon className="h-4 w-4" />
-                  <span className="truncate">Rápido</span>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="p-0" align="start">
-                <DateRangeFilter
-                  date={selectedDate}
-                  dateRange={dateRange}
-                  onDateSelect={(date) => {
-                    setSelectedDate(date);
-                    setDateRange(undefined);
-                    setStartDate(undefined);
-                    setEndDate(undefined);
-                  }}
-                  onDateRangeSelect={(range) => {
-                    setDateRange(range);
-                    setSelectedDate(undefined);
-                    setStartDate(undefined);
-                    setEndDate(undefined);
-                  }}
-                  onClearFilter={() => {
-                    setSelectedDate(undefined);
-                    setDateRange(undefined);
-                    setStartDate(undefined);
-                    setEndDate(undefined);
-                  }}
-                  className="w-full border-0"
-                  placeholder="Filtro rápido"
-                />
-              </PopoverContent>
-            </Popover>
-            
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button 
-                  variant={startDate && endDate ? "default" : "outline"}
-                  size="sm" 
-                  className="gap-1 flex-1"
-                >
-                  <CalendarIcon className="h-4 w-4" />
-                  <span className="truncate">Período</span>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="p-0" align="start">
-                <CustomDateRangePicker
-                  startDate={startDate}
-                  endDate={endDate}
-                  onRangeChange={(start, end) => {
-                    setStartDate(start);
-                    setEndDate(end);
-                    setSelectedDate(undefined);
-                    setDateRange(undefined);
-                  }}
-                  placeholder="Período específico"
-                  className="w-full border-0"
-                />
-              </PopoverContent>
-            </Popover>
+
+          <div className="col-span-1">
+            <ModernDateRangeFilter
+              selectedRange={selectedDateRange}
+              customDateRange={customDateRange}
+              selectedDate={selectedDate}
+              onRangeSelect={handleDateRangeSelect}
+              onDateSelect={handleDateSelect}
+              placeholder="Filtrar por período"
+              defaultMode="range"
+              showModeToggle={true}
+            />
           </div>
-          
-          {(dateRange || selectedDate || startDate || endDate) && (
-            <div className="col-span-2 flex justify-end">
-              <Button 
-                variant="ghost" 
-                size="sm"
-                className="text-destructive"
-                onClick={() => {
-                  setSelectedDate(undefined);
-                  setDateRange(undefined);
-                  setStartDate(undefined);
-                  setEndDate(undefined);
-                }}
-              >
-                Limpar filtros
-              </Button>
-            </div>
-          )}
         </div>
       </div>
-      
-      <div className="space-y-6">
+
+      <div className="space-y-6 mt-6">
         {loading ? (
           <Card>
             <CardContent className="h-24 flex flex-col items-center justify-center text-muted-foreground">
@@ -363,7 +388,7 @@ const History = () => {
             ))
         )}
       </div>
-    </div>
+    </PageWrapper>
   );
 };
 

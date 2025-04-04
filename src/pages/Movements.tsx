@@ -7,17 +7,19 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useSupabaseProducts } from '@/hooks/useSupabaseProducts';
 import { useSupabaseMovements } from '@/hooks/useSupabaseMovements';
 import { useSupabaseCategories } from '@/hooks/useSupabaseCategories';
-import MovementDialog from '@/components/products/MovementDialog';
-import { 
-  Package, 
-  ArrowDownUp, 
-  PlusCircle, 
-  MinusCircle, 
+import ModernMovementDialog from '@/components/products/ModernMovementDialog';
+import {
+  Package,
+  ArrowDownUp,
+  PlusCircle,
+  MinusCircle,
   PlusSquare,
   CalendarDays,
   Calendar as CalendarIcon,
   CirclePlus,
-  SearchIcon
+  SearchIcon,
+  ArrowDownIcon,
+  ArrowUpIcon
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
@@ -35,6 +37,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/components/ui/use-toast";
 import DateRangeFilter from '@/components/ui/DateRangeFilter';
 import CustomDateRangePicker from '@/components/ui/CustomDateRangePicker';
+import PageWrapper from '@/components/layout/PageWrapper';
+import { ModernHeader, ModernFilters, ModernTable } from '@/components/layout/modern';
+import { Badge } from '@/components/ui/badge';
+import PageLoading from '@/components/PageLoading';
 
 // Definições de interface para tipagem
 interface ProductItem {
@@ -54,6 +60,8 @@ interface Movement {
   type: 'entrada' | 'saida';
   quantity: number;
   created_at: string;
+  employee_name?: string;
+  notes?: string;
 }
 
 interface Category {
@@ -87,28 +95,29 @@ const Movements = () => {
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [isNewMovementDialogOpen, setIsNewMovementDialogOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<'predefined' | 'custom'>('predefined');
+  const [isLoading, setIsLoading] = useState(true);
 
   // Verificar parâmetros da URL ao carregar a página
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const typeParam = params.get('type');
-    
+
     if (typeParam === 'entrada' || typeParam === 'saida') {
       setMovementType(typeParam);
-      
+
       // Verificar se devemos abrir o diálogo de nova movimentação
       const openDialog = params.get('open') === 'true';
       if (openDialog) {
         setIsNewMovementDialogOpen(true);
       }
     }
-    
+
     const productParam = params.get('product');
     if (productParam) {
       const product = products.find(p => p.id === productParam);
       if (product) {
         setSelectedProduct(product);
-        
+
         // Se temos um produto e um tipo, abrimos o diálogo diretamente
         if (typeParam && (typeParam === 'entrada' || typeParam === 'saida')) {
           setIsDialogOpen(true);
@@ -116,6 +125,46 @@ const Movements = () => {
       }
     }
   }, [products]);
+
+  // Adicionar efeito de carregamento inicial
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+
+      // Iniciar o tempo para medir quanto leva para carregar os dados
+      const startTime = performance.now();
+
+      // Esperar pelo menos que os produtos e movimentos sejam carregados
+      if (loading || loadingMovements) {
+        await new Promise(resolve => {
+          const checkInterval = setInterval(() => {
+            if (!loading && !loadingMovements) {
+              clearInterval(checkInterval);
+              resolve(true);
+            }
+          }, 50);
+        });
+      }
+
+      // Quando todas as operações de carregamento terminarem, verificamos o tempo
+      const endTime = performance.now();
+      const loadTime = endTime - startTime;
+
+      // Garantir tempo mínimo de carregamento para evitar flash
+      // Se os dados carregarem muito rápido, mostramos o loading por pelo menos 400ms
+      // Se os dados demorarem mais que isso, não adicionamos atraso adicional
+      const minLoadingTime = 400;
+      const remainingTime = Math.max(0, minLoadingTime - loadTime);
+
+      if (remainingTime > 0) {
+        await new Promise(resolve => setTimeout(resolve, remainingTime));
+      }
+
+      setIsLoading(false);
+    };
+
+    loadData();
+  }, [loading, loadingMovements]);
 
   const handleOpenDialog = (product: ProductItem, type: 'entrada' | 'saida') => {
     setSelectedProduct(product);
@@ -162,19 +211,19 @@ const Movements = () => {
   // Filtra os movimentos de acordo com a data selecionada
   const filterMovementsByDate = (productMovements: Movement) => {
     const movementDate = new Date(productMovements.created_at);
-    
+
     // Se não há filtro de data ativo
     if (!date && !dateRange && !startDate && !endDate) return true;
-    
+
     // Filtro por intervalo personalizado
     if (startDate && endDate) {
       // Ajustar endDate para incluir o final do dia
       const adjustedEndDate = new Date(endDate);
       adjustedEndDate.setHours(23, 59, 59, 999);
-      
+
       return movementDate >= startDate && movementDate <= adjustedEndDate;
     }
-    
+
     // Filtro por data específica
     if (date) {
       return (
@@ -183,11 +232,11 @@ const Movements = () => {
         movementDate.getFullYear() === date.getFullYear()
       );
     }
-    
+
     // Filtro por intervalo predefinido
     if (dateRange) {
       const today = new Date();
-      
+
       if (dateRange === 'day') {
         return (
           movementDate.getDate() === today.getDate() &&
@@ -208,31 +257,31 @@ const Movements = () => {
         return movementDate >= yearAgo;
       }
     }
-    
+
     return true;
   };
 
   // Filter products that have movements and match search/category/type criteria
   const filteredProducts = products.filter(product => {
     // Check if product has any movements that match the date and type filter
-    const hasMovements = movements.some(m => 
-      m.product_id === product.id && 
-      filterMovementsByDate(m) && 
+    const hasMovements = movements.some(m =>
+      m.product_id === product.id &&
+      filterMovementsByDate(m) &&
       (selectedType === 'all' || m.type === selectedType)
     );
-    
+
     if (!hasMovements) return false;
-    
-    const matchesSearch = 
-      searchTerm === '' || 
+
+    const matchesSearch =
+      searchTerm === '' ||
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    const matchesCategory = 
-      selectedCategory === 'all' || 
+
+    const matchesCategory =
+      selectedCategory === 'all' ||
       product.category_id === selectedCategory;
-    
+
     return matchesSearch && matchesCategory;
   });
 
@@ -241,261 +290,213 @@ const Movements = () => {
     return category ? category.name : 'Sem categoria';
   };
 
-  return (
-    <div className="px-2 sm:px-4 py-4 sm:py-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Movimentações</h1>
-          <p className="text-muted-foreground text-sm sm:text-base">
-            Visualize o histórico de entradas e saídas de produtos.
-          </p>
+  // Renderizar estado de carregamento
+  if (isLoading) {
+    return (
+      <div className="h-full p-4 md:p-6">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">Movimentações</h1>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
+              Histórico de entradas e saídas de produtos
+            </p>
+          </div>
         </div>
-        <div className="flex gap-2 w-full sm:w-auto">
-          <Button onClick={() => setIsNewMovementDialogOpen(true)} className="gap-2 w-full sm:w-auto">
-            <CirclePlus className="h-4 w-4" />
-            <span>Nova Movimentação</span>
-          </Button>
-        </div>
+
+        <PageLoading message="Carregando movimentações..." />
       </div>
+    );
+  }
 
-      {/* Filtros de busca, categoria e data */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
-        <div className="relative col-span-1 sm:col-span-4 md:col-span-1">
-          <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar produtos..."
-            className="pl-8 w-full"
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
+  return (
+    <PageWrapper className="flex flex-col p-0">
+      <div className="flex-1 w-full overflow-auto">
+        <div className="w-full px-2 sm:px-4 py-4 sm:py-6">
+          <ModernHeader
+            title="Movimentações"
+            subtitle="Visualize o histórico de entradas e saídas de produtos."
+            actions={
+              <Button
+                type="button"
+                onClick={() => setIsNewMovementDialogOpen(true)}
+                className="gap-2 w-full sm:w-auto"
+              >
+                <PlusSquare className="h-4 w-4" /> Nova Movimentação
+              </Button>
+            }
           />
-        </div>
-        
-        <div className="col-span-1 sm:col-span-2 md:col-span-1">
-          <Select 
-            value={selectedCategory} 
-            onValueChange={setSelectedCategory}
-          >
-            <SelectTrigger className="w-full text-xs sm:text-sm">
-              <SelectValue placeholder="Categoria" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas Categorias</SelectItem>
-              {categories.map(category => (
-                <SelectItem key={category.id} value={category.id}>
-                  {category.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
 
-        <div className="col-span-1 sm:col-span-2 md:col-span-1">
-          <Select 
-            value={selectedType} 
-            onValueChange={setSelectedType}
-          >
-            <SelectTrigger className="w-full text-xs sm:text-sm">
-              <SelectValue placeholder="Tipo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="entrada">Entradas</SelectItem>
-              <SelectItem value="saida">Saídas</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex items-center gap-2 col-span-1 sm:col-span-4 md:col-span-1">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button 
-                variant={dateRange ? "default" : "outline"}
-                size="sm" 
-                className="gap-1 flex-1"
-              >
-                <CalendarIcon className="h-4 w-4" />
-                <span className="truncate">Rápido</span>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="p-0" align="start">
-              <DateRangeFilter
-                date={date}
-                dateRange={dateRange}
-                onDateSelect={handleDateSelect}
-                onDateRangeSelect={handleDateRangeSelect}
-                onClearFilter={clearDateFilter}
-                placeholder="Filtro rápido"
-                className="w-full border-0"
+          {/* Filtros de busca, categoria e data */}
+          <ModernFilters>
+            <div className="relative col-span-1 sm:col-span-4 md:col-span-1">
+              <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar produtos..."
+                className="pl-8 w-full"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
               />
-            </PopoverContent>
-          </Popover>
-          
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button 
-                variant={startDate && endDate ? "default" : "outline"}
-                size="sm" 
-                className="gap-1 flex-1"
+            </div>
+
+            <div className="col-span-1 sm:col-span-2 md:col-span-1">
+              <Select
+                value={selectedCategory}
+                onValueChange={setSelectedCategory}
               >
-                <CalendarIcon className="h-4 w-4" />
-                <span className="truncate">Período</span>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="p-0" align="start">
+                <SelectTrigger className="w-full text-xs sm:text-sm">
+                  <SelectValue placeholder="Categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas Categorias</SelectItem>
+                  {categories.map(category => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="col-span-1 sm:col-span-2 md:col-span-1">
+              <Select
+                value={selectedType}
+                onValueChange={setSelectedType}
+              >
+                <SelectTrigger className="w-full text-xs sm:text-sm">
+                  <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos Tipos</SelectItem>
+                  <SelectItem value="entrada">Entradas</SelectItem>
+                  <SelectItem value="saida">Saídas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="col-span-1 sm:col-span-2 md:col-span-1">
               <CustomDateRangePicker
                 startDate={startDate}
                 endDate={endDate}
                 onRangeChange={handleCustomRangeChange}
-                placeholder="Período específico"
-                className="w-full border-0"
+                className="w-full"
+                placeholder="Selecionar período"
               />
-            </PopoverContent>
-          </Popover>
-          
-          {(dateRange || date || startDate || endDate) && (
-            <Button 
-              variant="ghost" 
-              size="sm"
-              className="text-destructive"
-              onClick={clearDateFilter}
-            >
-              Limpar
-            </Button>
-          )}
+            </div>
+          </ModernFilters>
+
+          {/* Lista de movimentações */}
+          <ModernTable className="flex-1">
+            {loading ? (
+              <div className="flex justify-center items-center py-32">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
+              </div>
+            ) : filteredProducts.length === 0 ? (
+              <div className="text-center py-16 text-gray-500 dark:text-gray-400">
+                <Package className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
+                <h3 className="text-lg font-medium mb-1 dark:text-gray-300">Nenhuma movimentação encontrada</h3>
+                <p className="text-sm text-gray-400 dark:text-gray-500 max-w-md mx-auto">
+                  Tente ajustar os filtros ou criar uma nova movimentação clicando no botão acima.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-6 p-2">
+                {filteredProducts.map(product => {
+                  const productMovements = movements.filter(
+                    m => m.product_id === product.id &&
+                      filterMovementsByDate(m) &&
+                      (selectedType === 'all' || m.type === selectedType)
+                  ).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+                  if (productMovements.length === 0) return null;
+
+                  return (
+                    <div key={product.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                      <div className="p-4 flex justify-between items-center border-b border-gray-100 dark:border-gray-700">
+                        <div className="flex items-center gap-3">
+                          <div className="bg-blue-100 dark:bg-blue-900/30 h-10 w-10 rounded-full flex items-center justify-center">
+                            <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                          </div>
+                          <div>
+                            <h3 className="font-medium dark:text-white">{product.name}</h3>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Categoria: {getCategoryName(product.category_id)}</p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+                          onClick={() => handleOpenDialog(product, 'entrada')}
+                        >
+                          <span className="mr-1 text-xs">+</span> Movimentar
+                        </Button>
+                      </div>
+
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="border-b border-gray-200 dark:border-gray-700">
+                            <TableHead>Data</TableHead>
+                            <TableHead>Tipo</TableHead>
+                            <TableHead>Quantidade</TableHead>
+                            <TableHead>Responsável</TableHead>
+                            <TableHead>Observação</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {productMovements.map(movement => (
+                            <TableRow key={movement.id} className="border-b border-gray-100 dark:border-gray-800">
+                              <TableCell className="font-medium whitespace-nowrap dark:text-gray-300">
+                                {format(new Date(movement.created_at), 'dd/MM/yyyy HH:mm')}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center">
+                                  {movement.type === 'entrada' ? (
+                                    <>
+                                      <div className="mr-2 h-2 w-2 rounded-full bg-green-500"></div>
+                                      <span className="dark:text-gray-300">Entrada</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <div className="mr-2 h-2 w-2 rounded-full bg-orange-500"></div>
+                                      <span className="dark:text-gray-300">Saída</span>
+                                    </>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <span className="font-medium dark:text-gray-300">
+                                  {movement.quantity} {product.unit}
+                                </span>
+                              </TableCell>
+                              <TableCell className="dark:text-gray-300">{movement.employee_name || '-'}</TableCell>
+                              <TableCell className="max-w-xs truncate dark:text-gray-300">{movement.notes || '-'}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </ModernTable>
         </div>
       </div>
 
-      {/* Estado de carregamento ou sem dados */}
-      {loading ? (
-        <Card>
-          <CardContent className="h-24 flex items-center justify-center">
-            <p className="text-muted-foreground">Carregando produtos...</p>
-          </CardContent>
-        </Card>
-      ) : filteredProducts.length === 0 ? (
-        <Card>
-          <CardContent className="h-24 flex flex-col items-center justify-center">
-            <Package className="h-8 w-8 mb-2 text-muted-foreground" />
-            <p className="text-muted-foreground">Nenhum produto encontrado</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="shadow-sm overflow-hidden">
-          <CardHeader className="py-4 px-4 sm:px-6 bg-background">
-            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-              <ArrowDownUp className="h-5 w-5" />
-              Controle de Estoque
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[80px] sm:w-[120px]">Código</TableHead>
-                    <TableHead>Produto</TableHead>
-                    <TableHead className="hidden md:table-cell">Categoria</TableHead>
-                    <TableHead className="text-center w-[70px] sm:w-[100px]">Estoque</TableHead>
-                    <TableHead className="text-center w-[100px]">Tipo</TableHead>
-                    <TableHead className="hidden md:table-cell w-[200px]">Colaborador</TableHead>
-                    <TableHead className="w-[130px] sm:w-[180px] md:w-[220px]">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredProducts.map((product) => (
-                    <TableRow key={product.id}>
-                      <TableCell className="font-mono text-xs px-2 sm:px-4 py-2 sm:py-4">
-                        <div className="bg-secondary/40 dark:bg-secondary/20 px-2 py-0.5 rounded border border-border/50 inline-block font-mono">
-                          {product.code}
-                        </div>
-                      </TableCell>
-                      <TableCell className="px-2 sm:px-4 py-2 sm:py-4">
-                        <div className="font-medium">{product.name}</div>
-                        <div className="text-xs text-muted-foreground hidden sm:block line-clamp-1">{product.description}</div>
-                        <div className="text-xs text-muted-foreground md:hidden">{getCategoryName(product.category_id)}</div>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell px-2 sm:px-4 py-2 sm:py-4">
-                        {getCategoryName(product.category_id)}
-                      </TableCell>
-                      <TableCell className="text-center px-2 sm:px-4 py-2 sm:py-4">
-                        <span className={`px-1.5 py-0.5 sm:px-2 sm:py-1 rounded text-xs sm:text-sm ${product.quantity <= product.min_quantity ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary'}`}>
-                          {product.quantity}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-center px-2 sm:px-4 py-2 sm:py-4">
-                        {(() => {
-                          const movement = movements.find(m => m.product_id === product.id);
-                          if (movement?.type === 'entrada') {
-                            return (
-                              <span className="px-2 py-1 rounded text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Entrada</span>
-                            );
-                          } else {
-                            return (
-                              <span className="px-2 py-1 rounded text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">Saída</span>
-                            );
-                          }
-                        })()}
-                        {/* Exibir informação reduzida do colaborador em telas menores */}
-                        {(() => {
-                          const movement = movements.find(m => m.product_id === product.id);
-                          if (movement?.type === 'saida' && movement?.employee_name) {
-                            return (
-                              <div className="text-xs mt-1 md:hidden">
-                                <span className="text-muted-foreground">Colaborador:</span>
-                                <div className="font-medium truncate">{movement.employee_name}</div>
-                              </div>
-                            );
-                          }
-                          return null;
-                        })()}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell px-2 sm:px-4 py-2 sm:py-4">
-                        {(() => {
-                          const movement = movements.find(m => m.product_id === product.id);
-                          if (movement?.type === 'saida' && movement?.employee_name) {
-                            return (
-                              <div className="space-y-1">
-                                <div className="font-medium truncate">{movement.employee_name}</div>
-                                <div className="text-xs text-muted-foreground font-mono">{movement.employee_code || 'Sem código'}</div>
-                              </div>
-                            );
-                          }
-                          return '-';
-                        })()}
-                      </TableCell>
-                      <TableCell className="px-2 sm:px-4 py-2 sm:py-4">
-                        <div className="flex flex-row sm:flex-row gap-1 sm:gap-2">
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            className="gap-1 text-xs w-full sm:w-auto whitespace-nowrap"
-                            onClick={() => handleOpenDialog(product, 'entrada')}
-                          >
-                            <PlusCircle className="h-3 w-3 text-green-500" />
-                            <span className="hidden xs:inline">Entrada</span>
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            className="gap-1 text-xs w-full sm:w-auto whitespace-nowrap"
-                            onClick={() => handleOpenDialog(product, 'saida')}
-                          >
-                            <MinusCircle className="h-3 w-3 text-blue-500" />
-                            <span className="hidden xs:inline">Saída</span>
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Dialog para criar uma nova movimentação */}
+      <Dialog open={isNewMovementDialogOpen} onOpenChange={setIsNewMovementDialogOpen}>
+        <DialogContent className="sm:max-w-[580px] p-0 border-none max-h-[90vh] overflow-hidden">
+          <MovementProductSelector
+            open={isNewMovementDialogOpen}
+            onOpenChange={setIsNewMovementDialogOpen}
+            products={products}
+            categories={categories}
+            onSelectProduct={handleOpenDialog}
+          />
+        </DialogContent>
+      </Dialog>
 
-      {/* Dialog para produto selecionado */}
-      <MovementDialog
+      {/* Dialog de movimentação */}
+      <ModernMovementDialog
         product={selectedProduct ? {
           id: selectedProduct.id,
           code: selectedProduct.code,
@@ -507,21 +508,7 @@ const Movements = () => {
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
       />
-
-      {/* Dialog para nova movimentação (selecionar produto) */}
-      <MovementProductSelector
-        open={isNewMovementDialogOpen}
-        onOpenChange={setIsNewMovementDialogOpen}
-        products={products}
-        categories={categories}
-        onSelectProduct={(product, type) => {
-          setSelectedProduct(product);
-          setMovementType(type);
-          setIsNewMovementDialogOpen(false);
-          setIsDialogOpen(true);
-        }}
-      />
-    </div>
+    </PageWrapper>
   );
 };
 
@@ -535,17 +522,17 @@ const MovementProductSelector = ({
   const [movementType, setMovementType] = useState<'entrada' | 'saida'>('entrada');
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  
+
   const filteredProducts = products.filter(product => {
-    const matchesSearch = 
-      searchTerm === '' || 
+    const matchesSearch =
+      searchTerm === '' ||
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.code.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesCategory = 
-      categoryFilter === 'all' || 
+
+    const matchesCategory =
+      categoryFilter === 'all' ||
       product.category_id === categoryFilter;
-    
+
     return matchesSearch && matchesCategory;
   });
 
@@ -555,138 +542,129 @@ const MovementProductSelector = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[620px] p-0 w-[95vw] max-h-[90vh] overflow-hidden bg-background border-none shadow-xl">
-        <div className="flex flex-col h-full">
-          {/* Cabeçalho */}
-          <div className="p-6 pb-3">
-            <DialogTitle className="text-xl font-bold">
-              Registrar Movimentação
-            </DialogTitle>
-            <DialogDescription className="text-sm mt-1">
-              Selecione o produto e o tipo de movimentação a ser registrada.
-            </DialogDescription>
-          </div>
+    <div className="flex flex-col h-full max-h-[90vh]">
+      <div className="p-6 pb-4 border-b">
+        <h2 className="text-xl font-semibold">Registrar Movimentação</h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          Selecione o produto e o tipo de movimentação a ser registrada.
+        </p>
+      </div>
 
-          {/* Abas de tipo de movimentação */}
-          <Tabs 
-            defaultValue="entrada" 
-            onValueChange={(value) => setMovementType(value as 'entrada' | 'saida')} 
-            className="p-0 flex-1 flex flex-col"
-          >
-            <div className="px-6 pt-2">
-              <TabsList className="grid w-full grid-cols-2 h-10 p-0.5">
-                <TabsTrigger 
-                  value="entrada" 
-                  className="text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                >
-                  Entrada
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="saida" 
-                  className="text-sm font-medium data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-                >
-                  Saída
-                </TabsTrigger>
-              </TabsList>
-            </div>
+      <div className="grid grid-cols-2 gap-2 p-4">
+        <Button
+          type="button"
+          variant={movementType === 'entrada' ? 'default' : 'outline'}
+          className={`h-12 ${movementType === 'entrada'
+            ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+            : 'hover:bg-primary/10'
+            }`}
+          onClick={() => setMovementType('entrada')}
+        >
+          <ArrowDownIcon className="h-4 w-4 mr-2" />
+          Entrada
+        </Button>
+        <Button
+          type="button"
+          variant={movementType === 'saida' ? 'default' : 'outline'}
+          className={`h-12 ${movementType === 'saida'
+            ? 'bg-blue-600 text-white hover:bg-blue-700'
+            : 'hover:bg-blue-100 dark:hover:bg-blue-900/30'
+            }`}
+          onClick={() => setMovementType('saida')}
+        >
+          <ArrowUpIcon className="h-4 w-4 mr-2" />
+          Saída
+        </Button>
+      </div>
 
-            {/* Filtros e listagem de produtos */}
-            <div className="px-6 py-4 flex-1 flex flex-col overflow-hidden">
-              <div className="space-y-4 mb-4">
-                {/* Campo de busca */}
-                <div className="relative">
-                  <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar por nome ou código do produto..."
-                    className="pl-9 w-full h-10"
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                  />
-                </div>
-
-                {/* Seletor de categoria */}
-                <Select 
-                  value={categoryFilter} 
-                  onValueChange={setCategoryFilter}
-                >
-                  <SelectTrigger className="w-full h-10">
-                    <SelectValue placeholder="Filtrar por categoria" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas as categorias</SelectItem>
-                    {categories.map(category => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Lista de produtos */}
-              <div className="border rounded-md overflow-hidden flex-1 min-h-[300px] bg-card">
-                <div className="h-full overflow-y-auto max-h-[350px]">
-                  {filteredProducts.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full py-8 text-center px-4">
-                      <Package className="h-10 w-10 text-muted-foreground mb-2 opacity-50" />
-                      <p className="text-muted-foreground font-medium">Nenhum produto encontrado</p>
-                      <p className="text-xs text-muted-foreground mt-1">Tente ajustar os filtros ou adicione produtos ao estoque</p>
-                    </div>
-                  ) : (
-                    <table className="w-full">
-                      <thead className="sticky top-0 bg-muted/50 backdrop-blur-sm">
-                        <tr>
-                          <th className="text-left text-xs font-medium text-muted-foreground px-4 py-2.5 w-[50%]">Produto</th>
-                          <th className="text-center text-xs font-medium text-muted-foreground px-2 py-2.5 w-[20%]">Estoque</th>
-                          <th className="text-right text-xs font-medium text-muted-foreground px-4 py-2.5 w-[30%]"></th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y">
-                        {filteredProducts.map(product => (
-                          <tr key={product.id} className="hover:bg-muted/50 transition-colors">
-                            <td className="px-4 py-3">
-                              <div className="flex flex-col gap-1">
-                                <div className="font-medium text-sm line-clamp-1">{product.name}</div>
-                                <div className="flex items-center flex-wrap gap-1 sm:gap-2">
-                                  <span className="text-xs px-1.5 py-0.5 rounded bg-muted border border-muted-foreground/20 font-mono inline-block max-w-[100px] truncate">
-                                    {product.code}
-                                  </span>
-                                  <span className="text-xs text-muted-foreground">
-                                    {getCategoryName(product.category_id)}
-                                  </span>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="text-center px-2 py-3">
-                              <div className={`inline-flex justify-center min-w-8 px-2.5 py-1 rounded-full text-sm font-medium ${
-                                product.quantity <= product.min_quantity 
-                                  ? 'bg-destructive/10 text-destructive' 
-                                  : 'bg-primary/10 text-primary'
-                              }`}>
-                                {product.quantity}
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 text-right">
-                              <Button
-                                variant={movementType === 'entrada' ? 'default' : 'custom-blue'}
-                                onClick={() => onSelectProduct(product, movementType)}
-                              >
-                                Selecionar
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
-              </div>
-            </div>
-          </Tabs>
+      <div className="p-4 space-y-4">
+        <div className="relative">
+          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nome ou código do produto..."
+            className="pl-9 w-full"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+          />
         </div>
-      </DialogContent>
-    </Dialog>
+
+        <Select
+          value={categoryFilter}
+          onValueChange={setCategoryFilter}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Todas as categorias" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas as categorias</SelectItem>
+            {categories.map(category => (
+              <SelectItem key={category.id} value={category.id}>
+                {category.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex-1 overflow-hidden p-4 pt-0">
+        <div className="border rounded-lg overflow-hidden h-full dark:border-gray-700">
+          {filteredProducts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full p-8">
+              <Package className="h-12 w-12 text-muted-foreground/50 mb-3" />
+              <p className="font-medium text-muted-foreground">Nenhum produto encontrado</p>
+              <p className="text-sm text-muted-foreground/70 text-center mt-1 max-w-xs">
+                Tente ajustar os filtros ou pesquise por outro termo
+              </p>
+            </div>
+          ) : (
+            <div className="h-full overflow-y-auto">
+              <div className="sticky top-0 bg-muted/60 dark:bg-gray-800/80 backdrop-blur-sm border-b dark:border-gray-700">
+                <div className="grid grid-cols-3 px-4 py-2.5 text-xs font-medium text-muted-foreground">
+                  <div>Produto</div>
+                  <div className="text-center">Estoque</div>
+                  <div className="text-right">Ação</div>
+                </div>
+              </div>
+
+              <div className="divide-y dark:divide-gray-700">
+                {filteredProducts.map(product => (
+                  <div key={product.id} className="grid grid-cols-3 items-center px-4 py-3 hover:bg-muted/40 dark:hover:bg-gray-700/40 transition-colors">
+                    <div>
+                      <div className="font-medium dark:text-white">{product.name}</div>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <Badge variant="outline" className="font-mono text-xs dark:border-gray-600 dark:text-gray-300">
+                          {product.code}
+                        </Badge>
+                        <span className="text-xs bg-secondary/40 dark:bg-gray-700 px-1.5 py-0.5 rounded-full dark:text-gray-300">
+                          {getCategoryName(product.category_id)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-center">
+                      <Badge variant={product.quantity <= product.min_quantity ? "destructive" : "secondary"} className="px-2.5 py-1">
+                        {product.quantity}
+                      </Badge>
+                    </div>
+
+                    <div className="flex justify-end">
+                      <Button
+                        variant={movementType === 'entrada' ? 'default' : 'custom-blue'}
+                        className="px-3"
+                        size="sm"
+                        onClick={() => onSelectProduct(product, movementType)}
+                      >
+                        Selecionar
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
 

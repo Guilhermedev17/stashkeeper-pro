@@ -49,7 +49,7 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
   const [selectAll, setSelectAll] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const tableContainerRef = useRef<HTMLDivElement>(null);
-  
+
   const { addEmployee, updateEmployee } = useSupabaseEmployees();
   const { toast } = useToast();
 
@@ -92,7 +92,7 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
     }
 
     setIsUploading(true);
-    
+
     try {
       const reader = new FileReader();
       reader.onload = async (e) => {
@@ -101,26 +101,26 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
           const workbook = XLSX.read(data, { type: 'binary' });
           const worksheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[worksheetName];
-          
+
           // Converter para JSON
           const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 'A' });
-          
+
           console.log(`Dados brutos do Excel: ${jsonData.length} linhas`);
-          
+
           // Processar e validar os dados para preview
           const processedData = processExcelData(jsonData);
-          
+
           console.log(`Após processamento: ${processedData.length} colaboradores válidos`);
-          
+
           // Marcar todos os colaboradores como selecionados por padrão
           const dataWithSelection = processedData.map(item => ({
             ...item,
             selected: true
           }));
-          
+
           setPreviewData(dataWithSelection);
           setSelectAll(true);
-          
+
           // Avançar para a etapa de preview
           setImportStep('preview');
         } catch (error) {
@@ -131,10 +131,10 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
             variant: "destructive"
           });
         }
-        
+
         setIsUploading(false);
       };
-      
+
       reader.onerror = () => {
         toast({
           title: "Erro na leitura",
@@ -143,7 +143,7 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
         });
         setIsUploading(false);
       };
-      
+
       reader.readAsBinaryString(selectedFile);
     } catch (error) {
       console.error("Erro ao processar arquivo Excel:", error);
@@ -168,17 +168,17 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
       }
       return !isHeader;
     });
-    
+
     console.log(`Após filtrar cabeçalhos: ${dataRows.length} linhas`);
-    
+
     // Log das primeiras linhas para debug
     if (dataRows.length > 0) {
       console.log('Amostra das primeiras linhas:');
       for (let i = 0; i < Math.min(3, dataRows.length); i++) {
-        console.log(`Linha ${i+1}:`, dataRows[i]);
+        console.log(`Linha ${i + 1}:`, dataRows[i]);
       }
     }
-    
+
     // Filtrar linhas vazias ou inválidas
     const validRows = dataRows.filter(row => {
       // Verificar se a linha tem código e nome do colaborador
@@ -188,16 +188,16 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
       }
       return hasRequiredFields;
     });
-    
+
     console.log(`Após filtrar linhas sem código/nome: ${validRows.length} linhas`);
-    
+
     const mappedData = validRows.map(row => {
       // Mapeamento fixo de colunas conforme o formato da planilha:
       // A: Código
       // B: Nome do Colaborador
       const code = String(row.A || '').trim();
       const name = String(row.B || '').trim();
-      
+
       return {
         code,
         name,
@@ -206,13 +206,13 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
         selected: true
       };
     });
-    
+
     const validItems = mappedData.filter(item => item.valid);
-    
+
     if (mappedData.length !== validItems.length) {
       console.log(`${mappedData.length - validItems.length} itens foram considerados inválidos após o mapeamento`);
     }
-    
+
     return validItems;
   };
 
@@ -220,30 +220,30 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
   const toggleSelectAll = () => {
     const newSelectAll = !selectAll;
     setSelectAll(newSelectAll);
-    
+
     // Atualizar todos os itens de acordo com a seleção geral
     setPreviewData(previewData.map(item => ({
       ...item,
       selected: newSelectAll
     })));
   };
-  
+
   // Função para alternar seleção de um colaborador específico
   const toggleSelectItem = (index: number) => {
     const updatedData = [...previewData];
     updatedData[index].selected = !updatedData[index].selected;
-    
+
     // Verificar se todos estão selecionados para atualizar o selectAll
     const allSelected = updatedData.every(item => item.selected);
     setSelectAll(allSelected);
-    
+
     setPreviewData(updatedData);
   };
 
   const confirmImport = async () => {
     // Filtrar apenas os itens selecionados
     const selectedItems = previewData.filter(item => item.selected);
-    
+
     if (selectedItems.length === 0) {
       toast({
         title: "Atenção",
@@ -252,9 +252,9 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
       });
       return;
     }
-    
+
     setIsUploading(true);
-    
+
     const stats = {
       total: selectedItems.length,
       added: 0,
@@ -262,21 +262,21 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
       skipped: 0,
       errors: 0
     };
-    
+
     // Criar apenas uma notificação que pode ser atualizada
     const toastInstance = toast({
       title: "Importação em andamento",
       description: `Iniciando importação de ${selectedItems.length} colaboradores...`,
       variant: "progress"
     });
-    
+
     // Processa a importação apenas dos itens selecionados
     for (let index = 0; index < selectedItems.length; index++) {
       const item = selectedItems[index];
       try {
         // Atualizar o progresso em intervalos regulares
         const progressPercent = Math.floor((index / selectedItems.length) * 100);
-        
+
         // Atualizar a notificação mais frequentemente (a cada colaborador ou a cada 5%)
         if (selectedItems.length < 10 || index % Math.max(1, Math.floor(selectedItems.length / 20)) === 0) {
           toastInstance.update({
@@ -286,14 +286,14 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
             variant: "progress"
           });
         }
-        
+
         // Buscar se já existe um colaborador com este código
         const { data: existingEmployees } = await supabase
           .from('employees')
           .select('id, code')
           .eq('code', item.code)
           .limit(1);
-        
+
         if (existingEmployees && existingEmployees.length > 0) {
           // Atualizar colaborador existente
           const employeeId = existingEmployees[0].id;
@@ -302,7 +302,7 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
             code: item.code,
             status: item.status
           }, { silent: true });
-          
+
           if (result.success) {
             stats.updated++;
           } else {
@@ -315,7 +315,7 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
             code: item.code,
             status: item.status
           }, { silent: true });
-          
+
           if (result.success) {
             stats.added++;
           } else {
@@ -327,7 +327,7 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
         stats.errors++;
       }
     }
-    
+
     // Atualizar notificação final com o resultado
     // Incluir o número total e a porcentagem 100% para indicar conclusão
     toastInstance.update({
@@ -360,7 +360,7 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
     setImportStats({
       total: 0,
       added: 0,
-      updated: 0, 
+      updated: 0,
       skipped: 0,
       errors: 0
     });
@@ -369,8 +369,8 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
   };
 
   // Filtrar dados de acordo com a pesquisa
-  const filteredPreviewData = previewData.filter(item => 
-    item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+  const filteredPreviewData = previewData.filter(item =>
+    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.code.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -381,24 +381,24 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto p-0">
         <div className="flex justify-between items-center p-4 border-b">
           <div className="flex items-center gap-2">
-            <FileSpreadsheet className="h-5 w-5 text-primary" />
+            <FileSpreadsheet className="size-5 text-primary" />
             <h2 className="text-xl font-bold">Importador de Colaboradores via Excel</h2>
           </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={handleClose}
-            className="h-8 w-8 rounded-full"
+            className="size-4 rounded-full"
           >
-            <X className="h-4 w-4" />
+            <X className="size-4" />
           </Button>
         </div>
-        
+
         <div className="p-4">
           <p className="text-sm text-muted-foreground mb-6">
             Importe dados de colaboradores de um arquivo Excel com código e nome
           </p>
-          
+
           {importStep === 'select' && (
             <div className="space-y-8">
               <div className="space-y-3">
@@ -408,7 +408,7 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
                     className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/30 transition-colors"
                   >
                     <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      <FileSpreadsheet className="w-8 h-8 text-primary/70 mb-2" />
+                      <FileSpreadsheet className="size-8 text-primary/70 mb-2" />
                       <p className="mb-1 text-sm text-muted-foreground">
                         <span className="font-semibold">Clique para selecionar</span> ou arraste o arquivo
                       </p>
@@ -418,7 +418,7 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
                     </div>
                     {selectedFile && (
                       <div className="flex items-center gap-2 py-2 px-3 bg-secondary/50 rounded-md text-sm mt-2">
-                        <Check className="w-4 h-4 text-green-500" />
+                        <Check className="size-4 text-green-500" />
                         <span className="truncate max-w-[280px]">{selectedFile.name}</span>
                       </div>
                     )}
@@ -432,9 +432,9 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
                   </label>
                 </div>
               </div>
-              
+
               <Alert className="bg-secondary/50 border-secondary">
-                <Info className="h-5 w-5 text-primary/80" />
+                <Info className="size-5 text-primary/80" />
                 <AlertTitle className="text-base font-medium">Como importar seus colaboradores</AlertTitle>
                 <AlertDescription className="mt-1 text-sm">
                   <p className="mb-2">Use sua planilha Excel com informações de colaboradores:</p>
@@ -447,29 +447,29 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
               </Alert>
             </div>
           )}
-          
+
           {importStep === 'preview' && (
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-2 border-b">
                 <h3 className="text-lg font-medium">Pré-visualização dos dados</h3>
                 <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <Search className="h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    placeholder="Buscar por nome ou código..." 
+                  <Search className="size-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por nome ou código..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="h-8 w-full"
                   />
                 </div>
               </div>
-              
+
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-2">
                 <div className="flex items-center gap-2">
-                  <Checkbox 
-                    id="select-all" 
+                  <Checkbox
+                    id="select-all"
                     checked={selectAll}
                     onCheckedChange={toggleSelectAll}
-                    className="h-4 w-4"
+                    className="size-4"
                   />
                   <Label htmlFor="select-all" className="text-sm font-medium">
                     Selecionar todos
@@ -479,11 +479,11 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
                   <span className="font-medium">{previewData.filter(item => item.selected).length}</span> de <span className="font-medium">{previewData.length}</span> selecionados
                 </div>
               </div>
-              
+
               <div className="border rounded-lg overflow-hidden shadow-sm">
-                <div 
+                <div
                   ref={tableContainerRef}
-                  className="overflow-auto" 
+                  className="overflow-auto"
                   style={{ maxHeight: '300px' }}
                 >
                   <table className="w-full text-sm">
@@ -499,25 +499,25 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
                     <tbody>
                       {filteredPreviewData.length > 0 ? (
                         filteredPreviewData.map((item, index) => (
-                          <tr 
-                            key={index} 
+                          <tr
+                            key={index}
                             className={`border-t hover:bg-secondary/30 transition-colors ${item.selected ? '' : 'bg-muted/20'}`}
                             onClick={() => toggleSelectItem(previewData.indexOf(item))}
                             style={{ cursor: 'pointer' }}
                           >
-                            <td 
-                              className="px-2 py-1.5 text-center" 
+                            <td
+                              className="px-2 py-1.5 text-center"
                               onClick={(e) => e.stopPropagation()}
                             >
-                              <Checkbox 
+                              <Checkbox
                                 checked={item.selected}
                                 onCheckedChange={() => toggleSelectItem(previewData.indexOf(item))}
-                                className="h-4 w-4"
+                                className="size-4"
                               />
                             </td>
                             <td className="px-3 py-1.5 font-medium">{item.code}</td>
                             <td className="px-3 py-1.5 max-w-[220px]">
-                              <div 
+                              <div
                                 className="truncate hover:whitespace-normal"
                                 title={item.name}
                               >
@@ -543,14 +543,14 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
                   </table>
                 </div>
               </div>
-              
+
               <div className="text-xs text-muted-foreground flex justify-between">
                 <span>{filteredPreviewData.length} itens exibidos</span>
                 <span>{previewData.filter(item => item.selected).length} selecionados para importação</span>
               </div>
-              
+
               <Alert className="bg-muted/50">
-                <AlertCircle className="h-4 w-4" />
+                <AlertCircle className="size-4" />
                 <AlertTitle>Antes de importar</AlertTitle>
                 <AlertDescription>
                   <ul className="list-disc space-y-1 pl-4 text-sm">
@@ -561,13 +561,13 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
               </Alert>
             </div>
           )}
-          
+
           {importStep === 'result' && (
             <div className="space-y-6">
               <div className="flex items-center justify-between border-b pb-3">
                 <h3 className="text-xl font-medium">Importação concluída</h3>
               </div>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <Card className="shadow-sm">
                   <CardContent className="pt-6 pb-4">
@@ -593,7 +593,7 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
                     </div>
                   </CardContent>
                 </Card>
-                
+
                 {importStats.errors > 0 ? (
                   <Card className="bg-red-500/5 shadow-sm border-red-500/20">
                     <CardContent className="pt-6 pb-4">
@@ -605,12 +605,12 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
                   </Card>
                 ) : null}
               </div>
-              
+
               <Alert variant={importStats.errors > 0 ? "destructive" : "default"}>
                 {importStats.errors > 0 ? (
-                  <AlertCircle className="h-4 w-4" />
+                  <AlertCircle className="size-4" />
                 ) : (
-                  <Check className="h-4 w-4" />
+                  <Check className="size-4" />
                 )}
                 <AlertTitle>
                   {importStats.errors > 0 ? "Importação concluída com erros" : "Importação concluída com sucesso"}
@@ -626,36 +626,36 @@ const EmployeeImporter = ({ onClose, onImportComplete }: EmployeeImporterProps) 
             </div>
           )}
         </div>
-        
+
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-between p-4 border-t">
           {importStep === 'select' && (
             <>
               <Button variant="outline" onClick={handleClose} className="w-full sm:w-auto order-2 sm:order-1">Cancelar</Button>
-              <Button 
-                onClick={handleUpload} 
+              <Button
+                onClick={handleUpload}
                 disabled={!selectedFile || isUploading}
                 className="gap-2 w-full sm:w-auto order-1 sm:order-2"
               >
                 {isUploading ? "Processando..." : "Continuar"}
-                <Upload className="h-4 w-4" />
+                <Upload className="size-4" />
               </Button>
             </>
           )}
-          
+
           {importStep === 'preview' && (
             <>
               <Button variant="outline" onClick={() => setImportStep('select')} className="w-full sm:w-auto order-2 sm:order-1">Voltar</Button>
-              <Button 
-                onClick={confirmImport} 
+              <Button
+                onClick={confirmImport}
                 disabled={isUploading || previewData.filter(item => item.selected).length === 0}
                 className="gap-2 w-full sm:w-auto order-1 sm:order-2"
               >
                 {isUploading ? "Importando..." : "Confirmar Importação"}
-                <Check className="h-4 w-4" />
+                <Check className="size-4" />
               </Button>
             </>
           )}
-          
+
           {importStep === 'result' && (
             <>
               <Button variant="outline" onClick={handleClose} className="w-full sm:w-auto order-2 sm:order-1">Fechar</Button>

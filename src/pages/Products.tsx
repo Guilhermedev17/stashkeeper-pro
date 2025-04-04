@@ -2,17 +2,21 @@ import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useSupabaseProducts } from '@/hooks/useSupabaseProducts';
 import { useSupabaseCategories } from '@/hooks/useSupabaseCategories';
-import ProductList, { Product } from '@/components/products/ProductList';
-import ProductFilters from '@/components/products/ProductFilters';
-import AddProductDialog from '@/components/products/AddProductDialog';
-import EditProductDialog from '@/components/products/EditProductDialog';
-import DeleteProductDialog from '@/components/products/DeleteProductDialog';
-import MovementDialog from '@/components/products/MovementDialog';
+import { Product } from '@/components/products/ModernProductList';
+import ModernProductList from '@/components/products/ModernProductList';
+import ModernProductFilters from '@/components/products/ModernProductFilters';
+import ModernAddProductDialog from '@/components/products/ModernAddProductDialog';
+import ModernEditProductDialog from '@/components/products/ModernEditProductDialog';
+import ModernDeleteProductDialog from '@/components/products/ModernDeleteProductDialog';
+import ModernMovementDialog from '@/components/products/ModernMovementDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { PlusSquare, CheckSquare } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import ImportExcelButton from '@/components/ImportExcelButton';
+import PageWrapper from '@/components/layout/PageWrapper';
+import { ModernHeader, ModernFilters, ModernTable } from '@/components/layout/modern';
+import PageLoading from '@/components/PageLoading';
 
 // Interface para o EditProductDialog
 interface EditProduct {
@@ -20,11 +24,10 @@ interface EditProduct {
   code: string;
   name: string;
   description: string;
-  categoryId: string;
-  quantity: number;
-  minQuantity: number;
+  category: string;
+  currentQty: number;
+  minQty: number;
   unit: string;
-  createdAt: Date;
 }
 
 // Interface para o DeleteProductDialog
@@ -48,14 +51,14 @@ interface NewProduct {
   code: string;
   name: string;
   description: string;
-  categoryId: string;
-  quantity: number;
-  minQuantity: number;
+  category: string;
+  initialQty: number;
+  minQty: number;
   unit: string;
 }
 
 const Products = () => {
-  
+
   const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -68,24 +71,15 @@ const Products = () => {
   const [movementType, setMovementType] = useState<'entrada' | 'saida'>('entrada');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectMode, setSelectMode] = useState(false);
-  
-  const [newProduct, setNewProduct] = useState<NewProduct>({
-    code: '',
-    name: '',
-    description: '',
-    categoryId: '',
-    quantity: 0,
-    minQuantity: 0,
-    unit: 'unidade',
-  });
-  
+  const [isLoading, setIsLoading] = useState(true);
+
   const { toast } = useToast();
   const { user } = useAuth();
-  const { 
-    products: supabaseProducts, 
-    loading, 
-    error, 
-    fetchProducts, 
+  const {
+    products: supabaseProducts,
+    loading,
+    error,
+    fetchProducts,
     addProduct,
     updateProduct,
     deleteProduct,
@@ -98,11 +92,11 @@ const Products = () => {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const statusParam = params.get('status');
-    
+
     if (statusParam && ['all', 'normal', 'baixo', 'critico'].includes(statusParam)) {
       setSelectedStatus(statusParam);
     }
-    
+
     const productParam = params.get('product');
     if (productParam) {
       const product = products.find(p => p.id === productParam);
@@ -110,7 +104,7 @@ const Products = () => {
         setSelectedProduct(product);
       }
     }
-    
+
     const typeParam = params.get('type');
     if (typeParam === 'entrada' || typeParam === 'saida') {
       setMovementType(typeParam);
@@ -142,11 +136,11 @@ const Products = () => {
   useEffect(() => {
     const lowercasedFilter = searchTerm.toLowerCase();
     const filtered = products.filter(product => {
-      const matchesSearch = 
+      const matchesSearch =
         product.name.toLowerCase().includes(lowercasedFilter) ||
         product.code.toLowerCase().includes(lowercasedFilter) ||
         product.description?.toLowerCase().includes(lowercasedFilter);
-      
+
       const matchesCategory = selectedCategory === 'all' || product.category_id === selectedCategory;
 
       let matchesStatus = true;
@@ -159,40 +153,78 @@ const Products = () => {
           matchesStatus = product.quantity > product.min_quantity * 1.5;
         }
       }
-      
+
       return matchesSearch && matchesCategory && matchesStatus;
     });
     setFilteredProducts(filtered);
   }, [searchTerm, selectedCategory, selectedStatus, products]);
 
+  // Adicionar efeito de carregamento inicial
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+
+      // Iniciar o tempo para medir quanto leva para carregar os dados
+      const startTime = performance.now();
+
+      // Esperar pelo menos que os produtos sejam carregados
+      if (loading) {
+        await new Promise(resolve => {
+          const checkInterval = setInterval(() => {
+            if (!loading) {
+              clearInterval(checkInterval);
+              resolve(true);
+            }
+          }, 50);
+        });
+      }
+
+      // Quando todas as operações de carregamento terminarem, verificamos o tempo
+      const endTime = performance.now();
+      const loadTime = endTime - startTime;
+
+      // Garantir tempo mínimo de carregamento para evitar flash 
+      // Se os dados carregarem muito rápido, mostramos o loading por pelo menos 400ms
+      // Se os dados demorarem mais que isso, não adicionamos atraso adicional
+      const minLoadingTime = 400;
+      const remainingTime = Math.max(0, minLoadingTime - loadTime);
+
+      if (remainingTime > 0) {
+        await new Promise(resolve => setTimeout(resolve, remainingTime));
+      }
+
+      setIsLoading(false);
+    };
+
+    loadData();
+  }, [loading]);
+
   const handleAddProduct = async () => {
-    const result = await addProduct({
-      code: newProduct.code,
-      name: newProduct.name,
-      description: newProduct.description,
-      category_id: newProduct.categoryId,
-      quantity: newProduct.quantity,
-      min_quantity: newProduct.minQuantity,
-      unit: newProduct.unit
-    });
-    
-    if (result.success) {
-      setIsAddDialogOpen(false);
-      setNewProduct({
+    console.log("handleAddProduct chamado - iniciando adição de produto");
+    try {
+      const result = await addProduct({
         code: '',
         name: '',
         description: '',
-        categoryId: '',
+        category_id: '',
         quantity: 0,
-        minQuantity: 0,
-        unit: 'unidade',
+        min_quantity: 0,
+        unit: 'unidade'
       });
+
+      console.log("Resultado da adição:", result);
+
+      if (result.success) {
+        setIsAddDialogOpen(false);
+      }
+    } catch (error) {
+      console.error("Erro ao adicionar produto:", error);
     }
   };
 
   const handleEditProduct = async () => {
     if (!selectedProduct) return;
-    
+
     const result = await updateProduct(selectedProduct.id, {
       name: selectedProduct.name,
       description: selectedProduct.description,
@@ -201,7 +233,7 @@ const Products = () => {
       min_quantity: selectedProduct.min_quantity,
       unit: selectedProduct.unit
     });
-    
+
     if (result.success) {
       setIsEditDialogOpen(false);
       setSelectedProduct(null);
@@ -210,12 +242,12 @@ const Products = () => {
 
   const handleDeleteProduct = async () => {
     if (!selectedProduct) return;
-    
+
     const result = await deleteProduct(selectedProduct.id);
-    
+
     if (result.success) {
       setIsDeleteDialogOpen(false);
-      
+
       // Importante: Definir como null APÓS fechar o diálogo
       setTimeout(() => {
         setSelectedProduct(null);
@@ -239,18 +271,16 @@ const Products = () => {
     setIsMovementDialogOpen(true);
   };
 
-  const handleNewProductChange = (field: string, value: any) => {
-    setNewProduct({ ...newProduct, [field]: value });
-  };
-
   // Função para atualizar o selectedProduct com base no campo alterado
   const handleSelectedProductChange = (field: string, value: any) => {
     if (selectedProduct) {
       // Mapeia os campos da interface do EditProductDialog para a interface do Product
-      if (field === 'categoryId') {
+      if (field === 'category') {
         setSelectedProduct({ ...selectedProduct, category_id: value });
-      } else if (field === 'minQuantity') {
+      } else if (field === 'minQty') {
         setSelectedProduct({ ...selectedProduct, min_quantity: value });
+      } else if (field === 'currentQty') {
+        setSelectedProduct({ ...selectedProduct, quantity: value });
       } else {
         setSelectedProduct({ ...selectedProduct, [field]: value });
       }
@@ -273,11 +303,10 @@ const Products = () => {
       code: product.code,
       name: product.name,
       description: product.description,
-      categoryId: product.category_id,
-      quantity: product.quantity,
-      minQuantity: product.min_quantity,
-      unit: product.unit,
-      createdAt: product.createdAt
+      category: product.category_id,
+      currentQty: product.quantity,
+      minQty: product.min_quantity,
+      unit: product.unit
     };
   };
 
@@ -307,24 +336,24 @@ const Products = () => {
 
   const handleDeleteMultiple = async (productIds: string[]) => {
     if (productIds.length === 0) return;
-    
+
     let success = true;
     let deleted = 0;
-    
+
     // Criar apenas uma notificação que pode ser atualizada
     const toastInstance = toast({
       title: "Exclusão em lote",
       description: `Iniciando exclusão de ${productIds.length} produtos...`,
       variant: "progress"
     });
-    
+
     // Executa cada exclusão individualmente
     for (let index = 0; index < productIds.length; index++) {
       const id = productIds[index];
-      
+
       // Atualizar o progresso em intervalos regulares
       const progressPercent = Math.floor((index / productIds.length) * 100);
-      
+
       // Atualizar a notificação mais frequentemente (a cada produto ou a cada 5%)
       if (productIds.length < 10 || index % Math.max(1, Math.floor(productIds.length / 20)) === 0) {
         toastInstance.update({
@@ -334,7 +363,7 @@ const Products = () => {
           variant: "progress"
         });
       }
-      
+
       // Usar o modo silencioso para evitar múltiplas notificações
       const result = await deleteProduct(id, { silent: true });
       if (result.success) {
@@ -343,102 +372,151 @@ const Products = () => {
         success = false;
       }
     }
-    
+
     // Atualizar notificação final com o resultado
     // Incluir o número total e a porcentagem 100% para indicar conclusão
     toastInstance.update({
       id: toastInstance.id,
       title: success ? "Produtos excluídos" : "Exclusão parcial",
-      description: success 
+      description: success
         ? `${deleted} de ${productIds.length} produtos excluídos com sucesso (100%).`
         : `${deleted} de ${productIds.length} produtos foram excluídos (100%). Alguns produtos não puderam ser excluídos.`,
       variant: success ? "success" : "destructive"
     });
   };
 
+  // Renderizar estado de carregamento
+  if (isLoading) {
+    return (
+      <div className="h-full p-4 md:p-6">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">Produtos</h1>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
+              Gerencie seu inventário de produtos
+            </p>
+          </div>
+        </div>
+
+        <PageLoading message="Carregando produtos..." />
+      </div>
+    );
+  }
+
   return (
-    <div className="zoom-stable w-full h-full">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Produtos</h1>
-          <p className="text-muted-foreground text-sm sm:text-base">
-            Visualize e gerencie todos os seus produtos.
-          </p>
+    <PageWrapper className="flex flex-col p-0">
+      <div className="flex-1 w-full overflow-auto">
+        <div className="w-full px-2 sm:px-4 py-4 sm:py-6">
+          <ModernHeader
+            title="Produtos"
+            subtitle="Visualize e gerencie todos os seus produtos."
+            actions={
+              <>
+                <ImportExcelButton />
+                {!selectMode && (
+                  <Button
+                    type="button"
+                    onClick={() => setIsAddDialogOpen(true)}
+                    className="gap-2"
+                    title="Adicionar novo produto"
+                  >
+                    <PlusSquare className="h-4 w-4" /> Novo Produto
+                  </Button>
+                )}
+              </>
+            }
+          />
+
+          <ModernFilters>
+            <ModernProductFilters
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+              selectedStatus={selectedStatus}
+              onStatusChange={setSelectedStatus}
+              selectMode={selectMode}
+              onToggleSelectMode={toggleSelectMode}
+            />
+          </ModernFilters>
+
+          <ModernTable>
+            <ModernProductList
+              products={filteredProducts}
+              getCategoryName={getCategoryName}
+              onEdit={handleEditClick}
+              onDelete={handleDeleteClick}
+              onDeleteMultiple={handleDeleteMultiple}
+              onMovement={handleMovementClick}
+              selectMode={selectMode}
+              onToggleSelectMode={toggleSelectMode}
+            />
+          </ModernTable>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <ImportExcelButton />
-          
-          {!selectMode && (
-            <Button 
-              onClick={() => setIsAddDialogOpen(true)} 
-              className="gap-2" 
-              title="Adicionar novo produto"
-            >
-              <PlusSquare className="h-4 w-4" /> Novo Produto
-            </Button>
-          )}
-        </div>
       </div>
 
-      <div className="mb-6 w-full">
-        <ProductFilters
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          categories={categories}
-          selectedCategory={selectedCategory}
-          onCategoryChange={setSelectedCategory}
-          selectedStatus={selectedStatus}
-          onStatusChange={setSelectedStatus}
-          selectMode={selectMode}
-          onToggleSelectMode={toggleSelectMode}
-        />
-      </div>
-
-      <div className="rounded-md border overflow-hidden w-full">
-        <ProductList
-          products={filteredProducts}
-          getCategoryName={getCategoryName}
-          onEdit={handleEditClick}
-          onDelete={handleDeleteClick}
-          onDeleteMultiple={handleDeleteMultiple}
-          onMovement={handleMovementClick}
-          selectMode={selectMode}
-          onToggleSelectMode={toggleSelectMode}
-        />
-      </div>
-
-      <EditProductDialog
-        product={selectedProduct ? mapProductToEditProduct(selectedProduct) : null}
+      <ModernEditProductDialog
+        product={selectedProduct ? mapProductToEditProduct(selectedProduct) : undefined}
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
         categories={categories}
-        onUpdate={handleEditProduct}
-        onChange={handleSelectedProductChange}
+        onSave={(updatedProduct) => {
+          if (selectedProduct) {
+            // Map back from EditProduct to the format expected by updateProduct
+            updateProduct(selectedProduct.id, {
+              name: updatedProduct.name,
+              description: updatedProduct.description,
+              category_id: updatedProduct.category,
+              quantity: updatedProduct.currentQty,
+              min_quantity: updatedProduct.minQty,
+              unit: updatedProduct.unit
+            }).then(result => {
+              if (result.success) {
+                setIsEditDialogOpen(false);
+                setSelectedProduct(null);
+              }
+            });
+          }
+        }}
       />
 
-      <DeleteProductDialog
-        product={selectedProduct ? mapProductToDeleteProduct(selectedProduct) : null}
+      <ModernDeleteProductDialog
+        product={selectedProduct ? mapProductToDeleteProduct(selectedProduct) : undefined}
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
-        onConfirm={handleDeleteProduct}
+        onDelete={handleDeleteProduct}
       />
 
-      <MovementDialog 
-        product={selectedProduct ? mapProductToMovementProduct(selectedProduct) : null}
+      <ModernMovementDialog
+        product={selectedProduct ? mapProductToMovementProduct(selectedProduct) : undefined}
         type={movementType}
         open={isMovementDialogOpen}
         onOpenChange={setIsMovementDialogOpen}
       />
-      
-      <AddProductDialog
+
+      <ModernAddProductDialog
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
         categories={categories}
-        newProduct={newProduct}
-        onChange={handleNewProductChange}
-        onSubmit={handleAddProduct}
+        onAdd={(product) => {
+          // Map from our dialog's NewProduct to the format expected by addProduct
+          addProduct({
+            code: product.code,
+            name: product.name,
+            description: product.description,
+            category_id: product.category,
+            quantity: product.initialQty,
+            min_quantity: product.minQty,
+            unit: product.unit
+          }).then(result => {
+            if (result.success) {
+              setIsAddDialogOpen(false);
+            }
+          });
+        }}
       />
-    </div>
+    </PageWrapper>
   );
 };
 
