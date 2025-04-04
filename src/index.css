@@ -198,16 +198,76 @@
     @apply active:bg-muted/50;
   }
 
+  .animation-delay-100 {
+    animation-delay: 100ms;
+  }
+
+  .animation-delay-200 {
+    animation-delay: 200ms;
+  }
+
   .animation-delay-300 {
     animation-delay: 300ms;
+  }
+
+  .animation-delay-400 {
+    animation-delay: 400ms;
+  }
+
+  .animation-delay-500 {
+    animation-delay: 500ms;
+  }
+
+  .animation-delay-600 {
+    animation-delay: 600ms;
   }
 
   .animation-delay-700 {
     animation-delay: 700ms;
   }
 
+  .animation-delay-800 {
+    animation-delay: 800ms;
+  }
+
+  .animation-delay-900 {
+    animation-delay: 900ms;
+  }
+
+  .animation-delay-950 {
+    animation-delay: 950ms;
+  }
+
+  .animation-delay-1000 {
+    animation-delay: 1000ms;
+  }
+
+  .animation-delay-1200 {
+    animation-delay: 1200ms;
+  }
+
+  .animation-delay-1250 {
+    animation-delay: 1250ms;
+  }
+
+  .animation-delay-1300 {
+    animation-delay: 1300ms;
+  }
+
   .animation-delay-1500 {
     animation-delay: 1500ms;
+  }
+
+  .animation-delay-1600 {
+    animation-delay: 1600ms;
+  }
+
+  .animation-delay-1650 {
+    animation-delay: 1650ms;
+  }
+
+  .animation-delay-1800 {
+    animation-delay: 1800ms;
   }
 
   .animation-delay-2000 {
@@ -216,44 +276,38 @@
 
   /* Animações para a tela de login */
   @keyframes float {
-    0% {
+
+    0%,
+    100% {
       transform: translateY(0px) translateX(0px);
     }
 
     50% {
       transform: translateY(-20px) translateX(10px);
     }
-
-    100% {
-      transform: translateY(0px) translateX(0px);
-    }
   }
 
   @keyframes float-reverse {
-    0% {
+
+    0%,
+    100% {
       transform: translateY(0px) translateX(0px);
     }
 
     50% {
       transform: translateY(20px) translateX(-10px);
     }
-
-    100% {
-      transform: translateY(0px) translateX(0px);
-    }
   }
 
   @keyframes pulse-subtle {
-    0% {
+
+    0%,
+    100% {
       opacity: 0.5;
     }
 
     50% {
       opacity: 0.7;
-    }
-
-    100% {
-      opacity: 0.5;
     }
   }
 
@@ -270,25 +324,52 @@
   }
 
   @keyframes shine {
-    0% {
+
+    0%,
+    100% {
       background-position: -100% 0;
     }
 
-    100% {
+    50% {
       background-position: 200% 0;
     }
   }
 
+  /* Novas animações para tema claro */
+  @keyframes subtle-rotate {
+
+    0%,
+    100% {
+      transform: rotate(0deg);
+    }
+
+    50% {
+      transform: rotate(5deg);
+    }
+  }
+
+  @keyframes color-shift {
+
+    0%,
+    100% {
+      filter: hue-rotate(0deg);
+    }
+
+    50% {
+      filter: hue-rotate(15deg);
+    }
+  }
+
   .animate-float {
-    animation: float 8s ease-in-out infinite;
+    animation: float 10s ease-in-out infinite;
   }
 
   .animate-float-reverse {
-    animation: float-reverse 9s ease-in-out infinite;
+    animation: float-reverse 12s ease-in-out infinite;
   }
 
   .animate-pulse-subtle {
-    animation: pulse-subtle 6s ease-in-out infinite;
+    animation: pulse-subtle 8s ease-in-out infinite;
   }
 
   .animate-scale-in {
@@ -301,7 +382,42 @@
         rgba(255, 255, 255, 0.08) 50%,
         transparent 100%);
     background-size: 200% 100%;
-    animation: shine 3s infinite;
+    animation: shine 8s ease-in-out infinite;
+  }
+
+  /* Estilos específicos para o tema claro */
+  :root:not(.dark) .animate-shine {
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(100, 100, 255, 0.08) 50%,
+        transparent 100%);
+    background-size: 200% 100%;
+    animation: shine 8s ease-in-out infinite;
+  }
+
+  /* Estilos para o card no tema claro */
+  :root:not(.dark) .card-glass {
+    background: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 8px 32px rgba(100, 100, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+  }
+
+  /* Melhorar o texto gradiente no tema claro */
+  :root:not(.dark) .text-gradient {
+    background: linear-gradient(90deg, hsl(var(--primary)) 20%, hsl(var(--primary)/0.7) 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+
+  /* Animações complementares */
+  .animate-rotate {
+    animation: subtle-rotate 15s ease-in-out infinite;
+  }
+
+  .animate-color-shift {
+    animation: color-shift 10s ease-in-out infinite;
   }
 
   /* Utilidades para layout fluido */
@@ -464,5 +580,275 @@
   /* Container responsivo com padding adequado */
   .mobile-container {
     @apply w-full px-2 sm:px-4 md:px-6 py-2 sm:py-4;
+  }
+
+  /* Utilidades para tema claro/escuro */
+  .light-only {
+    @apply hidden;
+  }
+
+  :root:not(.dark) .light-only {
+    @apply block;
+  }
+
+  .dark-only {
+    @apply hidden;
+  }
+
+  .dark .dark-only {
+    @apply block;
+  }
+
+  /* Refinamento de animação para formulário de login */
+  .card-glass.animate-form-appear {
+    will-change: transform, opacity;
+    transform-origin: center;
+    backface-visibility: hidden;
+    -webkit-font-smoothing: subpixel-antialiased;
+  }
+
+  /* Efeito minimalista para bordas do card */
+  .card-border-glow {
+    position: relative;
+  }
+
+  .card-border-glow::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(to bottom,
+        rgba(255, 255, 255, 0.4) 0%,
+        rgba(255, 255, 255, 0.1) 100%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    -webkit-mask-composite: xor;
+    pointer-events: none;
+  }
+
+  :root:not(.dark) .card-border-glow::after {
+    background: linear-gradient(to bottom,
+        rgba(100, 120, 255, 0.3) 0%,
+        rgba(100, 120, 255, 0.1) 100%);
+  }
+
+  .dark .card-border-glow::after {
+    background: linear-gradient(to bottom,
+        rgba(100, 120, 255, 0.2) 0%,
+        rgba(20, 30, 80, 0.05) 100%);
+  }
+
+  /* Animação profissional para o formulário de login */
+  @keyframes form-appear {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-form-appear {
+    animation: form-appear 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+  }
+
+  /* Efeito sutil para borda do card */
+  @keyframes subtle-glow {
+
+    0%,
+    100% {
+      opacity: 0.8;
+      filter: blur(0.5px);
+    }
+
+    50% {
+      opacity: 1;
+      filter: blur(0);
+    }
+  }
+
+  .card-border-glow::after {
+    animation: subtle-glow 4s ease-in-out infinite;
+  }
+
+  /* Animação de twinkle para as estrelas no tema escuro */
+  @keyframes twinkle {
+
+    0%,
+    100% {
+      opacity: 0.2;
+      transform: scale(0.8);
+    }
+
+    50% {
+      opacity: 0.8;
+      transform: scale(1.1);
+    }
+  }
+
+  /* Animação de movimento para o grid pattern */
+  @keyframes pan {
+    0% {
+      transform: translateX(0) translateY(0);
+    }
+
+    100% {
+      transform: translateX(-50px) translateY(-50px);
+    }
+  }
+
+  .animate-twinkle {
+    animation: twinkle 3s ease-in-out infinite;
+  }
+
+  /* Animação para ícones temáticos flutuantes */
+  @keyframes icon-float {
+    0% {
+      transform: translateY(0) rotate(0);
+      opacity: 0.6;
+    }
+
+    50% {
+      transform: translateY(-10px) rotate(5deg);
+      opacity: 0.8;
+    }
+
+    100% {
+      transform: translateY(0) rotate(0);
+      opacity: 0.6;
+    }
+  }
+
+  .animate-icon-float {
+    animation: icon-float 6s ease-in-out infinite;
+  }
+
+  /* Animações para as ondas */
+  @keyframes wave {
+
+    0%,
+    100% {
+      transform: translateX(0) translateY(0);
+    }
+
+    25% {
+      transform: translateX(-5px) translateY(-2px);
+    }
+
+    50% {
+      transform: translateX(0) translateY(-5px);
+    }
+
+    75% {
+      transform: translateX(5px) translateY(-2px);
+    }
+  }
+
+  @keyframes wave-reverse {
+
+    0%,
+    100% {
+      transform: translateX(0) translateY(0);
+    }
+
+    25% {
+      transform: translateX(5px) translateY(-3px);
+    }
+
+    50% {
+      transform: translateX(0) translateY(-6px);
+    }
+
+    75% {
+      transform: translateX(-5px) translateY(-3px);
+    }
+  }
+
+  .animate-wave {
+    animation: wave 8s ease-in-out infinite;
+  }
+
+  .animate-wave-reverse {
+    animation: wave-reverse 9s ease-in-out infinite;
+  }
+
+  /* Animação para partículas flutuantes grandes */
+  @keyframes floating-blob {
+
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+      opacity: 0.7;
+    }
+
+    33% {
+      transform: translate(15px, -15px) scale(1.05);
+      opacity: 0.8;
+    }
+
+    66% {
+      transform: translate(-10px, 10px) scale(0.95);
+      opacity: 0.6;
+    }
+  }
+
+  .animate-floating-blob {
+    animation: floating-blob 20s ease-in-out infinite;
+  }
+
+  /* Animação para partículas com movimento mais complexo */
+  @keyframes pulse-and-move {
+
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+      opacity: 0.6;
+    }
+
+    25% {
+      transform: translate(10px, -10px) scale(1.2);
+      opacity: 0.9;
+    }
+
+    50% {
+      transform: translate(15px, 10px) scale(1);
+      opacity: 0.7;
+    }
+
+    75% {
+      transform: translate(-10px, 5px) scale(0.8);
+      opacity: 0.5;
+    }
+  }
+
+  .animate-pulse-and-move {
+    animation: pulse-and-move 12s ease-in-out infinite;
+  }
+
+  /* Animação de efeito de digitação para texto */
+  @keyframes typewriter {
+
+    0%,
+    100% {
+      opacity: 0.2;
+    }
+
+    25%,
+    75% {
+      opacity: 0.8;
+    }
+
+    50% {
+      opacity: 1;
+    }
+  }
+
+  .animate-typewriter {
+    animation: typewriter 8s ease-in-out infinite;
   }
 }
