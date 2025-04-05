@@ -22,8 +22,11 @@ import Employees from "./pages/Employees";
 import DateComponentsDemo from "./pages/DateComponentsDemo";
 import DesignSystem from "./pages/DesignSystem";
 import ExcelImporter from "./components/ExcelImporter";
-import { Fragment, lazy, Suspense } from "react";
+import { Fragment, Suspense, lazy } from "react";
 import NavigationProgress from "./components/NavigationProgress";
+
+// Importação com Suspense que é mais confiável para aplicações Vite/React modernos
+const EmployeeOutputReport = lazy(() => import("./pages/EmployeeOutputReport"));
 
 // Tenta importar RealtimeProvider, mas tem um fallback caso falhe
 let RealtimeWrapper = Fragment;
@@ -72,6 +75,18 @@ const App = () => {
                         <Route path="movements" element={<Movements />} />
                         <Route path="categories" element={<Categories />} />
                         <Route path="reports" element={<Reports />} />
+                        <Route path="employee-output-report" element={
+                          <Suspense fallback={
+                            <div className="h-screen w-full flex items-center justify-center">
+                              <div className="flex flex-col items-center gap-3">
+                                <div className="h-8 w-48 rounded-md bg-accent animate-pulse"></div>
+                                <div className="text-muted-foreground text-sm">Carregando relatório...</div>
+                              </div>
+                            </div>
+                          }>
+                            <EmployeeOutputReport />
+                          </Suspense>
+                        } />
                         <Route path="history" element={<History />} />
                         <Route path="settings" element={<Settings />} />
                         <Route path="employees" element={<Employees />} />

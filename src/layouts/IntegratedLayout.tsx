@@ -6,7 +6,7 @@ import {
     BarChart3, FileBox, Home, ListTodo, LogOut,
     Package, Settings, ArrowDownUp, Users, Sparkles,
     Menu, X, Bell, Search, User, ChevronDown,
-    Calendar
+    Calendar, FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ModernThemeSwitcher from '@/components/layout/modern/ModernThemeSwitcher';
@@ -135,6 +135,13 @@ const IntegratedLayout = () => {
                             icon={<BarChart3 className="size-5" />}
                             label="Relatórios"
                             isActive={isActive('/reports')}
+                            collapsed={!isSidebarOpen}
+                        />
+                        <SidebarItem
+                            to="/employee-output-report"
+                            icon={<FileText className="size-5" />}
+                            label="Relatório de Saídas"
+                            isActive={isActive('/employee-output-report')}
                             collapsed={!isSidebarOpen}
                         />
                         <SidebarItem
@@ -289,6 +296,13 @@ const IntegratedLayout = () => {
                                     icon={<BarChart3 className="size-5" />}
                                     label="Relatórios"
                                     isActive={isActive('/reports')}
+                                    onClick={toggleMobileMenu}
+                                />
+                                <MobileSidebarItem
+                                    to="/employee-output-report"
+                                    icon={<FileText className="size-5" />}
+                                    label="Relatório de Saídas"
+                                    isActive={isActive('/employee-output-report')}
                                     onClick={toggleMobileMenu}
                                 />
                                 <MobileSidebarItem

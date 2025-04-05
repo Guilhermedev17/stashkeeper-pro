@@ -18,7 +18,8 @@ import {
   Sparkles,
   Layout,
   Calendar,
-  Palette
+  Palette,
+  FileText
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -159,6 +160,19 @@ const Sidebar = ({ showMobile, setShowMobile, showDesktop = true, setShowDesktop
           >
             <BarChart3 className="mr-3 h-4 w-4" />
             <span>Relatórios</span>
+          </NavLink>
+          <NavLink
+            to="/employee-output-report"
+            className={({ isActive }) =>
+              cn(
+                'flex items-center rounded-lg px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all',
+                isActive && 'bg-primary/10 text-primary font-semibold shadow-sm'
+              )
+            }
+            onClick={closeMobileMenu}
+          >
+            <FileText className="mr-3 h-4 w-4" />
+            <span>Relatório de Saídas</span>
           </NavLink>
           <NavLink
             to="/settings"
