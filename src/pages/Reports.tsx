@@ -30,7 +30,7 @@ import { ArrowDown, ArrowUp, CalendarRange, Download, FileText } from 'lucide-re
 import { useSupabaseProducts } from '@/hooks/useSupabaseProducts';
 import { useSupabaseMovements } from '@/hooks/useSupabaseMovements';
 import { useSupabaseCategories } from '@/hooks/useSupabaseCategories';
-import { ModernHeader } from '@/components/layout/modern';
+import { ModernHeader, ModernFilters } from '@/components/layout/modern';
 import PageWrapper from '@/components/layout/PageWrapper';
 import ModernDateRangeFilter, { DateFilterRange } from '@/components/ui/ModernDateRangeFilter';
 import { addDays, startOfDay, endOfDay, subMonths, subYears } from 'date-fns';
@@ -316,18 +316,13 @@ const Reports = () => {
   // Renderizar estado de carregamento
   if (isLoading) {
     return (
-      <div className="h-full p-4 md:p-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">Relatórios</h1>
-            <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
-              Visualize relatórios e análises de estoque
-            </p>
-          </div>
-        </div>
-
+      <PageWrapper>
+        <ModernHeader
+          title="Relatórios"
+          subtitle="Visualize dados e estatísticas sobre o almoxarifado."
+        />
         <PageLoading message="Carregando relatórios..." />
-      </div>
+      </PageWrapper>
     );
   }
 
@@ -338,26 +333,22 @@ const Reports = () => {
         subtitle="Visualize dados e estatísticas sobre o almoxarifado."
         actions={
           <div className="flex gap-2">
-            <Button variant="outline" className="gap-1.5">
-              <Download className="h-4 w-4" />
-              <span className="hidden xs:inline">Exportar</span>
+            <Button variant="outline" size="sm" className="h-8 gap-1.5">
+              <Download className="h-3.5 w-3.5" />
+              <span className="hidden xs:inline text-xs">Exportar</span>
             </Button>
-            <Button variant="outline" className="gap-1.5">
-              <FileText className="h-4 w-4" />
-              <span className="hidden xs:inline">PDF</span>
+            <Button variant="outline" size="sm" className="h-8 gap-1.5">
+              <FileText className="h-3.5 w-3.5" />
+              <span className="hidden xs:inline text-xs">PDF</span>
             </Button>
           </div>
         }
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">
-              Período
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+      <ModernFilters className="mt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-muted-foreground">Período</label>
             <ModernDateRangeFilter
               selectedRange={selectedDateRange}
               customDateRange={customDateRange}
@@ -367,19 +358,13 @@ const Reports = () => {
               placeholder="Selecione o período"
               defaultMode="range"
               showModeToggle={true}
+              className="h-9"
             />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">
-              Categoria
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-muted-foreground">Categoria</label>
             <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger className="text-xs sm:text-sm">
+              <SelectTrigger className="h-9 text-xs">
                 <SelectValue placeholder="Selecione a categoria" />
               </SelectTrigger>
               <SelectContent>
@@ -391,24 +376,24 @@ const Reports = () => {
                 ))}
               </SelectContent>
             </Select>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </div>
+      </ModernFilters>
 
-      <Tabs defaultValue="overview" className="mt-6">
+      <Tabs defaultValue="overview" className="mt-4">
         <TabsList className="grid grid-cols-4 w-full sm:w-auto">
-          <TabsTrigger value="overview" className="text-xs sm:text-sm">Visão Geral</TabsTrigger>
-          <TabsTrigger value="category" className="text-xs sm:text-sm">Categorias</TabsTrigger>
-          <TabsTrigger value="usage" className="text-xs sm:text-sm">Consumo</TabsTrigger>
-          <TabsTrigger value="forecast" className="text-xs sm:text-sm">Previsão</TabsTrigger>
+          <TabsTrigger value="overview" className="text-xs">Visão Geral</TabsTrigger>
+          <TabsTrigger value="category" className="text-xs">Categorias</TabsTrigger>
+          <TabsTrigger value="usage" className="text-xs">Consumo</TabsTrigger>
+          <TabsTrigger value="forecast" className="text-xs">Previsão</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-4 mt-4">
           <Card className="shadow-sm overflow-hidden">
-            <CardHeader className="px-4 sm:px-6 py-4">
-              <CardTitle className="text-lg">Movimentação de Estoque</CardTitle>
-              <CardDescription className="text-xs sm:text-sm">
+            <CardHeader className="px-4 py-3">
+              <CardTitle className="text-base">Movimentação de Estoque</CardTitle>
+              <CardDescription className="text-xs">
                 Acompanhe as entradas e saídas ao longo do tempo.
               </CardDescription>
             </CardHeader>
@@ -438,17 +423,14 @@ const Reports = () => {
                         <stop offset="95%" stopColor={CHART_COLORS.saida} stopOpacity={0.1} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#525252" opacity={0.3} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#525252" opacity={0.3} />
                     <XAxis
                       dataKey="month"
                       tick={{ fill: '#888888', fontSize: 10 }}
-                      height={40}
-                      tickMargin={8}
                       axisLine={{ stroke: '#525252', opacity: 0.3 }}
                     />
                     <YAxis
                       tick={{ fill: '#888888', fontSize: 10 }}
-                      width={30}
                       axisLine={{ stroke: '#525252', opacity: 0.3 }}
                     />
                     <Tooltip
@@ -459,83 +441,72 @@ const Reports = () => {
                         padding: '8px',
                         fontSize: '12px'
                       }}
-                      cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
-                      formatter={(value: number) => [`${value} unidades`, '']}
-                      labelStyle={{ color: '#888888', fontSize: '11px' }}
+                      formatter={(value) => [`${value} unidades`, '']}
                     />
                     <Legend
-                      wrapperStyle={{ paddingTop: '10px', fontSize: '11px' }}
-                      verticalAlign="bottom"
+                      verticalAlign="top"
                       height={36}
                       iconSize={8}
                       iconType="circle"
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="total"
-                      stackId="1"
-                      stroke={CHART_COLORS.total}
-                      fillOpacity={1}
-                      fill="url(#colorTotal)"
-                      name="Estoque Total"
+                      wrapperStyle={{ fontSize: '11px' }}
                     />
                     <Area
                       type="monotone"
                       dataKey="entradas"
+                      name="Entradas"
                       stroke={CHART_COLORS.entrada}
                       fillOpacity={1}
                       fill="url(#colorEntradas)"
-                      name="Entradas"
                     />
                     <Area
                       type="monotone"
                       dataKey="saidas"
+                      name="Saídas"
                       stroke={CHART_COLORS.saida}
                       fillOpacity={1}
                       fill="url(#colorSaidas)"
-                      name="Saídas"
                     />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mt-6">
-                <Card className="overflow-hidden">
-                  <CardHeader className="py-2 px-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+                <Card className="overflow-hidden border-0 shadow-sm">
+                  <CardHeader className="py-2 px-3">
                     <CardTitle className="text-xs text-muted-foreground">Total de Produtos</CardTitle>
                   </CardHeader>
-                  <CardContent className="pt-0 px-4 pb-3">
-                    <div className="text-xl sm:text-2xl font-bold">{products.reduce((acc, p) => acc + p.quantity, 0)}</div>
+                  <CardContent className="pt-0 px-3 pb-2">
+                    <div className="text-lg font-bold">{products.reduce((acc, p) => acc + p.quantity, 0)}</div>
                   </CardContent>
                 </Card>
-                <Card className="overflow-hidden">
-                  <CardHeader className="py-2 px-4">
+                <Card className="overflow-hidden border-0 shadow-sm">
+                  <CardHeader className="py-2 px-3">
                     <CardTitle className="text-xs text-muted-foreground">Crescimento</CardTitle>
                   </CardHeader>
-                  <CardContent className="pt-0 px-4 pb-3">
-                    <div className={`text-xl sm:text-2xl font-bold ${totalEntradas > totalSaidas ? 'text-green-500' : 'text-red-500'}`}>
+                  <CardContent className="pt-0 px-3 pb-2">
+                    <div className={`text-lg font-bold ${totalEntradas > totalSaidas ? 'text-green-500' : 'text-red-500'}`}>
                       {totalEntradas > totalSaidas ?
                         `+${Math.round((totalEntradas - totalSaidas) / (totalSaidas || 1) * 100)}%` :
                         `${Math.round((totalEntradas - totalSaidas) / (totalSaidas || 1) * 100)}%`}
                     </div>
                   </CardContent>
                 </Card>
-                <Card className="overflow-hidden">
-                  <CardHeader className="py-2 px-4">
+                <Card className="overflow-hidden border-0 shadow-sm">
+                  <CardHeader className="py-2 px-3">
                     <CardTitle className="text-xs text-muted-foreground">Taxa de Rotatividade</CardTitle>
                   </CardHeader>
-                  <CardContent className="pt-0 px-4 pb-3">
-                    <div className="text-xl sm:text-2xl font-bold">
+                  <CardContent className="pt-0 px-3 pb-2">
+                    <div className="text-lg font-bold">
                       {Math.round(totalSaidas / (products.reduce((acc, p) => acc + p.quantity, 0) || 1) * 100)}%
                     </div>
                   </CardContent>
                 </Card>
-                <Card className="overflow-hidden">
-                  <CardHeader className="py-2 px-4">
+                <Card className="overflow-hidden border-0 shadow-sm">
+                  <CardHeader className="py-2 px-3">
                     <CardTitle className="text-xs text-muted-foreground">Nível de Serviço</CardTitle>
                   </CardHeader>
-                  <CardContent className="pt-0 px-4 pb-3">
-                    <div className="text-xl sm:text-2xl font-bold">
+                  <CardContent className="pt-0 px-3 pb-2">
+                    <div className="text-lg font-bold">
                       {Math.round(((products.length - products.filter(p => p.quantity <= p.min_quantity).length) / products.length) * 100)}%
                     </div>
                   </CardContent>

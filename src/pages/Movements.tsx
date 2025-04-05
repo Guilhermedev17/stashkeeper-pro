@@ -77,6 +77,30 @@ interface MovementProductSelectorProps {
   onSelectProduct: (product: ProductItem, type: 'entrada' | 'saida') => void;
 }
 
+const getUnitAbbreviation = (unit: string): string => {
+  switch (unit.toLowerCase()) {
+    case 'un': return 'UN';
+    case 'unidade': return 'UN';
+    case 'kg': return 'KG';
+    case 'g': return 'G';
+    case 'gramas': return 'G';
+    case 'l': return 'L';
+    case 'litros': return 'L';
+    case 'ml': return 'ML';
+    case 'cx': return 'CX';
+    case 'caixa': return 'CX';
+    case 'pct': return 'PCT';
+    case 'pacote': return 'PCT';
+    case 'rl': return 'RL';
+    case 'rolo': return 'RL';
+    case 'par': return 'PAR';
+    case 'm': return 'M';
+    case 'metros': return 'M';
+    case 'cm': return 'CM';
+    default: return unit.toUpperCase();
+  }
+};
+
 const Movements = () => {
   const { products, loading, fetchProducts } = useSupabaseProducts();
   const { movements, loading: loadingMovements, fetchMovements } = useSupabaseMovements();
@@ -293,18 +317,13 @@ const Movements = () => {
   // Renderizar estado de carregamento
   if (isLoading) {
     return (
-      <div className="h-full p-4 md:p-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">Movimentações</h1>
-            <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
-              Histórico de entradas e saídas de produtos
-            </p>
-          </div>
-        </div>
-
+      <PageWrapper>
+        <ModernHeader
+          title="Movimentações"
+          subtitle="Visualize o histórico de entradas e saídas de produtos."
+        />
         <PageLoading message="Carregando movimentações..." />
-      </div>
+      </PageWrapper>
     );
   }
 
@@ -319,87 +338,91 @@ const Movements = () => {
               <Button
                 type="button"
                 onClick={() => setIsNewMovementDialogOpen(true)}
-                className="gap-2 w-full sm:w-auto"
+                className="gap-1.5"
+                size="sm"
               >
-                <PlusSquare className="h-4 w-4" /> Nova Movimentação
+                <PlusSquare className="h-3.5 w-3.5" /> 
+                <span className="text-xs">Nova Movimentação</span>
               </Button>
             }
           />
 
           {/* Filtros de busca, categoria e data */}
-          <ModernFilters>
-            <div className="relative col-span-1 sm:col-span-4 md:col-span-1">
-              <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar produtos..."
-                className="pl-8 w-full"
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-              />
-            </div>
+          <ModernFilters className="mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div className="relative">
+                <SearchIcon className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar produtos..."
+                  className="pl-8 h-9 text-sm"
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                />
+              </div>
 
-            <div className="col-span-1 sm:col-span-2 md:col-span-1">
-              <Select
-                value={selectedCategory}
-                onValueChange={setSelectedCategory}
-              >
-                <SelectTrigger className="w-full text-xs sm:text-sm">
-                  <SelectValue placeholder="Categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas Categorias</SelectItem>
-                  {categories.map(category => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+              <div>
+                <Select
+                  value={selectedCategory}
+                  onValueChange={setSelectedCategory}
+                >
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas Categorias</SelectItem>
+                    {categories.map(category => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="col-span-1 sm:col-span-2 md:col-span-1">
-              <Select
-                value={selectedType}
-                onValueChange={setSelectedType}
-              >
-                <SelectTrigger className="w-full text-xs sm:text-sm">
-                  <SelectValue placeholder="Tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos Tipos</SelectItem>
-                  <SelectItem value="entrada">Entradas</SelectItem>
-                  <SelectItem value="saida">Saídas</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              <div>
+                <Select
+                  value={selectedType}
+                  onValueChange={setSelectedType}
+                >
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos Tipos</SelectItem>
+                    <SelectItem value="entrada">Entradas</SelectItem>
+                    <SelectItem value="saida">Saídas</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="col-span-1 sm:col-span-2 md:col-span-1">
-              <CustomDateRangePicker
-                startDate={startDate}
-                endDate={endDate}
-                onRangeChange={handleCustomRangeChange}
-                className="w-full"
-                placeholder="Selecionar período"
-              />
+              <div>
+                <CustomDateRangePicker
+                  startDate={startDate}
+                  endDate={endDate}
+                  onRangeChange={handleCustomRangeChange}
+                  className="h-9"
+                  placeholder="Selecionar período"
+                />
+              </div>
             </div>
           </ModernFilters>
 
           {/* Lista de movimentações */}
-          <ModernTable className="flex-1">
+          <ModernTable className="flex-1 mt-4 shadow-sm">
             {loading ? (
-              <div className="flex justify-center items-center py-32">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
+              <div className="flex justify-center items-center py-20">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
               </div>
             ) : filteredProducts.length === 0 ? (
-              <div className="text-center py-16 text-gray-500 dark:text-gray-400">
-                <Package className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
-                <h3 className="text-lg font-medium mb-1 dark:text-gray-300">Nenhuma movimentação encontrada</h3>
-                <p className="text-sm text-gray-400 dark:text-gray-500 max-w-md mx-auto">
+              <div className="text-center py-14 text-muted-foreground">
+                <Package className="h-10 w-10 mx-auto text-muted-foreground/40 mb-2" />
+                <h3 className="text-sm font-medium mb-1">Nenhuma movimentação encontrada</h3>
+                <p className="text-xs text-muted-foreground/70 max-w-md mx-auto">
                   Tente ajustar os filtros ou criar uma nova movimentação clicando no botão acima.
                 </p>
               </div>
             ) : (
-              <div className="space-y-6 p-2">
+              <div className="space-y-4 p-1">
                 {filteredProducts.map(product => {
                   const productMovements = movements.filter(
                     m => m.product_id === product.id &&
@@ -410,65 +433,72 @@ const Movements = () => {
                   if (productMovements.length === 0) return null;
 
                   return (
-                    <div key={product.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                      <div className="p-4 flex justify-between items-center border-b border-gray-100 dark:border-gray-700">
-                        <div className="flex items-center gap-3">
-                          <div className="bg-blue-100 dark:bg-blue-900/30 h-10 w-10 rounded-full flex items-center justify-center">
-                            <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    <div key={product.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                      <div className="p-3 flex justify-between items-center border-b border-gray-100 dark:border-gray-700">
+                        <div className="flex items-center gap-2">
+                          <div className="bg-blue-100 dark:bg-blue-900/30 h-8 w-8 rounded-full flex items-center justify-center">
+                            <Package className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                           </div>
                           <div>
-                            <h3 className="font-medium dark:text-white">{product.name}</h3>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">Categoria: {getCategoryName(product.category_id)}</p>
+                            <h3 className="font-medium text-sm dark:text-white">
+                              {product.name}
+                              <Badge variant="outline" className="ml-2 font-mono text-xs px-1.5 py-0 h-5 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+                                {product.code}
+                              </Badge>
+                            </h3>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Categoria: {getCategoryName(product.category_id)}
+                            </p>
                           </div>
                         </div>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+                          className="h-8 text-xs gap-1 text-muted-foreground hover:text-primary"
                           onClick={() => handleOpenDialog(product, 'entrada')}
                         >
-                          <span className="mr-1 text-xs">+</span> Movimentar
+                          + Movimentar
                         </Button>
                       </div>
 
                       <Table>
                         <TableHeader>
                           <TableRow className="border-b border-gray-200 dark:border-gray-700">
-                            <TableHead>Data</TableHead>
-                            <TableHead>Tipo</TableHead>
-                            <TableHead>Quantidade</TableHead>
-                            <TableHead>Responsável</TableHead>
-                            <TableHead>Observação</TableHead>
+                            <TableHead className="text-xs w-[400px]">Data</TableHead>
+                            <TableHead className="text-xs w-[350px]">Tipo</TableHead>
+                            <TableHead className="text-xs w-[300px]">Quantidade</TableHead>
+                            <TableHead className="text-xs w-[250px]">Responsável</TableHead>
+                            <TableHead className="text-xs w-[180px]">Observação</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {productMovements.map(movement => (
                             <TableRow key={movement.id} className="border-b border-gray-100 dark:border-gray-800">
-                              <TableCell className="font-medium whitespace-nowrap dark:text-gray-300">
+                              <TableCell className="whitespace-nowrap text-xs w-[400px]">
                                 {format(new Date(movement.created_at), 'dd/MM/yyyy HH:mm')}
                               </TableCell>
-                              <TableCell>
+                              <TableCell className="w-[350px]">
                                 <div className="flex items-center">
                                   {movement.type === 'entrada' ? (
                                     <>
                                       <div className="mr-2 h-2 w-2 rounded-full bg-green-500"></div>
-                                      <span className="dark:text-gray-300">Entrada</span>
+                                      <span className="text-xs">Entrada</span>
                                     </>
                                   ) : (
                                     <>
                                       <div className="mr-2 h-2 w-2 rounded-full bg-orange-500"></div>
-                                      <span className="dark:text-gray-300">Saída</span>
+                                      <span className="text-xs">Saída</span>
                                     </>
                                   )}
                                 </div>
                               </TableCell>
-                              <TableCell>
-                                <span className="font-medium dark:text-gray-300">
-                                  {movement.quantity} {product.unit}
+                              <TableCell className="w-[300px]">
+                                <span className="font-medium text-xs">
+                                  {movement.quantity} {getUnitAbbreviation(product.unit)}
                                 </span>
                               </TableCell>
-                              <TableCell className="dark:text-gray-300">{movement.employee_name || '-'}</TableCell>
-                              <TableCell className="max-w-xs truncate dark:text-gray-300">{movement.notes || '-'}</TableCell>
+                              <TableCell className="text-xs w-[250px]">{movement.employee_name || '-'}</TableCell>
+                              <TableCell className="max-w-xs truncate text-xs w-[180px]">{movement.notes || '-'}</TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
@@ -484,7 +514,7 @@ const Movements = () => {
 
       {/* Dialog para criar uma nova movimentação */}
       <Dialog open={isNewMovementDialogOpen} onOpenChange={setIsNewMovementDialogOpen}>
-        <DialogContent className="sm:max-w-[580px] p-0 border-none max-h-[90vh] overflow-hidden">
+        <DialogContent className="sm:max-w-[650px] md:max-w-[700px] p-0 border-none max-h-[90vh] overflow-hidden">
           <MovementProductSelector
             open={isNewMovementDialogOpen}
             onOpenChange={setIsNewMovementDialogOpen}
@@ -543,9 +573,9 @@ const MovementProductSelector = ({
 
   return (
     <div className="flex flex-col h-full max-h-[90vh]">
-      <div className="p-6 pb-4 border-b">
-        <h2 className="text-xl font-semibold">Registrar Movimentação</h2>
-        <p className="text-sm text-muted-foreground mt-1">
+      <div className="p-4 pb-3 border-b">
+        <h2 className="text-base font-medium">Registrar Movimentação</h2>
+        <p className="text-xs text-muted-foreground mt-1">
           Selecione o produto e o tipo de movimentação a ser registrada.
         </p>
       </div>
@@ -554,7 +584,7 @@ const MovementProductSelector = ({
         <Button
           type="button"
           variant={movementType === 'entrada' ? 'default' : 'outline'}
-          className={`h-12 ${movementType === 'entrada'
+          className={`h-10 text-sm ${movementType === 'entrada'
             ? 'bg-primary text-primary-foreground hover:bg-primary/90'
             : 'hover:bg-primary/10'
             }`}
@@ -566,7 +596,7 @@ const MovementProductSelector = ({
         <Button
           type="button"
           variant={movementType === 'saida' ? 'default' : 'outline'}
-          className={`h-12 ${movementType === 'saida'
+          className={`h-10 text-sm ${movementType === 'saida'
             ? 'bg-blue-600 text-white hover:bg-blue-700'
             : 'hover:bg-blue-100 dark:hover:bg-blue-900/30'
             }`}
@@ -577,12 +607,12 @@ const MovementProductSelector = ({
         </Button>
       </div>
 
-      <div className="p-4 space-y-4">
+      <div className="px-4 pb-4 space-y-3">
         <div className="relative">
-          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <SearchIcon className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar por nome ou código do produto..."
-            className="pl-9 w-full"
+            className="pl-10 h-9 text-sm"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
@@ -592,13 +622,13 @@ const MovementProductSelector = ({
           value={categoryFilter}
           onValueChange={setCategoryFilter}
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger className="h-9 text-sm">
             <SelectValue placeholder="Todas as categorias" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todas as categorias</SelectItem>
+            <SelectItem value="all" className="text-sm">Todas as categorias</SelectItem>
             {categories.map(category => (
-              <SelectItem key={category.id} value={category.id}>
+              <SelectItem key={category.id} value={category.id} className="text-sm">
                 {category.name}
               </SelectItem>
             ))}
@@ -606,52 +636,52 @@ const MovementProductSelector = ({
         </Select>
       </div>
 
-      <div className="flex-1 overflow-hidden p-4 pt-0">
-        <div className="border rounded-lg overflow-hidden h-full dark:border-gray-700">
+      <div className="flex-1 overflow-hidden px-4 pb-4">
+        <div className="rounded-lg overflow-hidden h-full border dark:border-gray-700">
           {filteredProducts.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full p-8">
-              <Package className="h-12 w-12 text-muted-foreground/50 mb-3" />
-              <p className="font-medium text-muted-foreground">Nenhum produto encontrado</p>
-              <p className="text-sm text-muted-foreground/70 text-center mt-1 max-w-xs">
+            <div className="flex flex-col items-center justify-center h-full p-4">
+              <Package className="h-8 w-8 text-muted-foreground/50 mb-3" />
+              <p className="font-medium text-sm text-muted-foreground">Nenhum produto encontrado</p>
+              <p className="text-xs text-muted-foreground/70 text-center mt-1 max-w-xs">
                 Tente ajustar os filtros ou pesquise por outro termo
               </p>
             </div>
           ) : (
             <div className="h-full overflow-y-auto">
               <div className="sticky top-0 bg-muted/60 dark:bg-gray-800/80 backdrop-blur-sm border-b dark:border-gray-700">
-                <div className="grid grid-cols-3 px-4 py-2.5 text-xs font-medium text-muted-foreground">
+                <div className="grid grid-cols-3 px-3 py-2 text-xs font-medium text-muted-foreground">
                   <div>Produto</div>
                   <div className="text-center">Estoque</div>
                   <div className="text-right">Ação</div>
                 </div>
               </div>
 
-              <div className="divide-y dark:divide-gray-700">
+              <div>
                 {filteredProducts.map(product => (
-                  <div key={product.id} className="grid grid-cols-3 items-center px-4 py-3 hover:bg-muted/40 dark:hover:bg-gray-700/40 transition-colors">
+                  <div key={product.id} className="grid grid-cols-3 items-center px-3 py-2 hover:bg-muted/40 dark:hover:bg-gray-700/40 transition-colors">
                     <div>
-                      <div className="font-medium dark:text-white">{product.name}</div>
+                      <div className="font-medium text-sm dark:text-white">{product.name}</div>
                       <div className="flex items-center gap-1.5 mt-1">
-                        <Badge variant="outline" className="font-mono text-xs dark:border-gray-600 dark:text-gray-300">
+                        <Badge variant="outline" className="font-mono text-xs dark:border-gray-600 dark:text-gray-300 px-1.5 py-0 h-5">
                           {product.code}
                         </Badge>
-                        <span className="text-xs bg-secondary/40 dark:bg-gray-700 px-1.5 py-0.5 rounded-full dark:text-gray-300">
+                        <span className="text-xs bg-secondary/40 dark:bg-gray-700 px-1.5 py-0 rounded-full dark:text-gray-300 h-5 flex items-center">
                           {getCategoryName(product.category_id)}
                         </span>
                       </div>
                     </div>
 
                     <div className="flex justify-center">
-                      <Badge variant={product.quantity <= product.min_quantity ? "destructive" : "secondary"} className="px-2.5 py-1">
-                        {product.quantity}
+                      <Badge variant={product.quantity <= product.min_quantity ? "destructive" : "secondary"} className="px-2 py-0.5 text-xs h-5">
+                        {product.quantity} {getUnitAbbreviation(product.unit)}
                       </Badge>
                     </div>
 
                     <div className="flex justify-end">
                       <Button
                         variant={movementType === 'entrada' ? 'default' : 'custom-blue'}
-                        className="px-3"
                         size="sm"
+                        className="h-7 text-xs px-2.5"
                         onClick={() => onSelectProduct(product, movementType)}
                       >
                         Selecionar

@@ -174,6 +174,7 @@ export function ModernAddProductDialog({
                                 <SelectItem value="un">UNIDADE</SelectItem>
                                 <SelectItem value="kg">KG</SelectItem>
                                 <SelectItem value="g">GRAMAS</SelectItem>
+                                <SelectItem value="l">LITROS</SelectItem>
                                 <SelectItem value="ml">ML</SelectItem>
                                 <SelectItem value="cx">CAIXA</SelectItem>
                                 <SelectItem value="pct">PACOTE</SelectItem>

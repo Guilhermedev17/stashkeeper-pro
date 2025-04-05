@@ -148,18 +148,13 @@ const Categories = () => {
 
   if (isLoading) {
     return (
-      <div className="h-full p-4 md:p-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">Categorias</h1>
-            <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
-              Gerencie as categorias de produtos
-            </p>
-          </div>
-        </div>
-
+      <PageWrapper>
+        <ModernHeader
+          title="Categorias"
+          subtitle="Gerencie as categorias para organizar seus produtos."
+        />
         <PageLoading message="Carregando categorias..." />
-      </div>
+      </PageWrapper>
     );
   }
 
@@ -171,29 +166,32 @@ const Categories = () => {
             title="Categorias"
             subtitle="Gerencie as categorias para organizar seus produtos."
             actions={
-              <Button type="button" onClick={() => setIsDialogOpen(true)} className="gap-2 w-full sm:w-auto">
-                <Plus className="h-4 w-4" />
-                <span>Nova Categoria</span>
+              <Button 
+                type="button" 
+                onClick={() => setIsDialogOpen(true)} 
+                className="gap-1.5"
+                size="sm"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span className="text-xs">Nova Categoria</span>
               </Button>
             }
           />
 
-          <ModernFilters className="sm:grid-cols-1">
-            <div className="flex items-center space-x-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar categorias..."
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  className="pl-8 w-full"
-                />
-              </div>
+          <ModernFilters className="mt-4">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Buscar categorias..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="pl-8 h-9 text-sm"
+              />
             </div>
           </ModernFilters>
 
           {error && (
-            <Alert variant="destructive" className="mb-4">
+            <Alert variant="destructive" className="mt-4 mb-4 text-sm">
               <AlertDescription>
                 {error}
               </AlertDescription>
@@ -202,17 +200,17 @@ const Categories = () => {
 
           <ModernTable
             title="Categorias"
-            className="flex-1"
+            className="flex-1 mt-4 shadow-sm"
           >
             {loading ? (
-              <div className="flex justify-center items-center py-32">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="flex justify-center items-center py-20">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
               </div>
             ) : filteredCategories.length === 0 ? (
-              <div className="text-center py-16 text-gray-500">
-                <Folder className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-                <h3 className="text-lg font-medium mb-1">Nenhuma categoria encontrada</h3>
-                <p className="text-sm text-gray-400 max-w-md mx-auto">
+              <div className="text-center py-14 text-muted-foreground">
+                <Folder className="h-10 w-10 mx-auto text-muted-foreground/40 mb-2" />
+                <h3 className="text-sm font-medium mb-1">Nenhuma categoria encontrada</h3>
+                <p className="text-xs text-muted-foreground/70 max-w-md mx-auto">
                   {searchTerm ? 'Tente ajustar sua busca ou crie uma nova categoria.' : 'Crie categorias para organizar seus produtos.'}
                 </p>
               </div>
@@ -220,38 +218,39 @@ const Categories = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Descrição</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
+                    <TableHead className="text-xs">Nome</TableHead>
+                    <TableHead className="text-xs">Descrição</TableHead>
+                    <TableHead className="text-right text-xs">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredCategories.map(category => (
                     <TableRow key={category.id}>
-                      <TableCell className="font-medium">{category.name}</TableCell>
-                      <TableCell>{category.description || '-'}</TableCell>
+                      <TableCell className="font-medium text-sm">{category.name}</TableCell>
+                      <TableCell className="text-sm">{category.description || '-'}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="h-4 w-4" />
+                            <Button variant="ghost" size="icon" className="h-7 w-7">
+                              <MoreHorizontal className="h-3.5 w-3.5" />
                               <span className="sr-only">Abrir menu</span>
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                          <DropdownMenuContent align="end" className="text-xs">
+                            <DropdownMenuLabel className="text-xs">Ações</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               onClick={() => openEditDialog(category)}
+                              className="text-xs cursor-pointer"
                             >
-                              <Edit className="mr-2 h-4 w-4" />
+                              <Edit className="mr-2 h-3.5 w-3.5" />
                               Editar
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
+                              className="text-destructive focus:text-destructive text-xs cursor-pointer"
                               onClick={() => openDeleteDialog(category)}
                             >
-                              <Trash2 className="mr-2 h-4 w-4" />
+                              <Trash2 className="mr-2 h-3.5 w-3.5" />
                               Excluir
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -268,17 +267,17 @@ const Categories = () => {
 
       {/* Dialog para adicionar categoria */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[450px]">
           <DialogHeader>
-            <DialogTitle className="text-xl flex items-center gap-2">
-              <FolderPlus className="h-5 w-5 text-primary" />
+            <DialogTitle className="text-base flex items-center gap-2">
+              <FolderPlus className="h-4 w-4 text-primary" />
               Nova Categoria
             </DialogTitle>
           </DialogHeader>
 
-          <div className="grid gap-5 py-4">
-            <div className="grid gap-3">
-              <Label htmlFor="name" className="text-sm font-medium">
+          <div className="grid gap-4 py-3">
+            <div className="grid gap-2">
+              <Label htmlFor="name" className="text-xs font-medium">
                 Nome
               </Label>
               <Input
@@ -286,12 +285,12 @@ const Categories = () => {
                 value={newCategory.name}
                 onChange={e => setNewCategory({ ...newCategory, name: e.target.value })}
                 placeholder="Nome da categoria"
-                className="w-full"
+                className="h-9 text-sm"
               />
             </div>
 
-            <div className="grid gap-3">
-              <Label htmlFor="description" className="text-sm font-medium">
+            <div className="grid gap-2">
+              <Label htmlFor="description" className="text-xs font-medium">
                 Descrição <span className="text-muted-foreground">(opcional)</span>
               </Label>
               <Textarea
@@ -299,7 +298,7 @@ const Categories = () => {
                 value={newCategory.description || ''}
                 onChange={e => setNewCategory({ ...newCategory, description: e.target.value })}
                 placeholder="Descreva a categoria brevemente"
-                className="w-full min-h-[100px] resize-none"
+                className="text-sm min-h-[80px] resize-none"
               />
             </div>
           </div>
@@ -308,16 +307,16 @@ const Categories = () => {
             <Button
               type="button"
               variant="outline"
+              size="sm"
               onClick={() => setIsDialogOpen(false)}
-              className="w-[120px]"
             >
               Cancelar
             </Button>
             <Button
               type="button"
+              size="sm"
               onClick={handleAddCategory}
               disabled={!newCategory.name.trim()}
-              className="w-[120px]"
             >
               Adicionar
             </Button>
@@ -327,17 +326,17 @@ const Categories = () => {
 
       {/* Dialog para editar categoria */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[450px]">
           <DialogHeader>
-            <DialogTitle className="text-xl flex items-center gap-2">
-              <FolderEdit className="h-5 w-5 text-primary" />
+            <DialogTitle className="text-base flex items-center gap-2">
+              <FolderEdit className="h-4 w-4 text-primary" />
               Editar Categoria
             </DialogTitle>
           </DialogHeader>
 
-          <div className="grid gap-5 py-4">
-            <div className="grid gap-3">
-              <Label htmlFor="edit-name" className="text-sm font-medium">
+          <div className="grid gap-4 py-3">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-name" className="text-xs font-medium">
                 Nome
               </Label>
               <Input
@@ -345,12 +344,12 @@ const Categories = () => {
                 value={selectedCategory?.name || ''}
                 onChange={e => selectedCategory && setSelectedCategory({ ...selectedCategory, name: e.target.value })}
                 placeholder="Nome da categoria"
-                className="w-full"
+                className="h-9 text-sm"
               />
             </div>
 
-            <div className="grid gap-3">
-              <Label htmlFor="edit-description" className="text-sm font-medium">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-description" className="text-xs font-medium">
                 Descrição <span className="text-muted-foreground">(opcional)</span>
               </Label>
               <Textarea
@@ -358,7 +357,7 @@ const Categories = () => {
                 value={selectedCategory?.description || ''}
                 onChange={e => selectedCategory && setSelectedCategory({ ...selectedCategory, description: e.target.value })}
                 placeholder="Descreva a categoria brevemente"
-                className="w-full min-h-[100px] resize-none"
+                className="text-sm min-h-[80px] resize-none"
               />
             </div>
           </div>
@@ -367,16 +366,16 @@ const Categories = () => {
             <Button
               type="button"
               variant="outline"
+              size="sm"
               onClick={() => setIsEditDialogOpen(false)}
-              className="w-[120px]"
             >
               Cancelar
             </Button>
             <Button
               type="button"
+              size="sm"
               onClick={handleEditCategory}
               disabled={!selectedCategory?.name.trim()}
-              className="w-[120px]"
             >
               Salvar
             </Button>
@@ -386,22 +385,22 @@ const Categories = () => {
 
       {/* Dialog para confirmar exclusão de categoria */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[450px]">
           <DialogHeader>
-            <DialogTitle className="text-xl flex items-center gap-2">
-              <Trash2 className="h-5 w-5 text-destructive" />
+            <DialogTitle className="text-base flex items-center gap-2">
+              <Trash2 className="h-4 w-4 text-destructive" />
               Excluir Categoria
             </DialogTitle>
-            <DialogDescription className="pt-2">
+            <DialogDescription className="text-xs pt-2">
               Tem certeza que deseja excluir esta categoria? Esta ação não pode ser desfeita.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="py-4 px-1">
-            <div className="p-4 rounded-lg border bg-muted/40">
-              <h3 className="font-medium">{selectedCategory?.name}</h3>
+          <div className="py-3 px-1">
+            <div className="p-3 rounded-lg border bg-muted/40">
+              <h3 className="font-medium text-sm">{selectedCategory?.name}</h3>
               {selectedCategory?.description && (
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   {selectedCategory.description}
                 </p>
               )}
@@ -412,16 +411,16 @@ const Categories = () => {
             <Button
               type="button"
               variant="outline"
+              size="sm"
               onClick={() => setIsDeleteDialogOpen(false)}
-              className="w-[120px]"
             >
               Cancelar
             </Button>
             <Button
               type="button"
               variant="destructive"
+              size="sm"
               onClick={handleDeleteCategory}
-              className="w-[120px]"
             >
               Excluir
             </Button>

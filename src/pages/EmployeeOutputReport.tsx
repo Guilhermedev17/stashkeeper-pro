@@ -10,7 +10,7 @@ import { useSupabaseProducts } from '@/hooks/useSupabaseProducts';
 import { useSupabaseMovements } from '@/hooks/useSupabaseMovements';
 import { useSupabaseCategories } from '@/hooks/useSupabaseCategories';
 import PageWrapper from '@/components/layout/PageWrapper';
-import { ModernHeader } from '@/components/layout/modern';
+import { ModernHeader, ModernFilters } from '@/components/layout/modern';
 import PageLoading from '@/components/PageLoading';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -231,14 +231,34 @@ const EmployeeOutputReport = () => {
 
   // Função para imprimir o relatório
   const handlePrint = () => {
+    generatePrintableContent();
+  };
+
+  // Função para gerar o conteúdo de impressão
+  const generatePrintableContent = () => {
     if (printRef.current) {
-      const printContent = printRef.current;
-      const windowPrint = window.open('', '', 'width=900,height=650');
+      // Criar um iframe oculto dentro da mesma página
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.style.visibility = 'hidden';
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = 'none';
       
-      if (windowPrint) {
-        windowPrint.document.write('<html><head><title>Relatório de Saídas por Colaborador</title>');
-        windowPrint.document.write('<style>');
-        windowPrint.document.write(`
+      // Adicionar temporariamente ao documento
+      document.body.appendChild(iframe);
+      
+      // Acessar o documento dentro do iframe
+      const doc = iframe.contentDocument || iframe.contentWindow?.document;
+      
+      if (doc) {
+        doc.open();
+        doc.write('<html><head><title>Relatório de Saídas por Colaborador</title>');
+        doc.write('<style>');
+        doc.write(`
           @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
           
           /* Remove Page Headers, Footers and Margins in Print */
@@ -313,18 +333,42 @@ const EmployeeOutputReport = () => {
             padding: 3px 6px !important;
           }
         `);
-        windowPrint.document.write('</style></head><body>');
-        windowPrint.document.write('<div class="report-container">');
+        doc.write('</style></head><body>');
+        doc.write('<div class="report-container">');
+        
+        // Cores para a versão P&B
+        const colors = {
+          header: '#000000',
+          headerBg: '#F2F2F2',
+          companyName: '#000000',
+          reportTitle: '#000000',
+          subtitle: '#000000',
+          employeeHeaderBg: '#EFF6FF',
+          employeeHeaderBorder: '#000000',
+          employeeHeaderText: '#000000',
+          categoryHeaderBg: '#F2F2F2',
+          categoryBorder: '#000000',
+          categoryHeaderText: '#000000',
+          tableHeaderBg: '#F2F2F2',
+          tableHeaderText: '#000000',
+          alternateRowBg: '#F9F9F9',
+          totalBg: '#F2F2F2',
+          totalBorder: '#000000',
+          totalText: '#000000',
+          separatorBorder: '#cccccc',
+          dotted: '#666666',
+          productText: '#000000'
+        };
         
         // Adiciona cabeçalho personalizado
-        windowPrint.document.write(`
-          <div style="margin-bottom: 8px; border-bottom: 2px solid #000000; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-start;">
+        doc.write(`
+          <div style="margin-bottom: 12px; border-bottom: 2px solid #000000; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: flex-start;" class="report-header">
             <div>
-              <div style="font-size: 14px; font-weight: 700; color: #000000; margin-bottom: 1px;">StashKeeperPro</div>
-              <div style="font-size: 12px; font-weight: 600; color: #000000; margin-bottom: 1px;">Relatório de Saídas por Colaborador</div>
-              <div style="font-size: 10px; color: #000000;">Produtos agrupados por colaborador e categoria</div>
+              <div style="font-size: 16px; font-weight: 700; color: ${colors.companyName}; margin-bottom: 2px;">StashKeeperPro</div>
+              <div style="font-size: 13px; font-weight: 600; color: ${colors.reportTitle}; margin-bottom: 2px;">Relatório de Saídas por Colaborador</div>
+              <div style="font-size: 10px; color: ${colors.subtitle};">Produtos agrupados por colaborador e categoria</div>
             </div>
-            <div style="text-align: right; font-size: 10px; color: #000000;">
+            <div style="text-align: right; font-size: 10px; color: ${colors.subtitle};">
               <div>Emissão: ${format(new Date(), 'dd/MM/yyyy')}</div>
               <div>Período: ${
                 selectedDateRange === 'custom' && customDateRange.from && customDateRange.to 
@@ -338,7 +382,7 @@ const EmployeeOutputReport = () => {
         `);
         
         // Convertemos o HTML para um formato mais controlado para impressão
-        windowPrint.document.write(`
+        doc.write(`
         <div class="report-container" style="column-gap: 20px;">
           ${reportData.map((employeeReport) => {
               let lastCategory = '';
@@ -346,8 +390,8 @@ const EmployeeOutputReport = () => {
               
               output += `
                 <div class="employee-container" style="margin-bottom: 8px;">
-                  <div style="background-color: #EFF6FF; padding: 4px 6px; border-left: 3px solid #000000; border-bottom: 1px solid #000000; margin-bottom: 4px;">
-                    <div style="font-size: 12px; font-weight: 700; color: #000000;">${employeeReport.employee_code} - ${employeeReport.employee_name}</div>
+                  <div style="background-color: ${colors.employeeHeaderBg}; padding: 4px 6px; border-left: 3px solid ${colors.employeeHeaderBorder}; border-bottom: 1px solid ${colors.employeeHeaderBorder}; margin-bottom: 4px;">
+                    <div style="font-size: 12px; font-weight: 700; color: ${colors.employeeHeaderText};">${employeeReport.employee_code} - ${employeeReport.employee_name}</div>
                   </div>
               `;
               
@@ -365,24 +409,24 @@ const EmployeeOutputReport = () => {
                   currentCategory = product.category_name;
                   
                   categoryContent += `
-                    <div style="margin-top: 4px; margin-bottom: 2px; padding: 2px 0; border-bottom: 1px solid #000000;">
-                      <div style="font-weight: 600; color: #000000; font-size: 9px;">Categoria: ${product.category_name}</div>
+                    <div style="margin-top: 4px; margin-bottom: 2px; padding: 2px 0; border-bottom: 1px solid ${colors.categoryBorder};">
+                      <div style="font-weight: 600; color: ${colors.categoryHeaderText}; font-size: 9px; padding-left: 2px;">Categoria: ${product.category_name}</div>
                     </div>
-                    <div style="display: flex; padding: 2px 0; background-color: #F2F2F2; margin-bottom: 1px;">
-                      <div style="width: 15%; padding-right: 4px; font-size: 8px; font-weight: 600; color: #000000;">Código</div>
-                      <div style="width: 45%; padding-right: 4px; font-size: 8px; font-weight: 600; color: #000000;">Produto</div>
-                      <div style="width: 20%; text-align: right; padding-right: 4px; font-size: 8px; font-weight: 600; color: #000000;">Qtd</div>
-                      <div style="width: 20%; font-size: 8px; font-weight: 600; color: #000000;">Un</div>
+                    <div style="display: flex; padding: 2px 0; background-color: ${colors.tableHeaderBg}; margin-bottom: 1px; border-bottom: 1px solid #E2E8F0;">
+                      <div style="width: 15%; padding-right: 4px; font-size: 8px; font-weight: 600; color: ${colors.tableHeaderText};">Código</div>
+                      <div style="width: 45%; padding-right: 4px; font-size: 8px; font-weight: 600; color: ${colors.tableHeaderText};">Produto</div>
+                      <div style="width: 20%; text-align: right; padding-right: 4px; font-size: 8px; font-weight: 600; color: ${colors.tableHeaderText};">Qtd</div>
+                      <div style="width: 20%; font-size: 8px; font-weight: 600; color: ${colors.tableHeaderText};">Un</div>
                     </div>
                   `;
                 }
                 
                 categoryContent += `
-                  <div class="product-row" style="display: flex; padding: 1px 0; ${productIndex % 2 === 1 ? 'background-color: #F9F9F9;' : ''} border-bottom: 1px dotted #666666;">
-                    <div style="width: 15%; padding-right: 4px; font-size: 9px; color: #000000;">${product.product_code}</div>
-                    <div style="width: 45%; padding-right: 4px; font-size: 9px; color: #000000;">${product.product_name}</div>
-                    <div style="width: 20%; text-align: right; padding-right: 4px; font-size: 9px; color: #000000;">${product.quantity}</div>
-                    <div style="width: 20%; font-size: 9px; color: #000000;">${formatUnit(product.unit)}</div>
+                  <div class="product-row" style="display: flex; padding: 1px 0; ${productIndex % 2 === 1 ? `background-color: ${colors.alternateRowBg};` : ''} border-bottom: 1px solid #E2E8F0;">
+                    <div style="width: 15%; padding-right: 4px; font-size: 9px; color: ${colors.productText};">${product.product_code}</div>
+                    <div style="width: 45%; padding-right: 4px; font-size: 9px; color: ${colors.productText};">${product.product_name}</div>
+                    <div style="width: 20%; text-align: right; padding-right: 4px; font-size: 9px; color: ${colors.productText};">${product.quantity}</div>
+                    <div style="width: 20%; font-size: 9px; color: ${colors.productText};">${formatUnit(product.unit)}</div>
                   </div>
                 `;
               });
@@ -394,32 +438,58 @@ const EmployeeOutputReport = () => {
               
               // Adicionar o total do colaborador
               output += `
-                <div class="employee-total" style="margin-top: 4px; background-color: #F2F2F2; padding: 3px 6px; border-radius: 2px; display: flex; justify-content: space-between; font-size: 9px; border: 1px solid #000000;">
-                  <div style="font-weight: 600; color: #000000;">Total do colaborador:</div>
-                  <div style="font-weight: 700; color: #000000;">${employeeReport.products.reduce((sum, product) => sum + product.quantity, 0)} itens</div>
+                <div class="employee-total" style="margin-top: 4px; background-color: ${colors.totalBg}; padding: 3px 6px; border-radius: 2px; display: flex; justify-content: space-between; font-size: 9px; border: 1px solid ${colors.totalBorder};">
+                  <div style="font-weight: 600; color: ${colors.totalText};">Total do colaborador:</div>
+                  <div style="font-weight: 700; color: ${colors.totalText};">${employeeReport.products.reduce((sum, product) => sum + product.quantity, 0)} itens</div>
                 </div>
               `;
               
               output += `</div>`;
               
               // Adicionar espaço entre colaboradores (linha horizontal)
-              output += `<div style="height: 12px; border-bottom: 1px dashed #cccccc; margin-bottom: 8px;"></div>`;
+              output += `<div style="height: 12px; border-bottom: 1px dashed ${colors.separatorBorder}; margin-bottom: 8px;"></div>`;
               
               return output;
             }).join('')}
         </div>
         `);
         
-        windowPrint.document.write('</div>'); // Fecha container
-        windowPrint.document.write('</body></html>');
-        windowPrint.document.close();
-        windowPrint.focus();
+        doc.write('</div>'); // Fecha container
+        doc.write('</body></html>');
+        doc.close();
         
         // Aguardar o carregamento das folhas de estilo antes de imprimir
         setTimeout(() => {
-          windowPrint.print();
-          windowPrint.close();
-        }, 500);
+          try {
+            // Chamar a impressão dentro do iframe
+            iframe.contentWindow?.focus();
+            iframe.contentWindow?.print();
+            
+            // Remover o iframe após a impressão
+            const removeIframe = () => {
+              if (document.body.contains(iframe)) {
+                document.body.removeChild(iframe);
+              }
+            };
+            
+            // Remover o iframe depois da impressão ou após timeout
+            if (iframe.contentWindow) {
+              iframe.contentWindow.onafterprint = removeIframe;
+            }
+            
+            // Fallback se onafterprint não for suportado
+            setTimeout(removeIframe, 5000);
+          } catch (error) {
+            console.error("Erro ao imprimir:", error);
+            document.body.removeChild(iframe);
+            
+            toast({
+              title: "Erro",
+              description: "Ocorreu um erro ao imprimir o relatório.",
+              variant: "destructive"
+            });
+          }
+        }, 1000);
       } else {
         toast({
           title: "Erro",
@@ -430,26 +500,13 @@ const EmployeeOutputReport = () => {
     }
   };
 
-  // Função para exportar o relatório como PDF
-  const handleExportPDF = () => {
-    toast({
-      title: "Exportando PDF",
-      description: "Gerando relatório em PDF...",
-    });
-    
-    // Simulação - na prática, aqui seria implementada a geração real do PDF
-    setTimeout(() => {
-      handlePrint(); // Por enquanto, apenas chama a impressão
-    }, 500);
-  };
-
   // Função para formatar unidade de medida (abreviada e em maiúsculo)
   const formatUnit = (unit: string): string => {
-    // Mapeamento de unidades comuns para suas abreviações
+    // Mapeamento de unidades comuns para suas abreviações ou formatação exata
     const unitMap: Record<string, string> = {
-      'unidade': 'UN',
-      'un': 'UN',
-      'unidades': 'UN',
+      'unidade': 'unidade',
+      'un': 'unidade',
+      'unidades': 'unidade',
       'litro': 'L',
       'litros': 'L',
       'l': 'L',
@@ -465,9 +522,9 @@ const EmployeeOutputReport = () => {
       'grama': 'G',
       'gramas': 'G',
       'g': 'G',
-      'pacote': 'PCT',
-      'pacotes': 'PCT',
-      'pct': 'PCT',
+      'pacote': 'pacote',
+      'pacotes': 'pacote',
+      'pct': 'pacote',
       'caixa': 'CX',
       'caixas': 'CX',
       'cx': 'CX',
@@ -492,24 +549,19 @@ const EmployeeOutputReport = () => {
     const lowerUnit = unit.toLowerCase().trim();
     
     // Retornar a abreviação mapeada ou a unidade original em maiúsculo
-    return unitMap[lowerUnit] || unit.toUpperCase();
+    return unitMap[lowerUnit] || unit;
   };
 
   // Renderizar estado de carregamento
   if (isLoading) {
     return (
-      <div className="h-full p-4 md:p-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-semibold">Relatório de Saídas por Colaborador</h1>
-            <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
-              Visualize produtos de saída por colaborador
-            </p>
-          </div>
-        </div>
-
+      <PageWrapper>
+        <ModernHeader
+          title="Relatório de Saídas por Colaborador"
+          subtitle="Visualize produtos de saída por colaborador"
+        />
         <PageLoading message="Gerando relatório..." />
-      </div>
+      </PageWrapper>
     );
   }
 
@@ -520,26 +572,18 @@ const EmployeeOutputReport = () => {
         subtitle="Visualize todos os produtos que saíram por colaborador, organizados por categoria."
         actions={
           <div className="flex gap-2">
-            <Button variant="outline" className="gap-1.5" onClick={handleExportPDF}>
-              <FileText className="h-4 w-4" />
-              <span className="hidden xs:inline">PDF</span>
-            </Button>
             <Button variant="outline" className="gap-1.5" onClick={handlePrint}>
               <Printer className="h-4 w-4" />
-              <span className="hidden xs:inline">Imprimir</span>
+              <span className="hidden xs:inline">Imprimir / PDF</span>
             </Button>
           </div>
         }
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">
-              Período
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+      <ModernFilters className="mt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-muted-foreground">Período</label>
             <ModernDateRangeFilter
               selectedRange={selectedDateRange}
               customDateRange={customDateRange}
@@ -550,16 +594,9 @@ const EmployeeOutputReport = () => {
               defaultMode="range"
               showModeToggle={true}
             />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">
-              Colaborador
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-muted-foreground">Colaborador</label>
             <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
               <SelectTrigger className="text-xs sm:text-sm">
                 <SelectValue placeholder="Selecione o colaborador" />
@@ -573,12 +610,12 @@ const EmployeeOutputReport = () => {
                 ))}
               </SelectContent>
             </Select>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </div>
+      </ModernFilters>
 
       {/* Área do relatório com referência para impressão */}
-      <div className="mt-6">
+      <div className="mt-4">
         <Card>
           <CardContent className="p-6">
             <div ref={printRef}>

@@ -446,40 +446,36 @@ const Products = () => {
   // Renderizar estado de carregamento
   if (isLoading) {
     return (
-      <div className="h-full p-4 md:p-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">Produtos</h1>
-            <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
-              Gerencie seu inventário de produtos
-            </p>
-          </div>
-        </div>
-
+      <PageWrapper>
+        <ModernHeader
+          title="Produtos"
+          subtitle="Visualize e gerencie todos os seus produtos."
+        />
         <PageLoading message="Carregando produtos..." />
-      </div>
+      </PageWrapper>
     );
   }
 
   return (
     <PageWrapper className="flex flex-col p-0">
       <div className="flex-1 w-full overflow-auto">
-        <div className="mobile-container">
+        <div className="w-full px-2 sm:px-4 py-4 sm:py-6">
           <ModernHeader
             title="Produtos"
             subtitle="Visualize e gerencie todos os seus produtos."
             actions={
-              <div className="mobile-btn-group">
+              <div className="flex items-center gap-2">
                 {!selectMode && (
                   <>
-                    <ImportExcelButton />
+                    <ImportExcelButton className="h-9" />
                     <Button
                       type="button"
                       onClick={() => setIsAddDialogOpen(true)}
-                      className="gap-2"
-                      title="Adicionar novo produto"
+                      className="gap-1.5"
+                      size="sm"
                     >
-                      <PlusSquare className="h-4 w-4" /> Novo Produto
+                      <PlusSquare className="h-3.5 w-3.5" /> 
+                      <span className="text-xs">Novo Produto</span>
                     </Button>
                   </>
                 )}
@@ -487,7 +483,7 @@ const Products = () => {
             }
           />
 
-          <div className="responsive-gap">
+          <div className="mt-4">
             <ModernProductFilters
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
@@ -500,7 +496,7 @@ const Products = () => {
               onToggleSelectMode={toggleSelectMode}
             />
 
-            <div className="responsive-table mt-4">
+            <div className="mt-4 shadow-sm">
               <ModernProductList
                 products={filteredProducts}
                 getCategoryName={getCategoryName}

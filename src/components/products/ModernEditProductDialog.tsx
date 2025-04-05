@@ -89,6 +89,7 @@ export function ModernEditProductDialog({
         { value: "un", label: "UNIDADE" },
         { value: "kg", label: "KG" },
         { value: "g", label: "GRAMAS" },
+        { value: "l", label: "LITROS" },
         { value: "ml", label: "ML" },
         { value: "cx", label: "CAIXA" },
         { value: "pct", label: "PACOTE" },

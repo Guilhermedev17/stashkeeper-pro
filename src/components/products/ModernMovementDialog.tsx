@@ -164,7 +164,7 @@ export function ModernMovementDialog({
     const form = useForm<FormValues>({
         resolver,
         defaultValues: {
-            quantity: 1,
+            quantity: null,
             notes: '',
             employee_id: '',
             unitType: 'default'
@@ -175,7 +175,7 @@ export function ModernMovementDialog({
     useEffect(() => {
         if (open) {
             form.reset({
-                quantity: 1,
+                quantity: null,
                 notes: '',
                 employee_id: '',
                 unitType: 'default'
@@ -289,25 +289,25 @@ export function ModernMovementDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[500px] p-0 gap-0 overflow-hidden border-none max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[600px] md:max-w-[650px] p-0 gap-0 overflow-hidden border-none max-h-[90vh] overflow-y-auto">
                 {/* Cabeçalho colorido baseado no tipo */}
                 <div className={cn(
-                    "p-4 sm:p-6 flex items-center gap-3",
+                    "p-5 sm:p-6 flex items-center gap-4",
                     type === 'entrada'
                         ? "bg-primary text-primary-foreground"
                         : "bg-blue-600 text-white"
                 )}>
-                    <div className="rounded-full p-1.5 sm:p-2 bg-white/20">
+                    <div className="rounded-full p-2 sm:p-2.5 bg-white/20">
                         {type === 'entrada'
-                            ? <ArrowDown className="h-4 w-4 sm:h-5 sm:w-5" />
-                            : <ArrowUp className="h-4 w-4 sm:h-5 sm:w-5" />
+                            ? <ArrowDown className="h-5 w-5 sm:h-6 sm:w-6" />
+                            : <ArrowUp className="h-5 w-5 sm:h-6 sm:w-6" />
                         }
                     </div>
                     <div>
-                        <DialogTitle className="text-lg sm:text-xl font-semibold">
+                        <DialogTitle className="text-xl sm:text-2xl font-semibold">
                             Registrar {type === 'entrada' ? 'Entrada' : 'Saída'}
                         </DialogTitle>
-                        <DialogDescription className="text-xs sm:text-sm mt-1 text-white/80">
+                        <DialogDescription className="text-sm mt-1 text-white/80">
                             {type === 'entrada'
                                 ? 'Registre a entrada de produtos no estoque.'
                                 : 'Registre a saída de produtos do estoque.'}
@@ -317,24 +317,24 @@ export function ModernMovementDialog({
 
                 {/* Detalhes do produto */}
                 {product ? (
-                    <div className="px-4 sm:px-6 py-3 sm:py-4 border-b flex items-center gap-2 sm:gap-3 bg-background">
-                        <div className="bg-muted/50 p-1.5 sm:p-2 rounded-md">
-                            <Package className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+                    <div className="px-5 sm:px-6 py-4 border-b flex items-center gap-3 sm:gap-4 bg-background">
+                        <div className="bg-muted/50 p-2 sm:p-2.5 rounded-md">
+                            <Package className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate text-sm sm:text-base">{product.name}</p>
-                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-1">
-                                <Badge variant="outline" className="font-mono text-xs">
+                            <p className="font-medium truncate text-base sm:text-lg">{product.name}</p>
+                            <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                                <Badge variant="outline" className="font-mono text-sm px-1.5 py-0.5">
                                     {product.code}
                                 </Badge>
-                                <Badge variant="secondary" className="text-xs">
-                                    {getFullUnitName(product.unit)}
+                                <Badge variant="secondary" className="text-sm px-1.5 py-0.5">
+                                    {getFullUnitName(product.unit).toUpperCase()}
                                 </Badge>
                             </div>
                         </div>
                     </div>
                 ) : (
-                    <div className="px-4 sm:px-6 py-3 sm:py-4 border-b bg-background">
+                    <div className="px-5 sm:px-6 py-4 border-b bg-background">
                         <div className="p-2 sm:p-3 rounded-md bg-destructive/10 text-center">
                             <span className="text-xs sm:text-sm text-destructive font-medium">
                                 Nenhum produto selecionado
@@ -344,7 +344,7 @@ export function ModernMovementDialog({
                 )}
 
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="p-4 sm:p-6 bg-background space-y-4 sm:space-y-6">
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="p-5 sm:p-6 bg-background space-y-4 sm:space-y-6">
                         {/* Campo de quantidade */}
                         <FormField
                             control={form.control}
@@ -361,8 +361,10 @@ export function ModernMovementDialog({
                                                 min="0.001"
                                                 step="any"
                                                 inputMode="decimal"
+                                                placeholder="0"
                                                 {...field}
-                                                className="text-right border-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0 rounded-none text-sm"
+                                                value={field.value === null ? '' : field.value}
+                                                className="text-right border-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0 rounded-none text-sm h-10"
                                             />
                                             {type === 'saida' && unitOptions.length > 1 ? (
                                                 <Select
@@ -375,19 +377,19 @@ export function ModernMovementDialog({
                                                     }}
                                                     defaultValue="default"
                                                 >
-                                                    <SelectTrigger className="min-w-[80px] w-[90px] border-0 border-l border-input rounded-none focus:ring-0">
+                                                    <SelectTrigger className="min-w-[100px] w-[120px] border-0 border-l border-input rounded-none focus:ring-0 h-10">
                                                         <SelectValue />
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         {unitOptions.map(option => (
-                                                            <SelectItem key={option.value} value={option.value} className="text-xs">
+                                                            <SelectItem key={option.value} value={option.value} className="text-sm">
                                                                 {option.label.split(' ')[0].toUpperCase()}
                                                             </SelectItem>
                                                         ))}
                                                     </SelectContent>
                                                 </Select>
                                             ) : (
-                                                <div className="bg-muted flex items-center justify-center px-2 sm:px-3 text-xs sm:text-sm font-medium text-muted-foreground border-l">
+                                                <div className="bg-muted flex items-center justify-center px-3 sm:px-4 text-sm font-medium text-muted-foreground border-l h-10 min-w-[100px] w-[120px]">
                                                     {product ? getFullUnitName(product.unit).toUpperCase() : 'UNIDADES'}
                                                 </div>
                                             )}
@@ -405,13 +407,13 @@ export function ModernMovementDialog({
                                 name="employee_id"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-xs sm:text-sm font-medium flex items-center">
+                                        <FormLabel className="text-sm font-medium flex items-center">
                                             Colaborador Responsável
                                             <span className="text-destructive ml-1">*</span>
                                         </FormLabel>
                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                                             <FormControl>
-                                                <SelectTrigger className="w-full text-xs sm:text-sm">
+                                                <SelectTrigger className="w-full text-sm h-10">
                                                     <SelectValue placeholder="Selecione um colaborador" />
                                                 </SelectTrigger>
                                             </FormControl>
@@ -422,7 +424,7 @@ export function ModernMovementDialog({
                                                     </SelectItem>
                                                 ) : (
                                                     activeEmployees.map((employee) => (
-                                                        <SelectItem key={employee.id} value={employee.id} className="text-xs sm:text-sm">
+                                                        <SelectItem key={employee.id} value={employee.id} className="text-sm">
                                                             {employee.name} {employee.code && `(${employee.code})`}
                                                         </SelectItem>
                                                     ))
@@ -441,14 +443,14 @@ export function ModernMovementDialog({
                             name="notes"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-xs sm:text-sm font-medium">
+                                    <FormLabel className="text-sm font-medium">
                                         Observações
                                     </FormLabel>
                                     <FormControl>
                                         <Textarea
                                             {...field}
                                             placeholder="Informações adicionais sobre esta movimentação"
-                                            className="resize-none min-h-[60px] sm:min-h-[80px] text-xs sm:text-sm"
+                                            className="resize-none min-h-[80px] sm:min-h-[100px] text-sm"
                                         />
                                     </FormControl>
                                     <FormMessage className="text-xs" />
@@ -456,12 +458,12 @@ export function ModernMovementDialog({
                             )}
                         />
 
-                        <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2">
+                        <div className="flex flex-col sm:flex-row justify-end gap-3 pt-3">
                             <Button
                                 type="button"
                                 variant="outline"
                                 onClick={() => onOpenChange(false)}
-                                className="w-full sm:w-auto order-2 sm:order-1 text-xs sm:text-sm"
+                                className="w-full sm:w-auto order-2 sm:order-1 text-sm h-10"
                             >
                                 Cancelar
                             </Button>
@@ -469,7 +471,7 @@ export function ModernMovementDialog({
                                 type="submit"
                                 disabled={isSubmitting}
                                 className={cn(
-                                    "w-full sm:w-auto order-1 sm:order-2 text-xs sm:text-sm",
+                                    "w-full sm:w-auto order-1 sm:order-2 text-sm h-10",
                                     type === 'entrada'
                                         ? "bg-primary hover:bg-primary/90"
                                         : "bg-blue-600 hover:bg-blue-700"
