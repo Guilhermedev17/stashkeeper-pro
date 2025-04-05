@@ -178,7 +178,7 @@ const EmployeeOutputReport = () => {
             product_code: product.code,
             product_name: product.name,
             quantity: movement.quantity,
-            unit: product.unit || 'un',
+            unit: formatUnit(product.unit || 'un'),
             category_id: product.category_id || '',
             category_name: category?.name || 'Sem categoria'
           };
@@ -382,7 +382,7 @@ const EmployeeOutputReport = () => {
                     <div style="width: 15%; padding-right: 4px; font-size: 9px; color: #000000;">${product.product_code}</div>
                     <div style="width: 45%; padding-right: 4px; font-size: 9px; color: #000000;">${product.product_name}</div>
                     <div style="width: 20%; text-align: right; padding-right: 4px; font-size: 9px; color: #000000;">${product.quantity}</div>
-                    <div style="width: 20%; font-size: 9px; color: #000000;">${product.unit}</div>
+                    <div style="width: 20%; font-size: 9px; color: #000000;">${formatUnit(product.unit)}</div>
                   </div>
                 `;
               });
@@ -441,6 +441,58 @@ const EmployeeOutputReport = () => {
     setTimeout(() => {
       handlePrint(); // Por enquanto, apenas chama a impressão
     }, 500);
+  };
+
+  // Função para formatar unidade de medida (abreviada e em maiúsculo)
+  const formatUnit = (unit: string): string => {
+    // Mapeamento de unidades comuns para suas abreviações
+    const unitMap: Record<string, string> = {
+      'unidade': 'UN',
+      'un': 'UN',
+      'unidades': 'UN',
+      'litro': 'L',
+      'litros': 'L',
+      'l': 'L',
+      'metro': 'M',
+      'metros': 'M',
+      'm': 'M',
+      'quilograma': 'KG',
+      'quilogramas': 'KG',
+      'kg': 'KG',
+      'kilograma': 'KG',
+      'kilo': 'KG',
+      'kilos': 'KG',
+      'grama': 'G',
+      'gramas': 'G',
+      'g': 'G',
+      'pacote': 'PCT',
+      'pacotes': 'PCT',
+      'pct': 'PCT',
+      'caixa': 'CX',
+      'caixas': 'CX',
+      'cx': 'CX',
+      'peça': 'PÇ',
+      'peças': 'PÇ',
+      'pç': 'PÇ',
+      'pc': 'PÇ',
+      'pcs': 'PÇ',
+      'par': 'PAR',
+      'pares': 'PAR',
+      'metro quadrado': 'M²',
+      'metros quadrados': 'M²',
+      'm2': 'M²',
+      'm²': 'M²',
+      'metro cúbico': 'M³',
+      'metros cúbicos': 'M³',
+      'm3': 'M³',
+      'm³': 'M³',
+    };
+
+    // Converter para minúsculo para comparação
+    const lowerUnit = unit.toLowerCase().trim();
+    
+    // Retornar a abreviação mapeada ou a unidade original em maiúsculo
+    return unitMap[lowerUnit] || unit.toUpperCase();
   };
 
   // Renderizar estado de carregamento
@@ -616,7 +668,7 @@ const EmployeeOutputReport = () => {
                                       <div style={{ width: '15%' }}>{product.product_code}</div>
                                       <div style={{ width: '45%' }}>{product.product_name}</div>
                                       <div style={{ width: '20%' }} className="text-right">{product.quantity}</div>
-                                      <div style={{ width: '20%' }}>{product.unit}</div>
+                                      <div style={{ width: '20%' }}>{formatUnit(product.unit)}</div>
                                     </div>
                                   ))}
                                 </div>
