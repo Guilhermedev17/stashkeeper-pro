@@ -21,17 +21,21 @@ const NavBar = () => {
   const { user, logout } = useAuth();
   const { theme, setTheme, toggleTheme } = useTheme();
   const [isScrolled, setIsScrolled] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 5) {
+      const currentScrollY = window.scrollY;
+      setScrollY(currentScrollY);
+      
+      if (currentScrollY > 5) {
         setIsScrolled(true);
       } else {
         setIsScrolled(false);
       }
     };
 
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
@@ -61,15 +65,28 @@ const NavBar = () => {
     return user?.email?.substring(0, 2).toUpperCase() || 'U';
   };
 
+  // Calcular a altura dinâmica baseada no scroll
+  const headerHeight = Math.max(56, 64 - Math.min(scrollY * 0.1, 8));
+  const logoScale = Math.max(0.9, 1 - Math.min(scrollY * 0.002, 0.1));
+
   return (
-    <header className={`fixed top-0 left-0 w-full z-40 transition-all duration-200 ${
-      isScrolled ? 'bg-background border-b shadow-sm' : 'bg-background/80 backdrop-blur-md'
-    }`}>
-      <div className="container mx-auto px-4 flex h-16 items-center justify-between">
+    <header className={`fixed top-0 left-0 w-full z-40 transition-all duration-300 ${
+      isScrolled 
+        ? 'bg-background/95 border-b shadow-sm backdrop-blur-lg' 
+        : 'bg-background/80 backdrop-blur-md'
+    }`}
+    style={{
+      transform: scrollY > 100 && scrollY < 300 ? `translateY(-${Math.min((scrollY - 100) / 2, 100)}px)` : 
+               scrollY >= 300 ? 'translateY(-100px)' : 'translateY(0)',
+      transition: 'transform 400ms ease-in-out, background-color 300ms ease, border-color 300ms ease, box-shadow 300ms ease'
+    }}>
+      <div className="container mx-auto px-4 flex items-center justify-between transition-all duration-300"
+           style={{ height: `${headerHeight}px` }}>
         <div className="flex items-center gap-6">
           <div 
             onClick={() => navigate('/dashboard')} 
-            className="flex items-center gap-2 font-semibold text-lg cursor-pointer"
+            className="flex items-center gap-2 font-semibold cursor-pointer transition-transform duration-300 theme-toggle-btn"
+            style={{ transform: `scale(${logoScale})` }}
           >
             <span className="text-primary">StashKeeper</span>
             <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">Pro</span>
@@ -98,20 +115,20 @@ const NavBar = () => {
             variant="ghost"
             size="icon"
             onClick={() => toggleTheme()}
-            className="h-9 w-9"
+            className="h-8 w-8 md:h-9 md:w-9 theme-toggle-btn"
           >
             {theme === 'dark' ? (
-              <SunIcon className="h-4 w-4" />
+              <SunIcon className="h-4 w-4 theme-toggle-icon" />
             ) : (
-              <MoonIcon className="h-4 w-4" />
+              <MoonIcon className="h-4 w-4 theme-toggle-icon" />
             )}
             <span className="sr-only">Alternar tema</span>
           </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-                <Avatar className="h-9 w-9">
+              <Button variant="ghost" className="relative h-8 w-8 md:h-9 md:w-9 rounded-full">
+                <Avatar className="h-8 w-8 md:h-9 md:w-9 transition-all duration-300">
                   <AvatarImage src={user?.user_metadata?.avatar_url} alt="Avatar" />
                   <AvatarFallback>{getInitials()}</AvatarFallback>
                 </Avatar>
@@ -144,7 +161,7 @@ const NavBar = () => {
           {/* Mobile menu button */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden">
+              <Button variant="ghost" size="icon" className="md:hidden h-8 w-8">
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Menu</span>
               </Button>

@@ -24,6 +24,9 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
+import { formatQuantity } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export interface Product {
   id: string;
@@ -191,14 +194,18 @@ const ProductList: React.FC<ProductListProps> = ({
                   <div className="flex gap-3">
                     <div className="text-center">
                       <div className="text-xs text-muted-foreground">Estoque</div>
-                      <div className="font-medium text-sm">
-                        {product.quantity} {getUnitAbbreviation(product.unit)}
+                      <div className={cn(
+                        "font-medium text-sm",
+                        product.quantity <= product.min_quantity ? "text-red-600" :
+                          product.quantity <= product.min_quantity * 1.5 ? "text-amber-600" : ""
+                      )}>
+                        {formatQuantity(product.quantity, product.unit)} {getUnitAbbreviation(product.unit)}
                       </div>
                     </div>
                     <div className="text-center">
                       <div className="text-xs text-muted-foreground">Mínimo</div>
                       <div className="font-medium text-sm">
-                        {product.min_quantity} {getUnitAbbreviation(product.unit)}
+                        {formatQuantity(product.min_quantity, product.unit)} {getUnitAbbreviation(product.unit)}
                       </div>
                     </div>
                     <div className="text-center">

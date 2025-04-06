@@ -25,6 +25,7 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
+import { formatQuantity } from '@/lib/utils';
 
 export interface Product {
     id: string;
@@ -273,13 +274,13 @@ const ModernProductList: React.FC<ModernProductListProps> = ({
                                                 product.quantity <= product.min_quantity ? "text-red-600" :
                                                     product.quantity <= product.min_quantity * 1.5 ? "text-amber-600" : ""
                                             )}>
-                                                {product.quantity} {getUnitAbbreviation(product.unit)}
+                                                {formatQuantity(product.quantity, product.unit)} {getUnitAbbreviation(product.unit)}
                                             </div>
                                         </div>
                                         <div className="text-center">
                                             <div className="text-xs text-muted-foreground">Mínimo</div>
                                             <div className="font-medium text-sm">
-                                                {product.min_quantity} {getUnitAbbreviation(product.unit)}
+                                                {formatQuantity(product.min_quantity, product.unit)} {getUnitAbbreviation(product.unit)}
                                             </div>
                                         </div>
                                     </div>
@@ -402,10 +403,10 @@ const ModernProductList: React.FC<ModernProductListProps> = ({
                                         product.quantity <= product.min_quantity ? "text-red-600" :
                                             product.quantity <= product.min_quantity * 1.5 ? "text-amber-600" : ""
                                     )}>
-                                        {product.quantity} {getUnitAbbreviation(product.unit)}
+                                        {formatQuantity(product.quantity, product.unit)} {getUnitAbbreviation(product.unit)}
                                     </span>
                                 </TableCell>
-                                <TableCell className="text-center">{product.min_quantity} {getUnitAbbreviation(product.unit)}</TableCell>
+                                <TableCell className="text-center">{formatQuantity(product.min_quantity, product.unit)} {getUnitAbbreviation(product.unit)}</TableCell>
                                 <TableCell>{getStatusBadge(product)}</TableCell>
                                 <TableCell className="text-right" onClick={e => e.stopPropagation()}>
                                     {!selectMode && (

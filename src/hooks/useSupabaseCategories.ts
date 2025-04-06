@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -16,6 +15,37 @@ export const useSupabaseCategories = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  
+  // Array para manter registro de categorias excluídas
+  // Inicializar com os valores do localStorage se disponíveis
+  const [deletedCategoryIds] = useState<Set<string>>(() => {
+    const savedIds = localStorage.getItem('deletedCategoryIds');
+    if (savedIds) {
+      try {
+        const parsed = JSON.parse(savedIds);
+        return new Set(parsed);
+      } catch (e) {
+        console.error('Erro ao carregar IDs de categorias excluídas:', e);
+        return new Set<string>();
+      }
+    }
+    return new Set<string>();
+  });
+
+  // Função auxiliar para salvar IDs excluídas no localStorage
+  const saveDeletedIds = () => {
+    try {
+      localStorage.setItem('deletedCategoryIds', JSON.stringify([...deletedCategoryIds]));
+    } catch (e) {
+      console.error('Erro ao salvar IDs de categorias excluídas:', e);
+    }
+  };
+
+  // Função para adicionar um ID à lista de excluídos
+  const addToDeletedIds = (id: string) => {
+    deletedCategoryIds.add(id);
+    saveDeletedIds();
+  };
 
   const fetchCategories = async () => {
     if (loading) return; // Evita múltiplas requisições simultâneas
@@ -36,7 +66,12 @@ export const useSupabaseCategories = () => {
       }
       
       console.log('Categories fetched:', data);
-      setCategories(data || []);
+      
+      // Filtrar categorias excluídas
+      const filteredData = (data || []).filter(item => !deletedCategoryIds.has(item.id));
+      console.log(`Filtered out ${(data || []).length - filteredData.length} deleted categories`);
+      
+      setCategories(filteredData);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar categorias';
       setError(errorMessage);
@@ -128,7 +163,7 @@ export const useSupabaseCategories = () => {
     }
   };
 
-  const deleteCategory = async (id: string) => {
+  const deleteCategory = async (id: string, options?: { silent?: boolean, skipUIUpdate?: boolean }) => {
     try {
       console.log('Deleting category:', id);
       
@@ -142,24 +177,40 @@ export const useSupabaseCategories = () => {
         throw error;
       }
       
-      // Immediately update the categories state by removing the deleted category
-      setCategories(prevCategories => 
-        prevCategories.filter(category => category.id !== id)
-      );
+      // Adicionar à lista de categorias excluídas
+      addToDeletedIds(id);
       
-      toast({
-        title: 'Categoria removida',
-        description: `Categoria foi removida com sucesso.`,
-      });
+      // Atualizar o estado apenas se skipUIUpdate for falso
+      if (!options?.skipUIUpdate) {
+        // Immediately update the categories state by removing the deleted category
+        setCategories(prevCategories => {
+          const updatedCategories = [...prevCategories].filter(category => category.id !== id);
+          console.log(`Category ${id} removed. Total: ${prevCategories.length} -> ${updatedCategories.length}`);
+          return updatedCategories;
+        });
+      }
+      
+      // Exibir notificação apenas se não estiver no modo silencioso
+      if (!options?.silent) {
+        toast({
+          title: 'Categoria removida',
+          description: `Categoria foi removida com sucesso.`,
+        });
+      }
       
       return { success: true };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao remover categoria';
-      toast({
-        title: 'Erro',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+      
+      // Exibir notificação apenas se não estiver no modo silencioso
+      if (!options?.silent) {
+        toast({
+          title: 'Erro',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+      }
+      
       return { success: false, error: errorMessage };
     }
   };
@@ -176,12 +227,24 @@ export const useSupabaseCategories = () => {
           schema: 'public', 
           table: 'categories' 
         }, 
-        (payload: RealtimePostgresChangesPayload<Category>) => {
+        (payload: RealtimePostgresChangesPayload<any>) => {
           if (payload.eventType === 'INSERT') {
+            // Verificar se não está na lista de excluídos
+            if (deletedCategoryIds.has(payload.new.id)) {
+              console.log(`Ignorando INSERT de categoria excluída: ${payload.new.id}`);
+              return;
+            }
             setCategories(prev => [...prev, payload.new as Category]);
           } else if (payload.eventType === 'DELETE') {
+            // Adicionar à lista de excluídos
+            addToDeletedIds(payload.old.id);
             setCategories(prev => prev.filter(category => category.id !== payload.old.id));
           } else if (payload.eventType === 'UPDATE') {
+            // Verificar se não está na lista de excluídos
+            if (deletedCategoryIds.has(payload.new.id)) {
+              console.log(`Ignorando UPDATE de categoria excluída: ${payload.new.id}`);
+              return;
+            }
             setCategories(prev => prev.map(category =>
               category.id === payload.new.id ? payload.new as Category : category
             ));

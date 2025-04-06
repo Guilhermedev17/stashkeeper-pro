@@ -301,7 +301,13 @@ const Products = () => {
   const handleDeleteProduct = async () => {
     if (!selectedProduct) return;
 
-    const result = await deleteProduct(selectedProduct.id);
+    // Salvar o ID antes de excluir, pois o selectedProduct pode ficar null
+    const productIdToDelete = selectedProduct.id;
+    
+    // Verificar se este é o último ou o único produto na lista
+    const isLastOrOnlyItem = filteredProducts.length <= 1;
+
+    const result = await deleteProduct(productIdToDelete);
 
     if (result.success) {
       setIsDeleteDialogOpen(false);
@@ -309,6 +315,25 @@ const Products = () => {
       // Importante: Definir como null APÓS fechar o diálogo
       setTimeout(() => {
         setSelectedProduct(null);
+        
+        // Se era o último item, limpar completamente a lista
+        if (isLastOrOnlyItem) {
+          console.log("Último produto excluído, limpando lista completamente");
+          setFilteredProducts([]);
+          
+          // Forçar recarregamento após um breve delay
+          setTimeout(() => {
+            fetchProducts().catch(e => console.error("Erro ao recarregar após exclusão do último produto:", e));
+          }, 300);
+        } else {
+          // Caso contrário, atualizar normalmente
+          setFilteredProducts(prev => {
+            // Remover explicitamente o produto excluído da lista filtrada
+            const updated = prev.filter(p => p.id !== productIdToDelete);
+            console.log(`Produto ${productIdToDelete} removido da UI. Total: ${prev.length} -> ${updated.length}`);
+            return [...updated]; // Retorna uma nova referência para forçar a atualização
+          });
+        }
       }, 100);
     }
   };
@@ -404,35 +429,65 @@ const Products = () => {
       description: `Iniciando exclusão de ${productIds.length} produtos...`,
       variant: "progress"
     });
+    
+    // Desativar temporariamente atualizações visuais automáticas
+    // Vamos "congelar" a lista até que todas as exclusões estejam concluídas
+    const originalProducts = [...filteredProducts];
+    
+    try {
+      // Executa cada exclusão individualmente, mas sem atualizar a UI até o final
+      for (let index = 0; index < productIds.length; index++) {
+        const id = productIds[index];
 
-    // Executa cada exclusão individualmente
-    for (let index = 0; index < productIds.length; index++) {
-      const id = productIds[index];
+        // Atualizar o progresso na notificação
+        const progressPercent = Math.floor((index / productIds.length) * 100);
 
-      // Atualizar o progresso em intervalos regulares
-      const progressPercent = Math.floor((index / productIds.length) * 100);
+        // Atualizar a notificação mais frequentemente (a cada produto ou a cada 5%)
+        if (productIds.length < 10 || index % Math.max(1, Math.floor(productIds.length / 20)) === 0) {
+          toastInstance.update({
+            id: toastInstance.id,
+            title: "Exclusão em andamento",
+            description: `${index + 1} de ${productIds.length} produtos processados (${progressPercent}%)`,
+            variant: "progress"
+          });
+        }
 
-      // Atualizar a notificação mais frequentemente (a cada produto ou a cada 5%)
-      if (productIds.length < 10 || index % Math.max(1, Math.floor(productIds.length / 20)) === 0) {
-        toastInstance.update({
-          id: toastInstance.id,
-          title: "Exclusão em andamento",
-          description: `${index + 1} de ${productIds.length} produtos processados (${progressPercent}%)`,
-          variant: "progress"
-        });
+        // Usar o modo silencioso para evitar múltiplas notificações
+        // E usar a opção "skipUIUpdate" para não atualizar a interface ainda
+        const result = await deleteProduct(id, { silent: true, skipUIUpdate: true });
+        if (result.success) {
+          deleted++;
+        } else {
+          success = false;
+        }
       }
 
-      // Usar o modo silencioso para evitar múltiplas notificações
-      const result = await deleteProduct(id, { silent: true });
-      if (result.success) {
-        deleted++;
+      // Agora que todas as exclusões foram concluídas, atualizar a UI de uma vez
+      // Se todos os produtos foram removidos, mostrar lista vazia
+      if (productIds.length >= originalProducts.length) {
+        setFilteredProducts([]);
+        console.log("Todos os produtos foram excluídos");
       } else {
-        success = false;
+        // Caso contrário, filtrar os produtos excluídos
+        const updatedProducts = originalProducts.filter(p => !productIds.includes(p.id));
+        setFilteredProducts(updatedProducts);
+        console.log(`${deleted} produtos removidos. Restantes: ${updatedProducts.length}`);
       }
+
+      // Se todos os produtos foram excluídos, forçar um recarregamento
+      if (productIds.length >= originalProducts.length) {
+        console.log("Todos os produtos foram excluídos, forçando recarregamento");
+        setTimeout(() => {
+          fetchProducts().catch(e => console.error("Erro ao recarregar produtos após exclusão em lote:", e));
+        }, 200);
+      }
+    } catch (error) {
+      console.error("Erro durante exclusão em lote:", error);
+      // Em caso de erro, restaurar a lista original para evitar estado inconsistente
+      setFilteredProducts(originalProducts.filter(p => !productIds.slice(0, deleted).includes(p.id)));
     }
 
     // Atualizar notificação final com o resultado
-    // Incluir o número total e a porcentagem 100% para indicar conclusão
     toastInstance.update({
       id: toastInstance.id,
       title: success ? "Produtos excluídos" : "Exclusão parcial",
@@ -498,6 +553,7 @@ const Products = () => {
 
             <div className="mt-4 shadow-sm">
               <ModernProductList
+                key={`products-list-${filteredProducts.length}-${Date.now()}`}
                 products={filteredProducts}
                 getCategoryName={getCategoryName}
                 onEdit={handleEditClick}

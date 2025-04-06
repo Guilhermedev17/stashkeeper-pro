@@ -6,6 +6,9 @@
 
 @layer base {
   :root {
+    /* Transição universal para mudanças de tema */
+    --theme-transition-speed: 0.3s;
+    
     --background: 0 0% 100%;
     --foreground: 240 10% 3.9%;
     --card: 0 0% 100%;
@@ -35,6 +38,38 @@
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-ring: 229 99% 56%;
+  }
+
+  /* Classe para desabilitar todas as transições durante a mudança de tema */
+  .disable-transitions,
+  .disable-transitions * {
+    transition: none !important;
+  }
+  
+  /* Exceção para preservar as animações dos botões de troca de tema */
+  .disable-transitions .preserve-animations,
+  .disable-transitions .theme-toggle-btn,
+  .disable-transitions .theme-toggle-icon {
+    transition: all 0.3s ease-in-out !important;
+  }
+
+  /* Configuração global para a transição de cores */
+  html, body, #root, .dark, [data-theme="dark"] {
+    transition: background-color var(--theme-transition-speed) ease-out,
+                color var(--theme-transition-speed) ease-out,
+                border-color var(--theme-transition-speed) ease-out,
+                box-shadow var(--theme-transition-speed) ease-out;
+  }
+
+  /* Transição suave para componentes específicos */
+  *[class*="bg-"], 
+  *[class*="text-"], 
+  *[class*="border-"], 
+  *[class*="shadow-"] {
+    transition: background-color var(--theme-transition-speed) ease-out,
+                color var(--theme-transition-speed) ease-out,
+                border-color var(--theme-transition-speed) ease-out,
+                box-shadow var(--theme-transition-speed) ease-out;
   }
 
   .dark {

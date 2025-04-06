@@ -19,7 +19,11 @@ import {
   CirclePlus,
   SearchIcon,
   ArrowDownIcon,
-  ArrowUpIcon
+  ArrowUpIcon,
+  Edit,
+  Trash2,
+  AlertCircle,
+  Plus
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
@@ -41,6 +45,18 @@ import PageWrapper from '@/components/layout/PageWrapper';
 import { ModernHeader, ModernFilters, ModernTable } from '@/components/layout/modern';
 import { Badge } from '@/components/ui/badge';
 import PageLoading from '@/components/PageLoading';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { supabase } from '@/integrations/supabase/client';
+import { formatQuantity } from '@/lib/utils';
 
 // Definições de interface para tipagem
 interface ProductItem {
@@ -61,6 +77,7 @@ interface Movement {
   quantity: number;
   created_at: string;
   employee_name?: string;
+  employee_id?: string;
   notes?: string;
 }
 
@@ -102,8 +119,8 @@ const getUnitAbbreviation = (unit: string): string => {
 };
 
 const Movements = () => {
-  const { products, loading, fetchProducts } = useSupabaseProducts();
-  const { movements, loading: loadingMovements, fetchMovements } = useSupabaseMovements();
+  const { products, loading: loadingProducts, fetchProducts } = useSupabaseProducts();
+  const { movements, loading: loadingMovements, fetchMovements, deleteMovementLocally, deleteMovement } = useSupabaseMovements();
   const { categories } = useSupabaseCategories();
   const [selectedProduct, setSelectedProduct] = useState<ProductItem | null>(null);
   const [movementType, setMovementType] = useState<'entrada' | 'saida'>('entrada');
@@ -120,6 +137,14 @@ const Movements = () => {
   const [isNewMovementDialogOpen, setIsNewMovementDialogOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<'predefined' | 'custom'>('predefined');
   const [isLoading, setIsLoading] = useState(true);
+  const [movementToEdit, setMovementToEdit] = useState<Movement | null>(null);
+  const [movementToDelete, setMovementToDelete] = useState<Movement | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeletingMovement, setIsDeletingMovement] = useState(false);
+  const [localMovements, setLocalMovements] = useState<Movement[]>([]);
+  // Flag para controlar quando atualizar movimentações
+  const [skipMovementUpdate, setSkipMovementUpdate] = useState(false);
 
   // Verificar parâmetros da URL ao carregar a página
   useEffect(() => {
@@ -159,10 +184,10 @@ const Movements = () => {
       const startTime = performance.now();
 
       // Esperar pelo menos que os produtos e movimentos sejam carregados
-      if (loading || loadingMovements) {
+      if (loadingProducts || loadingMovements) {
         await new Promise(resolve => {
           const checkInterval = setInterval(() => {
-            if (!loading && !loadingMovements) {
+            if (!loadingProducts && !loadingMovements) {
               clearInterval(checkInterval);
               resolve(true);
             }
@@ -188,7 +213,66 @@ const Movements = () => {
     };
 
     loadData();
-  }, [loading, loadingMovements]);
+  }, [loadingProducts, loadingMovements]);
+
+  // Sincronizar movimentos do hook com o estado local
+  useEffect(() => {
+    if (!skipMovementUpdate) {
+      console.log("Sincronizando movimentos. Total recebido:", movements.length);
+      // Preservar movimentações filtradas quando já estiverem no estado local
+      setLocalMovements(prevLocalMovements => {
+        // Caso ainda não tenhamos dados locais ou estejamos recarregando todos os dados
+        if (prevLocalMovements.length === 0) {
+          return movements;
+        }
+        
+        // Criar nova lista a partir dos movements recebidos
+        const updatedMovements = [...movements];
+        
+        // Filtrar todas as movimentações que acabamos de excluir e que possam 
+        // estar tentando reaparecer no estado via subscribe
+        const recentlyDeletedIds = prevLocalMovements
+          .filter(prevM => !movements.some(m => m.id === prevM.id))
+          .map(m => m.id);
+        
+        console.log("Movimentações potencialmente excluídas:", recentlyDeletedIds.length);
+        
+        // Se tivermos movimentações recentemente excluídas, não as adicione de volta
+        if (recentlyDeletedIds.length > 0) {
+          return prevLocalMovements.filter(m => 
+            !recentlyDeletedIds.includes(m.id) || 
+            updatedMovements.some(um => um.id === m.id)
+          );
+        }
+        
+        return updatedMovements;
+      });
+    }
+  }, [movements, skipMovementUpdate]);
+
+  // Forçar a atualização da interface quando localMovements mudar
+  useEffect(() => {
+    console.log(`Estado localMovements atualizado com ${localMovements.length} movimentações`);
+    // Este efeito força o React a re-renderizar quando localMovements muda
+  }, [localMovements]);
+
+  // Efeito para limpeza periódica das movimentações (sanitização)
+  useEffect(() => {
+    // A cada 2 segundos, verificar se temos movimentações que devem ser removidas
+    const cleanupInterval = setInterval(() => {
+      // Se não estamos em processo de exclusão, fazer limpeza
+      if (!isDeletingMovement) {
+        setLocalMovements(current => {
+          // Apenas chamar novamente se houver movimentações
+          if (current.length === 0) return current;
+          // Retornar cópia imutável do array atual para forçar refresh
+          return [...current];
+        });
+      }
+    }, 2000);
+    
+    return () => clearInterval(cleanupInterval);
+  }, [isDeletingMovement]);
 
   const handleOpenDialog = (product: ProductItem, type: 'entrada' | 'saida') => {
     setSelectedProduct(product);
@@ -288,7 +372,7 @@ const Movements = () => {
   // Filter products that have movements and match search/category/type criteria
   const filteredProducts = products.filter(product => {
     // Check if product has any movements that match the date and type filter
-    const hasMovements = movements.some(m =>
+    const hasMovements = localMovements.some(m =>
       m.product_id === product.id &&
       filterMovementsByDate(m) &&
       (selectedType === 'all' || m.type === selectedType)
@@ -312,6 +396,61 @@ const Movements = () => {
   const getCategoryName = (categoryId: string) => {
     const category = categories.find(cat => cat.id === categoryId);
     return category ? category.name : 'Sem categoria';
+  };
+
+  // Função para abrir diálogo de edição de movimentação
+  const handleEditMovement = (movement: Movement, product: ProductItem) => {
+    setMovementToEdit(movement);
+    setSelectedProduct(product);
+    setMovementType(movement.type);
+    setIsEditDialogOpen(true);
+  };
+  
+  // Função para abrir diálogo de exclusão de movimentação
+  const handleDeleteMovement = (movement: Movement) => {
+    setMovementToDelete(movement);
+    setIsDeleteDialogOpen(true);
+  };
+  
+  // Função para confirmar exclusão de movimentação
+  const confirmDeleteMovement = async () => {
+    if (!movementToDelete) return;
+    
+    setIsDeletingMovement(true);
+    console.log('[Movements] Iniciando exclusão de movimentação:', movementToDelete.id);
+    
+    try {
+      // Usar a função melhorada do hook useSupabaseMovements
+      const result = await deleteMovement(movementToDelete.id);
+      
+      if (!result.success) {
+        console.error('[Movements] Erro retornado pela função de exclusão:', result.error);
+        throw new Error(result.error || 'Erro ao excluir movimentação');
+      }
+      
+      console.log('[Movements] Movimentação excluída com sucesso');
+      
+      // Fechar diálogo e limpar estado
+      setIsDeleteDialogOpen(false);
+      setMovementToDelete(null);
+      
+      toast({
+        title: "Movimentação excluída",
+        description: "A movimentação foi removida com sucesso.",
+        variant: "default",
+      });
+      
+    } catch (error: any) {
+      console.error('[Movements] Erro ao excluir movimentação:', error);
+      
+      toast({
+        title: "Erro ao excluir",
+        description: error.message || "Não foi possível excluir a movimentação. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeletingMovement(false);
+    }
   };
 
   // Renderizar estado de carregamento
@@ -409,103 +548,142 @@ const Movements = () => {
 
           {/* Lista de movimentações */}
           <ModernTable className="flex-1 mt-4 shadow-sm">
-            {loading ? (
+            {loadingProducts ? (
               <div className="flex justify-center items-center py-20">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
               </div>
-            ) : filteredProducts.length === 0 ? (
-              <div className="text-center py-14 text-muted-foreground">
-                <Package className="h-10 w-10 mx-auto text-muted-foreground/40 mb-2" />
-                <h3 className="text-sm font-medium mb-1">Nenhuma movimentação encontrada</h3>
-                <p className="text-xs text-muted-foreground/70 max-w-md mx-auto">
-                  Tente ajustar os filtros ou criar uma nova movimentação clicando no botão acima.
-                </p>
-              </div>
             ) : (
-              <div className="space-y-4 p-1">
-                {filteredProducts.map(product => {
-                  const productMovements = movements.filter(
-                    m => m.product_id === product.id &&
-                      filterMovementsByDate(m) &&
-                      (selectedType === 'all' || m.type === selectedType)
-                  ).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-                  if (productMovements.length === 0) return null;
+              <div className="p-1" key={`movement-table-${localMovements.length}-${Date.now()}`}>
+                {/* Filtragem de movimentações */}
+                {(() => {
+                  // Filtrar todas as movimentações baseado nos critérios
+                  const filteredMovements = localMovements.filter(movement => {
+                    // Verificar se corresponde à busca por texto (produto)
+                    const product = products.find(p => p.id === movement.product_id);
+                    const matchesSearch = !searchTerm || (
+                      product && (
+                        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        product.code.toLowerCase().includes(searchTerm.toLowerCase())
+                      )
+                    );
+                    
+                    // Verificar se corresponde à categoria
+                    const matchesCategory = selectedCategory === 'all' || (
+                      product && product.category_id === selectedCategory
+                    );
+                    
+                    // Verificar se corresponde ao tipo de movimentação
+                    const matchesType = selectedType === 'all' || movement.type === selectedType;
+                    
+                    // Verificar se corresponde ao filtro de data
+                    const matchesDate = filterMovementsByDate(movement);
+                    
+                    return matchesSearch && matchesCategory && matchesType && matchesDate;
+                  }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+                  
+                  if (filteredMovements.length === 0) {
+                    return (
+                      <div className="text-center py-14 text-muted-foreground">
+                        <Package className="h-10 w-10 mx-auto text-muted-foreground/40 mb-2" />
+                        <h3 className="text-sm font-medium mb-1">Nenhuma movimentação encontrada</h3>
+                        <p className="text-xs text-muted-foreground/70 max-w-md mx-auto">
+                          Tente ajustar os filtros ou criar uma nova movimentação clicando no botão acima.
+                        </p>
+                      </div>
+                    );
+                  }
 
                   return (
-                    <div key={product.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                      <div className="p-3 flex justify-between items-center border-b border-gray-100 dark:border-gray-700">
-                        <div className="flex items-center gap-2">
-                          <div className="bg-blue-100 dark:bg-blue-900/30 h-8 w-8 rounded-full flex items-center justify-center">
-                            <Package className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                          </div>
-                          <div>
-                            <h3 className="font-medium text-sm dark:text-white">
-                              {product.name}
-                              <Badge variant="outline" className="ml-2 font-mono text-xs px-1.5 py-0 h-5 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
-                                {product.code}
-                              </Badge>
-                            </h3>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              Categoria: {getCategoryName(product.category_id)}
-                            </p>
-                          </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 text-xs gap-1 text-muted-foreground hover:text-primary"
-                          onClick={() => handleOpenDialog(product, 'entrada')}
-                        >
-                          + Movimentar
-                        </Button>
-                      </div>
-
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
                       <Table>
                         <TableHeader>
                           <TableRow className="border-b border-gray-200 dark:border-gray-700">
-                            <TableHead className="text-xs w-[400px]">Data</TableHead>
-                            <TableHead className="text-xs w-[350px]">Tipo</TableHead>
-                            <TableHead className="text-xs w-[300px]">Quantidade</TableHead>
-                            <TableHead className="text-xs w-[250px]">Responsável</TableHead>
+                            <TableHead className="text-xs w-[150px]">Data</TableHead>
+                            <TableHead className="text-xs w-[250px]">Produto</TableHead>
+                            <TableHead className="text-xs w-[150px]">Categoria</TableHead>
+                            <TableHead className="text-xs w-[100px]">Tipo</TableHead>
+                            <TableHead className="text-xs w-[100px]">Quantidade</TableHead>
+                            <TableHead className="text-xs w-[150px]">Responsável</TableHead>
                             <TableHead className="text-xs w-[180px]">Observação</TableHead>
+                            <TableHead className="text-xs w-[100px] text-right">Ações</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {productMovements.map(movement => (
-                            <TableRow key={movement.id} className="border-b border-gray-100 dark:border-gray-800">
-                              <TableCell className="whitespace-nowrap text-xs w-[400px]">
-                                {format(new Date(movement.created_at), 'dd/MM/yyyy HH:mm')}
-                              </TableCell>
-                              <TableCell className="w-[350px]">
-                                <div className="flex items-center">
-                                  {movement.type === 'entrada' ? (
-                                    <>
-                                      <div className="mr-2 h-2 w-2 rounded-full bg-green-500"></div>
-                                      <span className="text-xs">Entrada</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <div className="mr-2 h-2 w-2 rounded-full bg-orange-500"></div>
-                                      <span className="text-xs">Saída</span>
-                                    </>
-                                  )}
-                                </div>
-                              </TableCell>
-                              <TableCell className="w-[300px]">
-                                <span className="font-medium text-xs">
-                                  {movement.quantity} {getUnitAbbreviation(product.unit)}
-                                </span>
-                              </TableCell>
-                              <TableCell className="text-xs w-[250px]">{movement.employee_name || '-'}</TableCell>
-                              <TableCell className="max-w-xs truncate text-xs w-[180px]">{movement.notes || '-'}</TableCell>
-                            </TableRow>
-                          ))}
+                          {filteredMovements.map(movement => {
+                            const product = products.find(p => p.id === movement.product_id);
+                            if (!product) return null;
+                            
+                            return (
+                              <TableRow key={movement.id} className="border-b border-gray-100 dark:border-gray-800">
+                                <TableCell className="whitespace-nowrap text-xs w-[150px]">
+                                  {format(new Date(movement.created_at), 'dd/MM/yyyy HH:mm')}
+                                </TableCell>
+                                <TableCell className="w-[250px]">
+                                  <div className="flex items-center gap-2">
+                                    <Badge 
+                                      variant="outline" 
+                                      className="font-mono text-xs px-1.5 py-0 h-5 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
+                                    >
+                                      {product.code}
+                                    </Badge>
+                                    <span className="text-xs font-medium">{product.name}</span>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-xs w-[150px]">
+                                  {getCategoryName(product.category_id)}
+                                </TableCell>
+                                <TableCell className="w-[100px]">
+                                  <div className="flex items-center">
+                                    {movement.type === 'entrada' ? (
+                                      <>
+                                        <div className="mr-2 h-2 w-2 rounded-full bg-green-500"></div>
+                                        <span className="text-xs">Entrada</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <div className="mr-2 h-2 w-2 rounded-full bg-orange-500"></div>
+                                        <span className="text-xs">Saída</span>
+                                      </>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="w-24 sm:w-32 text-center">
+                                  <span className="text-xs whitespace-nowrap">
+                                    {formatQuantity(movement.quantity, product.unit)} {product.unit}
+                                  </span>
+                                </TableCell>
+                                <TableCell className="text-xs w-[150px]">{movement.employee_name || '-'}</TableCell>
+                                <TableCell className="max-w-xs truncate text-xs w-[180px]">{movement.notes || '-'}</TableCell>
+                                <TableCell className="text-right w-[100px]">
+                                  <div className="flex items-center justify-end space-x-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7 text-gray-500 hover:text-blue-600"
+                                      onClick={() => handleEditMovement(movement, product)}
+                                      title="Editar movimentação"
+                                    >
+                                      <Edit className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7 text-gray-500 hover:text-red-600"
+                                      onClick={() => handleDeleteMovement(movement)}
+                                      title="Excluir movimentação"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
                         </TableBody>
                       </Table>
                     </div>
                   );
-                })}
+                })()}
               </div>
             )}
           </ModernTable>
@@ -525,19 +703,81 @@ const Movements = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog de movimentação */}
+      {/* Dialog de nova movimentação (após seleção do produto) */}
       <ModernMovementDialog
         product={selectedProduct ? {
           id: selectedProduct.id,
           code: selectedProduct.code,
           name: selectedProduct.name,
           description: selectedProduct.description,
-          unit: selectedProduct.unit
+          unit: selectedProduct.unit,
+          quantity: selectedProduct.quantity,
+          categoryName: getCategoryName(selectedProduct.category_id)
         } : null}
         type={movementType}
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
+        editMode={false}
+        movementToEdit={null}
       />
+
+      {/* Dialog de edição de movimentação */}
+      <ModernMovementDialog
+        product={selectedProduct ? {
+          id: selectedProduct.id,
+          code: selectedProduct.code,
+          name: selectedProduct.name,
+          description: selectedProduct.description,
+          unit: selectedProduct.unit,
+          quantity: selectedProduct.quantity,
+          categoryName: getCategoryName(selectedProduct.category_id)
+        } : null}
+        type={movementType}
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        editMode={true}
+        movementToEdit={movementToEdit}
+      />
+      
+      {/* Dialog de confirmação de exclusão */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Movimentação</AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-muted-foreground">
+              Tem certeza que deseja excluir esta movimentação? Esta ação é irreversível e o estoque será ajustado automaticamente.
+              {movementToDelete?.type === 'entrada' ? (
+                <div className="mt-2 flex items-center p-2 rounded bg-yellow-50 text-amber-800 text-xs border border-yellow-200">
+                  <AlertCircle className="h-4 w-4 mr-2 flex-shrink-0" />
+                  A quantidade será <strong>removida</strong> do estoque atual.
+                </div>
+              ) : (
+                <div className="mt-2 flex items-center p-2 rounded bg-blue-50 text-blue-800 text-xs border border-blue-200">
+                  <AlertCircle className="h-4 w-4 mr-2 flex-shrink-0" />
+                  A quantidade será <strong>devolvida</strong> ao estoque atual.
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeletingMovement}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteMovement}
+              disabled={isDeletingMovement}
+              className="bg-red-600 text-white hover:bg-red-700"
+            >
+              {isDeletingMovement ? (
+                <>
+                  <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                  Excluindo...
+                </>
+              ) : (
+                "Excluir"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageWrapper>
   );
 };

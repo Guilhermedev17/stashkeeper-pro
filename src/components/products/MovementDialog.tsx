@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { ArrowDownUp, ArrowDown, ArrowUp, Package, User, PlusCircle, MinusCircle, Loader2, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
+import { ArrowDownUp, ArrowDown, ArrowUp, Package, User, PlusCircle, MinusCircle, Loader2, ArrowDownCircle, ArrowUpCircle, Info } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import {
@@ -31,6 +31,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
+import { parseDecimal, formatQuantity } from '@/lib/utils';
 
 export interface Product {
   id: string;
@@ -62,6 +63,32 @@ const getFullUnitName = (unitCode: string): string => {
   };
 
   return unitMap[unitCode.toLowerCase()] || unitCode;
+};
+
+// Função para determinar se a unidade é do tipo que pode causar confusão
+const isConfusingUnit = (unit: string): boolean => {
+  const unitLower = unit.toLowerCase();
+  return ['kg', 'g', 'l', 'ml'].includes(unitLower);
+};
+
+// Função para obter a instrução baseada na unidade
+const getUnitInstruction = (unit: string): string => {
+  const unitLower = unit.toLowerCase();
+  
+  if (unitLower === 'kg') {
+    return "Exemplo: 90g = digite 0,090";
+  } 
+  else if (unitLower === 'g') {
+    return "Digite diretamente em gramas. Exemplo: 90g = digite 90";
+  }
+  else if (unitLower === 'l') {
+    return "Exemplo: 500ml = digite 0,5";
+  }
+  else if (unitLower === 'ml') {
+    return "Digite diretamente em mililitros. Exemplo: 500ml = digite 500";
+  }
+  
+  return "";
 };
 
 // Define o schema de validação para o formulário
@@ -103,6 +130,7 @@ const MovementDialog = ({ product, type, open, onOpenChange }: MovementDialogPro
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeEmployees, setActiveEmployees] = useState<any[]>([]);
+  const [quantityInput, setQuantityInput] = useState('');
 
   // Resolver atualizado quando o tipo muda
   const resolver = zodResolver(createFormSchema(type));
@@ -123,12 +151,14 @@ const MovementDialog = ({ product, type, open, onOpenChange }: MovementDialogPro
   useEffect(() => {
     if (open) {
       form.reset({
-        quantity: 1,
         notes: '',
         employee_id: '',
         reason: '',
         customReason: '',
       });
+      
+      // Inicializar o input de quantidade
+      setQuantityInput('1');
 
       // Revalidar o formulário quando o tipo muda para aplicar a validação condicional
       form.clearErrors();
@@ -138,6 +168,52 @@ const MovementDialog = ({ product, type, open, onOpenChange }: MovementDialogPro
   useEffect(() => {
     setActiveEmployees(employees.filter(emp => emp.status === 'active'));
   }, [employees]);
+
+  // Para depuração
+  const DEBUG = true;
+
+  // Função simples para lidar com mudanças no input de quantidade
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setQuantityInput(value);
+  };
+
+  // Button onClick handler com validação integrada
+  const handleSubmitButtonClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    
+    // Validar a quantidade diretamente aqui
+    const numericValue = quantityInput.replace(',', '.');
+    const parsedValue = parseFloat(numericValue);
+    
+    // Verificar se é um número válido
+    if (isNaN(parsedValue) || parsedValue <= 0) {
+      form.setError('quantity', { 
+        type: 'manual', 
+        message: 'Quantidade deve ser maior que zero' 
+      });
+      return;
+    }
+    
+    // Para saídas, verificar se há estoque suficiente
+    if (type === 'saida' && product && parsedValue > product.quantity) {
+      form.setError('quantity', { 
+        type: 'manual', 
+        message: 'Quantidade não pode ser maior que o estoque disponível' 
+      });
+      return;
+    }
+    
+    // Se chegou aqui, o valor é válido
+    form.clearErrors('quantity');
+    
+    // Obter os valores do formulário e adicionar a quantidade manualmente
+    const values = form.getValues() as FormValues;
+    values.quantity = parsedValue;
+    
+    // Chamar onSubmit com os valores combinados
+    onSubmit(values);
+  };
 
   // Função para registrar a movimentação
   const onSubmit = async (values: FormValues) => {
@@ -256,7 +332,7 @@ const MovementDialog = ({ product, type, open, onOpenChange }: MovementDialogPro
                 <div className="w-full sm:w-auto text-left sm:text-right">
                   <p className="text-sm text-muted-foreground">Estoque atual</p>
                   <p className="font-medium">
-                    {product.quantity} {product.unit}
+                    {formatQuantity(product.quantity, product.unit)} {product.unit}
                   </p>
                 </div>
               </div>
@@ -264,25 +340,26 @@ const MovementDialog = ({ product, type, open, onOpenChange }: MovementDialogPro
               <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="quantity" className="text-sm font-medium">Quantidade</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="quantity"
-                      type="number"
-                      inputMode="numeric"
-                      min="0"
-                      value={form.watch('quantity')}
-                      onChange={(e) => form.setValue('quantity', parseFloat(e.target.value))}
-                      className="flex-1"
-                    />
-                    <div className="bg-muted text-muted-foreground px-3 py-2 rounded flex items-center text-sm">
-                      {product.unit}
-                    </div>
-                  </div>
+                  <Input 
+                    id="quantity"
+                    type="text"
+                    inputMode="decimal"
+                    value={quantityInput}
+                    onChange={handleQuantityChange}
+                    className="w-full"
+                    autoComplete="off" // Prevenir autocomplete
+                  />
                   {form.formState.errors.quantity && (
                     <p className="text-destructive text-xs sm:text-sm">
-                      {type === 'saida' && 'Quantidade não pode ser maior que o estoque disponível.'}
-                      {type !== 'saida' && 'Quantidade deve ser maior que zero.'}
+                      {form.formState.errors.quantity.message}
                     </p>
+                  )}
+                  {/* Adicionar helper com instrução */}
+                  {product && isConfusingUnit(product.unit) && (
+                    <div className="mt-1.5 py-1.5 px-2 text-xs rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-800/50 flex items-center">
+                      <Info className="h-3.5 w-3.5 mr-1.5 flex-shrink-0 text-blue-500" />
+                      <span>{getUnitInstruction(product.unit)}</span>
+                    </div>
                   )}
                 </div>
 
@@ -363,8 +440,8 @@ const MovementDialog = ({ product, type, open, onOpenChange }: MovementDialogPro
           </Button>
           <Button
             type="button"
-            onClick={form.handleSubmit(onSubmit)}
-            disabled={!form.formState.isValid || isSubmitting}
+            onClick={handleSubmitButtonClick}
+            disabled={isSubmitting}
             className={cn(
               "gap-1 w-full sm:w-auto",
               type === 'entrada' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'

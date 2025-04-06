@@ -12,6 +12,8 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { PlusCircle, Plus, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { formatQuantity, parseDecimal } from '@/lib/utils';
 
 interface Category {
     id: string;
@@ -54,6 +56,10 @@ export function ModernAddProductDialog({
         initialQty: 0,
         minQty: 0
     });
+    
+    // Estados para controlar a entrada nos campos numéricos
+    const [initialQtyInput, setInitialQtyInput] = useState('');
+    const [minQtyInput, setMinQtyInput] = useState('');
 
     // Limpar o formulário quando o diálogo for aberto
     useEffect(() => {
@@ -67,11 +73,27 @@ export function ModernAddProductDialog({
                 initialQty: 0,
                 minQty: 0
             });
+            setInitialQtyInput('');
+            setMinQtyInput('');
         }
     }, [open]);
 
     const handleChange = (field: keyof NewProduct, value: string | number) => {
         setNewProduct((prev) => ({ ...prev, [field]: value }));
+    };
+
+    // Manipulador para campo de quantidade inicial
+    const handleInitialQtyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setInitialQtyInput(value);
+        handleChange('initialQty', value === '' ? 0 : parseDecimal(value));
+    };
+
+    // Manipulador para campo de quantidade mínima
+    const handleMinQtyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setMinQtyInput(value);
+        handleChange('minQty', value === '' ? 0 : parseDecimal(value));
     };
 
     const handleAdd = () => {
@@ -84,8 +106,8 @@ export function ModernAddProductDialog({
         newProduct.unit.trim() !== '';
 
     // Renderização condicional para campos numéricos
-    const displayNumberField = (value: number) => {
-        return value === 0 ? '' : value;
+    const displayNumberField = (value: number, unit: string = 'un') => {
+        return value === 0 ? '' : formatQuantity(value, unit);
     };
 
     return (
@@ -191,11 +213,11 @@ export function ModernAddProductDialog({
                             </Label>
                             <Input
                                 id="initialQty"
-                                type="number"
-                                value={displayNumberField(newProduct.initialQty)}
-                                onChange={(e) => handleChange('initialQty', e.target.value === '' ? 0 : Number(e.target.value))}
+                                type="text"
+                                inputMode="decimal"
+                                value={initialQtyInput}
+                                onChange={handleInitialQtyChange}
                                 className="w-full"
-                                min="0"
                                 placeholder="0"
                             />
                         </div>
@@ -206,11 +228,11 @@ export function ModernAddProductDialog({
                             </Label>
                             <Input
                                 id="minQty"
-                                type="number"
-                                value={displayNumberField(newProduct.minQty)}
-                                onChange={(e) => handleChange('minQty', e.target.value === '' ? 0 : Number(e.target.value))}
+                                type="text"
+                                inputMode="decimal"
+                                value={minQtyInput}
+                                onChange={handleMinQtyChange}
                                 className="w-full"
-                                min="0"
                                 placeholder="0"
                             />
                         </div>

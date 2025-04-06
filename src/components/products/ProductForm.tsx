@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { formatQuantity, parseDecimal } from '@/lib/utils';
 
 interface Category {
   id: string;
@@ -34,7 +35,7 @@ interface ProductFormProps {
   categories: Category[];
   onSubmit: () => void;
   onCancel: () => void;
-  onChange: (field: string, value: any) => void;
+  onChange: (field: string, value: string | number) => void;
 }
 
 const ProductForm: React.FC<ProductFormProps> = ({ 
@@ -45,6 +46,38 @@ const ProductForm: React.FC<ProductFormProps> = ({
   onCancel,
   onChange 
 }) => {
+  // Estados para os inputs nativos (sem formatação automática)
+  const [quantityInput, setQuantityInput] = useState('');
+  const [minQuantityInput, setMinQuantityInput] = useState('');
+  
+  // Inicializar os inputs com valores brutos quando o produto muda
+  useEffect(() => {
+    if (product.quantity > 0) {
+      setQuantityInput(product.quantity.toString());
+    } else {
+      setQuantityInput('');
+    }
+    
+    if (product.minQuantity > 0) {
+      setMinQuantityInput(product.minQuantity.toString());
+    } else {
+      setMinQuantityInput('');
+    }
+  }, [product.id, product.quantity, product.minQuantity]);
+  
+  // Manipuladores de alteração para os campos de quantidade
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setQuantityInput(value);
+    onChange('quantity', value === '' ? 0 : parseDecimal(value));
+  };
+  
+  const handleMinQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setMinQuantityInput(value);
+    onChange('minQuantity', value === '' ? 0 : parseDecimal(value));
+  };
+
   return (
     <div className="grid gap-4 py-2">
       <div className="space-y-2">
@@ -105,10 +138,10 @@ const ProductForm: React.FC<ProductFormProps> = ({
           <Label htmlFor="quantity" className="text-sm font-medium">Quantidade</Label>
           <Input
             id="quantity"
-            type="number"
-            min="0"
-            value={product.quantity === 0 && isNew ? '' : product.quantity || ''}
-            onChange={e => onChange('quantity', e.target.value === '' ? 0 : Number(e.target.value))}
+            type="text"
+            inputMode="decimal"
+            value={quantityInput}
+            onChange={handleQuantityChange}
             placeholder="0"
             className="w-full"
           />
@@ -118,10 +151,10 @@ const ProductForm: React.FC<ProductFormProps> = ({
           <Label htmlFor="minQuantity" className="text-sm font-medium">Quantidade Mínima</Label>
           <Input
             id="minQuantity"
-            type="number"
-            min="0"
-            value={product.minQuantity === 0 && isNew ? '' : product.minQuantity || ''}
-            onChange={e => onChange('minQuantity', e.target.value === '' ? 0 : Number(e.target.value))}
+            type="text"
+            inputMode="decimal"
+            value={minQuantityInput}
+            onChange={handleMinQuantityChange}
             placeholder="0"
             className="w-full"
           />

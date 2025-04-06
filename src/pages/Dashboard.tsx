@@ -54,6 +54,8 @@ import {
 } from 'recharts';
 import PageWrapper from '@/components/layout/PageWrapper';
 import PageLoading from '@/components/PageLoading';
+import { formatQuantity } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 
 export interface Product {
   id: string;
@@ -686,24 +688,17 @@ const Dashboard = () => {
                             }
                           </div>
                           <div className="min-w-0 flex-1">
-                            <div className="flex justify-between">
-                              <p className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">
-                                {movement.productName}
-                              </p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">
-                                {new Date(movement.created_at).toLocaleDateString('pt-BR')}
-                              </p>
-                            </div>
-                            <div className="flex items-center mt-0.5">
-                              <span className={`inline-flex items-center mr-1.5 px-1 py-0.5 text-[10px] rounded ${movement.type === 'entrada'
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
-                                : 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300'
-                                }`}>
-                                {movement.type === 'entrada' ? 'Entrada' : 'Saída'}
-                              </span>
-                              <span className="text-xs text-gray-500 dark:text-gray-400">
-                                {movement.quantity} {movement.unit}
-                              </span>
+                            <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
+                              <div className="flex items-center space-x-2">
+                                <div className={cn(
+                                  "w-2 h-2 rounded-full",
+                                  movement.type === 'entrada' ? "bg-green-500" : "bg-orange-500"
+                                )} />
+                                <div className="font-medium text-sm">{movement.productName}</div>
+                              </div>
+                              <div className="text-sm">
+                                {formatQuantity(movement.quantity, movement.unit)} {movement.unit}
+                              </div>
                             </div>
                           </div>
                         </div>

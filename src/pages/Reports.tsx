@@ -35,6 +35,8 @@ import PageWrapper from '@/components/layout/PageWrapper';
 import ModernDateRangeFilter, { DateFilterRange } from '@/components/ui/ModernDateRangeFilter';
 import { addDays, startOfDay, endOfDay, subMonths, subYears } from 'date-fns';
 import PageLoading from '@/components/PageLoading';
+import { useSupabaseEmployees } from '@/hooks/useSupabaseEmployees';
+import { formatQuantity } from '@/lib/utils';
 
 const Reports = () => {
   // Estado para o filtro de datas modernizado
@@ -49,6 +51,7 @@ const Reports = () => {
   const { products } = useSupabaseProducts();
   const { movements } = useSupabaseMovements();
   const { categories } = useSupabaseCategories();
+  const { employees } = useSupabaseEmployees();
 
   const [stockMovementData, setStockMovementData] = useState<any[]>([]);
   const [categoryData, setCategoryData] = useState<any[]>([]);
@@ -1057,7 +1060,7 @@ const Reports = () => {
                                 <div key={index} className="flex flex-col text-xs border-b border-gray-800 pb-1 mb-1">
                                   <div className="font-medium mb-1">{product.name}</div>
                                   <div className="flex justify-between">
-                                    <span>Excesso: {product.quantity - product.min_quantity} {product.unit}</span>
+                                    <span>Excesso: {formatQuantity(product.quantity - product.min_quantity, product.unit)} {product.unit}</span>
                                     <span className="text-blue-400 flex items-center gap-1" title="Porcentagem em relação ao estoque mínimo">
                                       <span className="bg-blue-950/50 px-1.5 py-0.5 rounded-md">{percentagem}%</span>
                                       <span className="text-[10px] text-muted-foreground">(do mínimo)</span>
