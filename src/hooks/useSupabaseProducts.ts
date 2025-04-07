@@ -23,6 +23,8 @@ interface Movement {
   user_id?: string;
   notes?: string;
   created_at?: string;
+  employee_id?: string | null;
+  deleted?: boolean;
 }
 
 export const useSupabaseProducts = () => {

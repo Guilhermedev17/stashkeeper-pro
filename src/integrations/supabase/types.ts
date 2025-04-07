@@ -39,6 +39,8 @@ export type Database = {
           quantity: number
           type: string
           user_id: string | null
+          employee_id: string | null
+          deleted: boolean
         }
         Insert: {
           created_at?: string
@@ -48,6 +50,8 @@ export type Database = {
           quantity: number
           type: string
           user_id?: string | null
+          employee_id?: string | null
+          deleted?: boolean
         }
         Update: {
           created_at?: string
@@ -57,6 +61,8 @@ export type Database = {
           quantity?: number
           type?: string
           user_id?: string | null
+          employee_id?: string | null
+          deleted?: boolean
         }
         Relationships: [
           {
@@ -66,6 +72,13 @@ export type Database = {
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "movements_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          }
         ]
       }
       employees: {
