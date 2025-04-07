@@ -24,6 +24,7 @@ import DesignSystem from "./pages/DesignSystem";
 import ExcelImporter from "./components/ExcelImporter";
 import { Fragment, Suspense, lazy } from "react";
 import NavigationProgress from "./components/NavigationProgress";
+import PrivateRoute from "./components/PrivateRoute";
 
 // Importação com Suspense que é mais confiável para aplicações Vite/React modernos
 const EmployeeOutputReport = lazy(() => import("./pages/EmployeeOutputReport"));
@@ -69,37 +70,43 @@ const App = () => {
                     <Routes location={location} key={location.pathname}>
                       <Route path="/" element={<Navigate to="/login" replace />} />
                       <Route path="/login" element={<Login />} />
-                      <Route path="/" element={<IntegratedLayout />}>
-                        <Route path="dashboard" element={<Dashboard />} />
-                        <Route path="products" element={<Products />} />
-                        <Route path="movements" element={<Movements />} />
-                        <Route path="categories" element={<Categories />} />
-                        <Route path="reports" element={<Reports />} />
-                        <Route path="employee-output-report" element={
-                          <Suspense fallback={
-                            <div className="h-screen w-full flex items-center justify-center">
-                              <div className="flex flex-col items-center gap-3">
-                                <div className="h-8 w-48 rounded-md bg-accent animate-pulse"></div>
-                                <div className="text-muted-foreground text-sm">Carregando relatório...</div>
+                      
+                      {/* Rotas protegidas */}
+                      <Route element={<PrivateRoute />}>
+                        <Route element={<IntegratedLayout />}>
+                          <Route path="dashboard" element={<Dashboard />} />
+                          <Route path="products" element={<Products />} />
+                          <Route path="movements" element={<Movements />} />
+                          <Route path="categories" element={<Categories />} />
+                          <Route path="reports" element={<Reports />} />
+                          <Route path="employee-output-report" element={
+                            <Suspense fallback={
+                              <div className="h-screen w-full flex items-center justify-center">
+                                <div className="flex flex-col items-center gap-3">
+                                  <div className="h-8 w-48 rounded-md bg-accent animate-pulse"></div>
+                                  <div className="text-muted-foreground text-sm">Carregando relatório...</div>
+                                </div>
                               </div>
+                            }>
+                              <EmployeeOutputReport />
+                            </Suspense>
+                          } />
+                          <Route path="history" element={<History />} />
+                          <Route path="settings" element={<Settings />} />
+                          <Route path="employees" element={<Employees />} />
+                          <Route path="design-system" element={<DesignSystem />} />
+                        </Route>
+                        
+                        <Route path="/import-excel" element={
+                          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+                            <div className="max-w-4xl w-full">
+                              <ExcelImporter onClose={() => window.history.back()} />
                             </div>
-                          }>
-                            <EmployeeOutputReport />
-                          </Suspense>
-                        } />
-                        <Route path="history" element={<History />} />
-                        <Route path="settings" element={<Settings />} />
-                        <Route path="employees" element={<Employees />} />
-                        <Route path="design-system" element={<DesignSystem />} />
-                      </Route>
-                      <Route path="/import-excel" element={
-                        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-                          <div className="max-w-4xl w-full">
-                            <ExcelImporter onClose={() => window.history.back()} />
                           </div>
-                        </div>
-                      } />
-                      <Route path="*" element={<NotFound />} />
+                        } />
+                        
+                        <Route path="*" element={<NotFound />} />
+                      </Route>
                     </Routes>
                   </RouteTransitionProvider>
                 </SidebarProvider>
