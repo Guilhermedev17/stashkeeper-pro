@@ -14,6 +14,7 @@ import {
 import { MoonIcon, SunIcon, Menu, LogOut, Settings, User } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { useToast } from '@/hooks/use-toast';
 
 const NavBar = () => {
   const navigate = useNavigate();
@@ -22,6 +23,7 @@ const NavBar = () => {
   const { theme, setTheme, toggleTheme } = useTheme();
   const [isScrolled, setIsScrolled] = useState(false);
   const [scrollY, setScrollY] = useState(0);
+  const { toast } = useToast();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -43,8 +45,24 @@ const NavBar = () => {
   }, []);
 
   const handleSignOut = async () => {
-    await logout();
-    navigate('/login');
+    try {
+      await logout();
+      toast({
+        title: 'Sessão encerrada',
+        description: 'Você saiu do sistema com sucesso. Até logo!',
+        variant: 'default',
+      });
+      setTimeout(() => {
+        navigate("/login");
+      }, 1000);
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+      toast({
+        title: 'Erro ao sair',
+        description: 'Ocorreu um problema ao encerrar sua sessão. Tente novamente.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const routes = [

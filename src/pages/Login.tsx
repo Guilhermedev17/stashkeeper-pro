@@ -7,14 +7,15 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
 import { supabase } from '@/integrations/supabase/client';
-import { Mail, KeyRound, User, ArrowRight } from 'lucide-react';
+import { Mail, KeyRound, User, Eye, EyeOff, BarChart2, LineChart } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState(''); // Add name field for signup
+  const [name, setName] = useState('');
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -66,312 +67,134 @@ const Login = () => {
     }
   };
 
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   return (
-    <div className="h-screen w-full flex items-center justify-center bg-background/95 dark:bg-background/95 p-4 relative overflow-hidden">
-      {/* Fundo abstrato premium para tema claro */}
-      <div className="absolute inset-0 light-only bg-gradient-to-br from-blue-50 via-white to-indigo-50 opacity-90"></div>
-      <div className="absolute inset-0 light-only bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-100/30 via-transparent to-transparent"></div>
+    <div className="h-screen w-full flex items-center justify-center bg-background relative overflow-hidden">
+      {/* Fundo gradiente para o tema claro */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/60 via-white to-indigo-50/60 light-only"></div>
 
-      {/* Grid pattern animado para tema claro */}
-      <div className="absolute inset-0 light-only opacity-20 overflow-hidden">
+      {/* Fundo para o tema escuro */}
+      <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 dark-only"></div>
+
+      {/* Grid pattern para ambos os temas */}
+      <div className="absolute inset-0 opacity-[0.03]">
         <div className="absolute inset-0"
           style={{
-            backgroundImage: `linear-gradient(to right, rgba(100, 120, 255, 0.15) 1px, transparent 1px),
-                            linear-gradient(to bottom, rgba(100, 120, 255, 0.15) 1px, transparent 1px)`,
-            backgroundSize: '50px 50px',
-            animation: 'pan 50s infinite linear'
+            backgroundImage: `linear-gradient(to right, rgba(100, 120, 255, 0.4) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(100, 120, 255, 0.4) 1px, transparent 1px)`,
+            backgroundSize: '40px 40px',
           }}>
         </div>
       </div>
 
-      {/* Fundo abstrato para tema escuro */}
-      <div className="absolute inset-0 dark-only bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 opacity-95"></div>
-      <div className="absolute inset-0 dark-only bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent"></div>
+      {/* Elementos decorativos sutis */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {/* Circulos decorativos - lado direito superior */}
+        <div className="absolute top-[8%] right-[8%] w-56 h-56 rounded-full border border-primary/5 opacity-30 hidden md:block"></div>
+        <div className="absolute top-[15%] right-[15%] w-24 h-24 rounded-full border border-primary/5 opacity-20 hidden md:block"></div>
 
-      {/* Grid pattern para tema escuro */}
-      <div className="absolute inset-0 dark-only opacity-10 overflow-hidden">
-        <div className="absolute inset-0"
-          style={{
-            backgroundImage: `linear-gradient(to right, rgba(100, 120, 255, 0.2) 1px, transparent 1px),
-                            linear-gradient(to bottom, rgba(100, 120, 255, 0.2) 1px, transparent 1px)`,
-            backgroundSize: '60px 60px',
-            animation: 'pan 60s infinite linear'
-          }}>
+        {/* Circulos decorativos - lado esquerdo inferior */}
+        <div className="absolute bottom-[12%] left-[8%] w-40 h-40 rounded-full border border-primary/5 opacity-20 hidden md:block"></div>
+        <div className="absolute bottom-[25%] left-[5%] w-20 h-20 rounded-full border border-primary/5 opacity-15 hidden md:block"></div>
+        
+        {/* Linhas decorativas horizontais - distribuídas pela tela */}
+        <div className="absolute top-[22%] left-[5%] w-[15%] h-px bg-gradient-to-r from-primary/10 to-transparent hidden md:block"></div>
+        <div className="absolute top-[25%] left-[10%] w-[10%] h-px bg-gradient-to-r from-primary/10 to-transparent hidden md:block"></div>
+        
+        <div className="absolute top-[70%] right-[8%] w-[15%] h-px bg-gradient-to-l from-primary/10 to-transparent hidden md:block"></div>
+        <div className="absolute top-[73%] right-[12%] w-[10%] h-px bg-gradient-to-l from-primary/10 to-transparent hidden md:block"></div>
+
+        {/* Elementos gráficos sutis - colocados nos cantos */}
+        <div className="absolute bottom-[15%] right-[6%] text-primary/15 hidden md:block">
+          <BarChart2 size={120} strokeWidth={1} />
+        </div>
+        <div className="absolute top-[18%] left-[6%] text-primary/10 hidden md:block">
+          <LineChart size={100} strokeWidth={1} />
+        </div>
+
+        {/* Elementos para telas menores */}
+        <div className="absolute top-[5%] right-[5%] w-20 h-20 rounded-full border border-primary/5 opacity-20 md:hidden"></div>
+        <div className="absolute bottom-[5%] left-[5%] w-20 h-20 rounded-full border border-primary/5 opacity-20 md:hidden"></div>
+        </div>
+
+      <div className="flex flex-col items-center md:items-start md:flex-row w-full max-w-6xl px-6 z-10">
+        {/* Lado esquerdo - Conteúdo da marca */}
+        <div className="w-full md:w-1/2 mb-8 md:mb-0 md:pr-8">
+          <div className="mb-4 md:mb-8">
+            <div className="flex items-center justify-center md:justify-start">
+              <svg className="w-12 h-12 text-primary" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 3H4C2.9 3 2 3.9 2 5V19C2 20.1 2.9 21 4 21H20C21.1 21 22 20.1 22 19V5C22 3.9 21.1 3 20 3ZM4 19V5H20V19H4Z" />
+                <path d="M6 7H18V9H6V7Z" />
+                <path d="M6 11H18V13H6V11Z" />
+                <path d="M6 15H12V17H6V15Z" />
+          </svg>
+              <h1 className="text-3xl md:text-4xl font-bold ml-2 text-gradient">
+                StashKeeper<span className="text-primary font-bold">Pro</span>
+              </h1>
+        </div>
+            <p className="text-center md:text-left text-muted-foreground mt-2">
+              Sistema Inteligente de Gerenciamento de Estoque
+            </p>
+        </div>
+
+          <div className="hidden md:block">
+            <h2 className="text-2xl font-bold mb-4 text-foreground">
+              {isLoginMode ? 'Olá, Bem-vindo de volta!' : 'Crie sua conta'}
+            </h2>
+            <p className="text-muted-foreground mb-6">
+              {isLoginMode 
+                ? 'Entre em sua conta para gerenciar seus produtos e controlar seu estoque de forma eficiente.' 
+                : 'Registre-se para começar a usar o StashKeeper e otimizar o gerenciamento do seu estoque.'}
+            </p>
+            
+            <div className="hidden md:flex space-x-6 mb-6">
+              <div className="flex items-center">
+                <div className="rounded-full p-2 bg-primary/10 mr-3">
+                  <svg className="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M11.9999 2C6.47774 2 1.99994 6.478 1.99994 12C1.99994 17.522 6.47774 22 11.9999 22C17.5219 22 21.9999 17.522 21.9999 12C21.9999 6.478 17.5219 2 11.9999 2ZM16.7879 10.121L11.2999 15.607C11.1069 15.8 10.8559 15.896 10.6059 15.896C10.3559 15.896 10.1049 15.8 9.91194 15.607L7.21194 12.908C6.82594 12.522 6.82594 11.88 7.21194 11.494C7.59794 11.107 8.23894 11.107 8.62594 11.494L10.6059 13.474L15.3799 8.7C15.7659 8.314 16.4069 8.314 16.7939 8.7C17.1809 9.086 17.1799 9.726 16.7879 10.121Z" />
+          </svg>
+        </div>
+                <div>
+                  <h3 className="text-sm font-semibold">Fácil de Usar</h3>
+                  <p className="text-xs text-muted-foreground">Interface intuitiva</p>
         </div>
       </div>
 
-      {/* Partículas fluidas para tema claro */}
-      <div className="absolute light-only w-48 h-48 rounded-full bg-gradient-radial from-blue-200/50 to-transparent blur-xl top-1/4 left-1/4 animate-float"></div>
-      <div className="absolute light-only w-64 h-64 rounded-full bg-gradient-radial from-indigo-200/50 to-transparent blur-xl bottom-1/3 right-1/4 animate-float-reverse animation-delay-1000"></div>
-      <div className="absolute light-only w-72 h-72 rounded-full bg-gradient-radial from-purple-200/40 to-transparent blur-xl top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse-subtle"></div>
-
-      {/* Partículas brilhantes para tema claro */}
-      <div className="absolute light-only inset-0 overflow-hidden">
-        <div className="particle absolute w-2 h-2 rounded-full bg-blue-400/80 top-[15%] left-[10%] animate-twinkle animate-pulse-glow"></div>
-        <div className="particle absolute w-3 h-3 rounded-full bg-indigo-400/80 top-[25%] left-[20%] animate-twinkle animation-delay-500 animate-pulse-glow"></div>
-        <div className="particle absolute w-2 h-2 rounded-full bg-purple-400/80 top-[40%] left-[40%] animate-twinkle animation-delay-1000 animate-pulse-glow"></div>
-        <div className="particle absolute w-1.5 h-1.5 rounded-full bg-pink-400/80 top-[60%] left-[30%] animate-twinkle animation-delay-1500 animate-pulse-glow"></div>
-        <div className="particle absolute w-2 h-2 rounded-full bg-blue-400/80 top-[70%] left-[15%] animate-twinkle animation-delay-2000 animate-pulse-glow"></div>
-        <div className="particle absolute w-3 h-3 rounded-full bg-indigo-400/80 top-[85%] left-[35%] animate-twinkle animation-delay-700 animate-pulse-glow"></div>
-
-        <div className="particle absolute w-2 h-2 rounded-full bg-purple-400/80 top-[10%] right-[20%] animate-twinkle animation-delay-300 animate-pulse-glow"></div>
-        <div className="particle absolute w-1.5 h-1.5 rounded-full bg-pink-400/80 top-[30%] right-[10%] animate-twinkle animation-delay-800 animate-pulse-glow"></div>
-        <div className="particle absolute w-3 h-3 rounded-full bg-blue-400/80 top-[50%] right-[25%] animate-twinkle animation-delay-1300 animate-pulse-glow"></div>
-        <div className="particle absolute w-2 h-2 rounded-full bg-indigo-400/80 top-[65%] right-[40%] animate-twinkle animation-delay-1800 animate-pulse-glow"></div>
-        <div className="particle absolute w-1.5 h-1.5 rounded-full bg-purple-400/80 top-[80%] right-[15%] animate-twinkle animate-pulse-glow"></div>
-        <div className="particle absolute w-3 h-3 rounded-full bg-pink-400/80 top-[90%] right-[30%] animate-twinkle animation-delay-500 animate-pulse-glow"></div>
+              <div className="flex items-center">
+                <div className="rounded-full p-2 bg-primary/10 mr-3">
+                  <svg className="w-5 h-5 text-primary" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 5C13.66 5 15 6.34 15 8C15 9.66 13.66 11 12 11C10.34 11 9 9.66 9 8C9 6.34 10.34 5 12 5ZM12 19.2C9.5 19.2 7.29 17.92 6 15.98C6.03 13.99 10 12.9 12 12.9C13.99 12.9 17.97 13.99 18 15.98C16.71 17.92 14.5 19.2 12 19.2Z" />
+                  </svg>
       </div>
-
-      {/* Adicionando bolhas coloridas flutuantes para tema claro */}
-      <div className="absolute light-only w-10 h-10 rounded-full bg-blue-400/60 blur-md top-[20%] right-[15%] animate-float-random"></div>
-      <div className="absolute light-only w-8 h-8 rounded-full bg-indigo-400/60 blur-md top-[30%] right-[30%] animate-float-random animation-delay-700"></div>
-      <div className="absolute light-only w-12 h-12 rounded-full bg-purple-400/60 blur-md top-[60%] right-[20%] animate-float-random animation-delay-1500"></div>
-      <div className="absolute light-only w-6 h-6 rounded-full bg-pink-400/60 blur-sm top-[45%] right-[10%] animate-float-random animation-delay-2000"></div>
-
-      {/* Elementos vibrantes exclusivos para o tema claro */}
-      <div className="absolute light-only w-28 h-28 bg-gradient-to-r from-blue-400/40 to-indigo-400/40 rounded-full blur-xl top-[35%] left-[55%] animate-float-random animation-delay-1200"></div>
-      <div className="absolute light-only w-20 h-20 bg-gradient-to-r from-purple-400/40 to-pink-400/40 rounded-full blur-xl top-[55%] left-[15%] animate-float-random animation-delay-1800"></div>
-      <div className="absolute light-only w-24 h-24 bg-gradient-to-r from-blue-400/40 to-purple-400/40 rounded-full blur-xl top-[75%] left-[45%] animate-float-random animation-delay-500"></div>
-
-      {/* Luzes de destaque para o tema claro */}
-      <div className="absolute light-only w-40 h-40 bg-blue-400/20 rounded-full blur-2xl top-[20%] left-[60%] animate-pulse-glow"></div>
-      <div className="absolute light-only w-32 h-32 bg-indigo-400/20 rounded-full blur-2xl top-[60%] left-[70%] animate-pulse-glow animation-delay-1000"></div>
-      <div className="absolute light-only w-36 h-36 bg-purple-400/20 rounded-full blur-2xl top-[80%] left-[30%] animate-pulse-glow animation-delay-1500"></div>
-
-      {/* Estrelas cintilantes para o tema escuro */}
-      <div className="absolute dark-only inset-0 overflow-hidden">
-        <div className="absolute w-1 h-1 rounded-full bg-white/60 top-[10%] left-[20%] animate-twinkle"></div>
-        <div className="absolute w-1.5 h-1.5 rounded-full bg-white/70 top-[15%] left-[40%] animate-twinkle animation-delay-500"></div>
-        <div className="absolute w-1 h-1 rounded-full bg-white/60 top-[20%] left-[80%] animate-twinkle animation-delay-1000"></div>
-        <div className="absolute w-1 h-1 rounded-full bg-white/70 top-[30%] left-[10%] animate-twinkle animation-delay-1500"></div>
-        <div className="absolute w-2 h-2 rounded-full bg-white/60 top-[35%] left-[30%] animate-twinkle animation-delay-2000"></div>
-        <div className="absolute w-1 h-1 rounded-full bg-white/80 top-[40%] left-[60%] animate-twinkle animation-delay-700"></div>
-        <div className="absolute w-1.5 h-1.5 rounded-full bg-white/70 top-[50%] left-[80%] animate-twinkle animation-delay-300"></div>
-        <div className="absolute w-1 h-1 rounded-full bg-white/60 top-[60%] left-[60%] animate-twinkle animation-delay-800"></div>
-        <div className="absolute w-1 h-1 rounded-full bg-white/70 top-[65%] left-[20%] animate-twinkle animation-delay-1300"></div>
-        <div className="absolute w-1.5 h-1.5 rounded-full bg-white/80 top-[70%] left-[40%] animate-twinkle animation-delay-1800"></div>
-        <div className="absolute w-1 h-1 rounded-full bg-white/60 top-[75%] left-[70%] animate-twinkle"></div>
-        <div className="absolute w-1 h-1 rounded-full bg-white/70 top-[80%] left-[15%] animate-twinkle animation-delay-500"></div>
+                <div>
+                  <h3 className="text-sm font-semibold">Seguro</h3>
+                  <p className="text-xs text-muted-foreground">Acesso protegido</p>
       </div>
-
-      {/* Nebulas para o tema escuro */}
-      <div className="absolute dark-only w-60 h-60 rounded-full bg-primary/5 blur-3xl top-1/3 right-1/3 animate-float-reverse"></div>
-      <div className="absolute dark-only w-80 h-80 rounded-full bg-indigo-900/10 blur-3xl bottom-1/4 left-1/3 animate-float"></div>
-      <div className="absolute dark-only w-72 h-72 rounded-full bg-purple-900/10 blur-3xl top-1/4 left-1/4 animate-float-reverse animation-delay-1000"></div>
-
-      {/* Círculos decorativos para tema escuro */}
-      <div className="absolute dark-only w-96 h-96 rounded-full border border-primary/10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse-subtle"></div>
-      <div className="absolute dark-only w-[500px] h-[500px] rounded-full border border-primary/5 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse-subtle animation-delay-1000"></div>
-      <div className="absolute dark-only w-[700px] h-[700px] rounded-full border border-primary/5 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse-subtle animation-delay-2000"></div>
-
-      {/* Elementos decorativos para o tema escuro */}
-      <div className="absolute dark-only w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent opacity-60 blur-3xl -top-20 -right-20 animate-pulse-subtle"></div>
-      <div className="absolute dark-only w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent opacity-60 blur-3xl -bottom-20 -left-20 animate-pulse-subtle animation-delay-1500"></div>
-
-      {/* Elementos adicionais para o tema claro */}
-      <div className="absolute light-only w-60 h-60 rounded-full bg-gradient-to-br from-blue-200/50 to-purple-200/50 blur-3xl top-1/3 right-1/2 animate-float-reverse animation-delay-300 animate-rotate"></div>
-      <div className="absolute light-only w-52 h-52 rounded-full bg-gradient-to-tr from-indigo-200/50 to-pink-200/50 blur-2xl bottom-1/4 left-1/2 animate-float animation-delay-1000 animate-rotate"></div>
-
-      {/* Elementos especiais apenas para tema claro com mais visibilidade */}
-      <div className="absolute hidden md:block light-only w-80 h-80 rounded-full bg-gradient-to-tr from-blue-300/40 to-indigo-300/40 blur-3xl top-1/4 right-1/3 animate-float-reverse animation-delay-1200 animate-color-shift"></div>
-      <div className="absolute hidden md:block light-only w-72 h-72 rounded-full bg-gradient-to-bl from-purple-300/40 to-pink-300/40 blur-3xl bottom-1/3 left-1/4 animate-float animation-delay-500 animate-rotate"></div>
-
-      {/* Padrões geométricos exclusivos para o tema claro */}
-      <div className="absolute light-only w-96 h-96 rounded-full border-2 border-blue-400/50 top-20 right-20 animate-pulse-subtle"></div>
-      <div className="absolute light-only w-64 h-64 rounded-full border-2 border-indigo-400/50 bottom-20 left-1/4 animate-pulse-subtle animation-delay-1000"></div>
-      <div className="absolute light-only w-80 h-80 rounded-full border-4 border-purple-400/40 top-1/2 right-1/4 animate-pulse-subtle animation-delay-1500"></div>
-
-      {/* Elementos decorativos adicionais apenas para tema claro */}
-      <div className="absolute light-only w-full h-full bg-blue-200/40 rounded-full blur-3xl -top-20 -left-20 animate-pulse-subtle"></div>
-      <div className="absolute light-only w-full h-full bg-indigo-200/40 rounded-full blur-3xl -bottom-10 -right-10 animate-pulse-subtle animation-delay-1200"></div>
-
-      {/* Efeito de brilho animado para tema claro */}
-      <div className="absolute light-only inset-0 bg-gradient-to-br from-primary/15 to-transparent opacity-50 animate-pulse-subtle"></div>
-
-      {/* Efeito de brilho animado para ambos os temas */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-30 animate-pulse-subtle"></div>
-
-      {/* Ícones temáticos flutuantes relacionados ao sistema */}
-      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        {/* Ícones para o tema claro */}
-        <div className="absolute light-only w-8 h-8 text-blue-500/60 top-[25%] right-[28%] animate-icon-float animation-delay-700">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M3 3a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H3Zm4 10a2 2 0 1 1 0-4 2 2 0 0 1 0 4Zm2-7a2 2 0 1 1 4 0 2 2 0 0 1-4 0Zm8 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-          </svg>
-        </div>
-        <div className="absolute light-only w-9 h-9 text-indigo-500/60 top-[65%] right-[13%] animate-icon-float animation-delay-1500">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M2 5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5Zm10 5a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm-6 8h12v-2a3 3 0 0 0-3-3H9a3 3 0 0 0-3 3v2Z" />
-          </svg>
-        </div>
-        <div className="absolute light-only w-7 h-7 text-purple-500/60 top-[15%] left-[25%] animate-icon-float animation-delay-1200">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M8 2a1 1 0 0 0-1 1v3H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-1V3a1 1 0 0 0-1-1H8ZM7 8h10v10H7V8Zm2 3v4h6v-4H9Z" />
-          </svg>
-        </div>
-        <div className="absolute light-only w-8 h-8 text-blue-500/60 top-[50%] left-[15%] animate-icon-float animation-delay-500">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M5 5V19H19V5H5ZM4 3H20C20.5523 3 21 3.44772 21 4V20C21 20.5523 20.5523 21 20 21H4C3.44772 21 3 20.5523 3 20V4C3 3.44772 3.44772 3 4 3ZM13 7H16V16H13V7ZM10 9H7V16H10V9Z" />
-          </svg>
-        </div>
-        <div className="absolute light-only w-9 h-9 text-indigo-500/60 top-[80%] left-[22%] animate-icon-float animation-delay-1800">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M2 18h1.4l3.7-6.5-3.7-6.5H2V3h9v2H9.4l3 5.3a1 1 0 0 1 0 .4l-3 5.3H11v2H2v-2Zm15-9h4v2h-4v-2Zm0 4h4v2h-4v-2Zm-8 3h2v3h-2v-3Zm0-14h2v3h-2V2Zm4 7h2v3h-2V9Zm0-7h2v3h-2V2Z" />
-          </svg>
-        </div>
-
-        {/* Ícones adicionais para o tema claro */}
-        <div className="absolute light-only w-8 h-8 text-blue-500/60 top-[38%] right-[45%] animate-icon-float animation-delay-950">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M3 19V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Zm14-13H7v2h10V6Zm0 4H7v6h10v-6Zm0 8H7v2h10v-2Z" />
-          </svg>
-        </div>
-        <div className="absolute light-only w-7 h-7 text-purple-500/60 top-[72%] right-[32%] animate-icon-float animation-delay-1250">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M21 11.646V21H3v-9.354l-3-3V6h4.756a4.5 4.5 0 0 1 8.488 0H24v2.646l-3 3Zm-1-6.646H4v.465l3 3V18h10v-9.535l3-3V5ZM12 3a2.5 2.5 0 0 0-2.5 2.5A2.5 2.5 0 0 0 12 8a2.5 2.5 0 0 0 2.5-2.5A2.5 2.5 0 0 0 12 3Z" />
-          </svg>
-        </div>
-        <div className="absolute light-only w-8 h-8 text-blue-500/60 top-[18%] right-[60%] animate-icon-float animation-delay-300">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M22.012 2a3 3 0 0 0-3-3H4.012a3 3 0 0 0-3 3v20a1 1 0 0 0 1 1h13a1 1 0 0 0 1-1V11h6a1 1 0 0 0 1-1V2h-1Zm-7 18h-4v-4h4v4Zm0-6h-4v-4h4v4Zm0-6h-4V4h4v4Zm6 0h-4V4h4v4Z" />
-          </svg>
-        </div>
-
-        {/* Ícones para o tema escuro */}
-        <div className="absolute dark-only w-8 h-8 text-blue-400/40 top-[25%] right-[28%] animate-icon-float animation-delay-700">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M3 3a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H3Zm4 10a2 2 0 1 1 0-4 2 2 0 0 1 0 4Zm2-7a2 2 0 1 1 4 0 2 2 0 0 1-4 0Zm8 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-          </svg>
-        </div>
-        <div className="absolute dark-only w-9 h-9 text-indigo-400/40 top-[65%] right-[13%] animate-icon-float animation-delay-1500">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M2 5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5Zm10 5a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm-6 8h12v-2a3 3 0 0 0-3-3H9a3 3 0 0 0-3 3v2Z" />
-          </svg>
-        </div>
-        <div className="absolute dark-only w-7 h-7 text-purple-400/40 top-[15%] left-[25%] animate-icon-float animation-delay-1200">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M8 2a1 1 0 0 0-1 1v3H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-1V3a1 1 0 0 0-1-1H8ZM7 8h10v10H7V8Zm2 3v4h6v-4H9Z" />
-          </svg>
-        </div>
-        <div className="absolute dark-only w-8 h-8 text-blue-400/40 top-[50%] left-[15%] animate-icon-float animation-delay-500">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M5 5V19H19V5H5ZM4 3H20C20.5523 3 21 3.44772 21 4V20C21 20.5523 20.5523 21 20 21H4C3.44772 21 3 20.5523 3 20V4C3 3.44772 3.44772 3 4 3ZM13 7H16V16H13V7ZM10 9H7V16H10V9Z" />
-          </svg>
-        </div>
-        <div className="absolute dark-only w-9 h-9 text-indigo-400/40 top-[80%] left-[22%] animate-icon-float animation-delay-1800">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M2 18h1.4l3.7-6.5-3.7-6.5H2V3h9v2H9.4l3 5.3a1 1 0 0 1 0 .4l-3 5.3H11v2H2v-2Zm15-9h4v2h-4v-2Zm0 4h4v2h-4v-2Zm-8 3h2v3h-2v-3Zm0-14h2v3h-2V2Zm4 7h2v3h-2V9Zm0-7h2v3h-2V2Z" />
-          </svg>
-        </div>
-
-        {/* Ícones adicionais para o tema escuro */}
-        <div className="absolute dark-only w-8 h-8 text-blue-400/40 top-[38%] right-[45%] animate-icon-float animation-delay-950">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M3 19V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Zm14-13H7v2h10V6Zm0 4H7v6h10v-6Zm0 8H7v2h10v-2Z" />
-          </svg>
-        </div>
-        <div className="absolute dark-only w-7 h-7 text-purple-400/40 top-[72%] right-[32%] animate-icon-float animation-delay-1250">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M21 11.646V21H3v-9.354l-3-3V6h4.756a4.5 4.5 0 0 1 8.488 0H24v2.646l-3 3Zm-1-6.646H4v.465l3 3V18h10v-9.535l3-3V5ZM12 3a2.5 2.5 0 0 0-2.5 2.5A2.5 2.5 0 0 0 12 8a2.5 2.5 0 0 0 2.5-2.5A2.5 2.5 0 0 0 12 3Z" />
-          </svg>
-        </div>
-        <div className="absolute dark-only w-8 h-8 text-blue-400/40 top-[18%] right-[60%] animate-icon-float animation-delay-300">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M22.012 2a3 3 0 0 0-3-3H4.012a3 3 0 0 0-3 3v20a1 1 0 0 0 1 1h13a1 1 0 0 0 1-1V11h6a1 1 0 0 0 1-1V2h-1Zm-7 18h-4v-4h4v4Zm0-6h-4v-4h4v4Zm0-6h-4V4h4v4Zm6 0h-4V4h4v4Z" />
-          </svg>
+      </div>
+      </div>
         </div>
       </div>
 
-      {/* Partículas adicionais - tema claro */}
-      <div className="absolute light-only inset-0 overflow-hidden">
-        <div className="particle absolute w-2 h-2 rounded-full bg-blue-400/80 top-[8%] left-[30%] animate-twinkle animate-pulse-glow"></div>
-        <div className="particle absolute w-1.5 h-1.5 rounded-full bg-indigo-400/80 top-[32%] left-[42%] animate-twinkle animation-delay-600 animate-pulse-glow"></div>
-        <div className="particle absolute w-1 h-1 rounded-full bg-purple-400/80 top-[88%] left-[65%] animate-twinkle animation-delay-800 animate-pulse-glow"></div>
-        <div className="particle absolute w-1.5 h-1.5 rounded-full bg-pink-400/80 top-[75%] left-[83%] animate-twinkle animation-delay-1200 animate-pulse-glow"></div>
-        <div className="particle absolute w-1 h-1 rounded-full bg-blue-400/80 top-[12%] left-[75%] animate-twinkle animation-delay-1600 animate-pulse-glow"></div>
-        <div className="particle absolute w-2 h-2 rounded-full bg-indigo-400/80 top-[55%] left-[90%] animate-twinkle animation-delay-900 animate-pulse-glow"></div>
-
-        <div className="particle absolute w-1.5 h-1.5 rounded-full bg-purple-400/80 top-[10%] right-[42%] animate-twinkle animation-delay-400 animate-pulse-glow"></div>
-        <div className="particle absolute w-1 h-1 rounded-full bg-pink-400/80 top-[42%] right-[22%] animate-twinkle animation-delay-950 animate-pulse-glow"></div>
-        <div className="particle absolute w-2 h-2 rounded-full bg-blue-400/80 top-[63%] right-[35%] animate-twinkle animation-delay-1250 animate-pulse-glow"></div>
-        <div className="particle absolute w-1 h-1 rounded-full bg-indigo-400/80 top-[83%] right-[48%] animate-twinkle animation-delay-1650 animate-pulse-glow"></div>
-      </div>
-
-      {/* Partículas adicionais - tema escuro */}
-      <div className="absolute dark-only inset-0 overflow-hidden">
-        <div className="absolute w-1 h-1 rounded-full bg-white/60 top-[8%] left-[30%] animate-twinkle"></div>
-        <div className="absolute w-0.5 h-0.5 rounded-full bg-white/70 top-[32%] left-[42%] animate-twinkle animation-delay-600"></div>
-        <div className="absolute w-1 h-1 rounded-full bg-white/60 top-[88%] left-[65%] animate-twinkle animation-delay-800"></div>
-        <div className="absolute w-0.5 h-0.5 rounded-full bg-white/70 top-[75%] left-[83%] animate-twinkle animation-delay-1200"></div>
-        <div className="absolute w-1 h-1 rounded-full bg-white/60 top-[12%] left-[75%] animate-twinkle animation-delay-1600"></div>
-        <div className="absolute w-0.5 h-0.5 rounded-full bg-white/70 top-[55%] left-[90%] animate-twinkle animation-delay-900"></div>
-
-        <div className="absolute w-1 h-1 rounded-full bg-white/60 top-[10%] right-[42%] animate-twinkle animation-delay-400"></div>
-        <div className="absolute w-0.5 h-0.5 rounded-full bg-white/70 top-[42%] right-[22%] animate-twinkle animation-delay-950"></div>
-        <div className="absolute w-1 h-1 rounded-full bg-white/60 top-[63%] right-[35%] animate-twinkle animation-delay-1250"></div>
-        <div className="absolute w-0.5 h-0.5 rounded-full bg-white/70 top-[83%] right-[48%] animate-twinkle animation-delay-1650"></div>
-      </div>
-
-      {/* Elementos animados adicionais - Ondas animadas */}
-      <div className="absolute inset-x-0 bottom-0 z-0 overflow-hidden pointer-events-none">
-        <div className="absolute w-full h-20 light-only bg-gradient-to-r from-blue-300/20 via-indigo-300/20 to-purple-300/20 animate-wave"></div>
-        <div className="absolute w-full h-24 -bottom-4 light-only bg-gradient-to-r from-indigo-300/10 via-purple-300/10 to-blue-300/10 animate-wave-reverse"></div>
-        <div className="absolute w-full h-16 -bottom-2 light-only bg-gradient-to-r from-purple-300/15 via-blue-300/15 to-indigo-300/15 animate-wave animation-delay-500"></div>
-
-        <div className="absolute w-full h-20 dark-only bg-gradient-to-r from-blue-800/10 via-indigo-800/10 to-purple-800/10 animate-wave"></div>
-        <div className="absolute w-full h-24 -bottom-4 dark-only bg-gradient-to-r from-indigo-800/5 via-purple-800/5 to-blue-800/5 animate-wave-reverse"></div>
-        <div className="absolute w-full h-16 -bottom-2 dark-only bg-gradient-to-r from-purple-800/8 via-blue-800/8 to-indigo-800/8 animate-wave animation-delay-500"></div>
-      </div>
-
-      {/* Partículas flutuantes grandes */}
-      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <div className="absolute w-40 h-40 rounded-full bg-gradient-to-br from-blue-400/10 to-purple-400/10 blur-3xl -top-10 left-1/4 animate-floating-blob animation-delay-300"></div>
-        <div className="absolute w-56 h-56 rounded-full bg-gradient-to-br from-indigo-400/10 to-blue-400/10 blur-3xl top-1/3 -right-20 animate-floating-blob animation-delay-700"></div>
-        <div className="absolute w-48 h-48 rounded-full bg-gradient-to-br from-purple-400/10 to-indigo-400/10 blur-3xl -bottom-10 left-1/3 animate-floating-blob animation-delay-1100"></div>
-        <div className="absolute w-60 h-60 rounded-full bg-gradient-to-br from-blue-400/10 to-purple-400/10 blur-3xl bottom-1/4 right-1/4 animate-floating-blob animation-delay-1500"></div>
-      </div>
-
-      {/* Partículas com efeitos mais dinâmicos */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute light-only w-3 h-3 rounded-full bg-blue-400/40 blur-sm top-[40%] left-[45%] animate-pulse-and-move"></div>
-        <div className="absolute light-only w-2 h-2 rounded-full bg-indigo-400/40 blur-sm top-[25%] right-[55%] animate-pulse-and-move animation-delay-400"></div>
-        <div className="absolute light-only w-4 h-4 rounded-full bg-purple-400/40 blur-sm bottom-[35%] left-[65%] animate-pulse-and-move animation-delay-800"></div>
-
-        <div className="absolute dark-only w-3 h-3 rounded-full bg-blue-400/20 blur-sm top-[40%] left-[45%] animate-pulse-and-move"></div>
-        <div className="absolute dark-only w-2 h-2 rounded-full bg-indigo-400/20 blur-sm top-[25%] right-[55%] animate-pulse-and-move animation-delay-400"></div>
-        <div className="absolute dark-only w-4 h-4 rounded-full bg-purple-400/20 blur-sm bottom-[35%] left-[65%] animate-pulse-and-move animation-delay-800"></div>
-      </div>
-
-      {/* Créditos do desenvolvedor */}
-      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-center z-10">
-        <div className="px-3 py-1.5 rounded-full bg-white/10 dark:bg-black/20 backdrop-blur-md border border-white/20 dark:border-white/5 shadow-sm animate-pulse-subtle">
-          <p className="text-xs text-foreground/70 font-medium">
-            Desenvolvido por: <span className="text-primary font-semibold animate-pulse-glow">Guilherme Sarmento</span>
-          </p>
-        </div>
-      </div>
-
-      <div className="absolute top-4 right-4 z-10">
-        <ThemeSwitcher />
-      </div>
-
-      <div className="w-full max-w-md px-4 sm:px-8 py-8 sm:py-12 rounded-2xl card-glass card-border-glow animate-form-appear shadow-xl dark:shadow-primary/5 light:shadow-xl light:shadow-blue-200/30 backdrop-blur-xl relative z-10 overflow-hidden">
-        {/* Gradiente estático interno mais minimalista */}
-        <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent dark:from-primary/5 dark:to-transparent pointer-events-none"></div>
-
-        <div className="text-center mb-6 sm:mb-8 animate-fade-in animation-delay-100">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gradient animate-color-shift">
-            StashKeeper<span className="text-primary font-bold">Pro</span>
-          </h1>
-          <p className="text-muted-foreground mt-2 text-xs sm:text-sm">
-            Sistema Inteligente de Gerenciamento de Estoque
+        {/* Lado direito - Formulário */}
+        <div className="w-full md:w-1/2 max-w-md">
+          <div className="bg-card rounded-xl shadow-lg p-6 md:p-8 border border-border/30">
+            <div className="text-center mb-6">
+              <h2 className="text-xl font-semibold text-foreground">
+                {isLoginMode ? 'Faça login' : 'Criar uma nova conta'}
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                {isLoginMode ? 'Acesse sua conta para continuar' : 'Preencha os dados para se cadastrar'}
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
           {!isLoginMode && (
-            <div className="space-y-1 sm:space-y-2">
+                <div className="space-y-2">
               <Label htmlFor="name" className="text-sm font-medium">Nome</Label>
+                  <div className="relative">
               <Input
                 id="name"
                 type="text"
@@ -379,14 +202,16 @@ const Login = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required={!isLoginMode}
-                className="bg-background/50"
-                prefix={<User className="h-4 w-4 text-muted-foreground" />}
+                      className="pl-10"
               />
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  </div>
             </div>
           )}
 
-          <div className="space-y-1 sm:space-y-2">
+              <div className="space-y-2">
             <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+                <div className="relative">
             <Input
               id="email"
               type="email"
@@ -396,12 +221,13 @@ const Login = () => {
               required
               autoComplete="email"
               autoFocus
-              className="bg-background/50"
-              prefix={<Mail className="h-4 w-4 text-muted-foreground" />}
+                    className="pl-10"
             />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                </div>
           </div>
 
-          <div className="space-y-1 sm:space-y-2">
+              <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="password" className="text-sm font-medium">Senha</Label>
               {isLoginMode && (
@@ -410,35 +236,38 @@ const Login = () => {
                 </Button>
               )}
             </div>
+                <div className="relative">
             <Input
               id="password"
-              type="password"
+                    type={showPassword ? "text" : "password"}
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="bg-background/50"
-              prefix={<KeyRound className="h-4 w-4 text-muted-foreground" />}
-            />
+                    className="pl-10 pr-10"
+                  />
+                  <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <button 
+                    type="button"
+                    onClick={togglePasswordVisibility}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
           </div>
 
           <Button
             type="submit"
-            className="w-full transition-all duration-300 rounded-lg bg-primary text-primary-foreground hover:shadow-md mt-6 sm:mt-8 relative overflow-hidden group"
+                className="w-full mt-2 bg-primary hover:bg-primary/90"
             disabled={isLoading}
           >
-            {/* Efeito de hover no botão */}
-            <span className="absolute inset-0 w-full h-full bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></span>
-            <span className="relative flex items-center justify-center">
               {isLoading
                 ? (isLoginMode ? 'Entrando...' : 'Criando conta...')
-                : (isLoginMode ? 'Entrar' : 'Criar conta')}
-              {!isLoading && <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />}
-            </span>
+                  : (isLoginMode ? 'Login' : 'Cadastrar')}
           </Button>
-        </form>
 
-        <div className="mt-4 sm:mt-6 text-center">
+              <div className="pt-2 text-center">
           <Button
             variant="link"
             onClick={() => setIsLoginMode(!isLoginMode)}
@@ -449,11 +278,13 @@ const Login = () => {
               : 'Já tem uma conta? Faça login'}
           </Button>
         </div>
-
-        <div className="mt-3 sm:mt-4 text-center text-xs text-muted-foreground">
-          <p>Para usar o sistema, crie uma conta ou entre com</p>
-          <p className="mt-1">e-mail e senha de sua escolha</p>
+            </form>
         </div>
+        </div>
+      </div>
+      
+      <div className="absolute top-4 right-4 z-10">
+        <ThemeSwitcher />
       </div>
     </div>
   );

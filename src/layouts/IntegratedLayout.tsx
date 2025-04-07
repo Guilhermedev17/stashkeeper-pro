@@ -25,6 +25,7 @@ import { useNavigate } from 'react-router-dom';
 import NavigationProgress from '@/components/NavigationProgress';
 import { AnimatePresence } from 'framer-motion';
 import PageTransition from '@/components/layout/PageTransition';
+import { useToast } from '@/hooks/use-toast';
 
 const IntegratedLayout = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -32,6 +33,7 @@ const IntegratedLayout = () => {
     const { logout, user } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
+    const { toast } = useToast();
 
     const toggleSidebar = () => {
         setIsSidebarOpen(!isSidebarOpen);
@@ -45,9 +47,26 @@ const IntegratedLayout = () => {
         return location.pathname === path;
     };
 
-    const handleLogout = () => {
-        logout();
-        navigate("/login");
+    const handleLogout = async () => {
+        try {
+            await logout();
+            toast({
+                title: 'Sessão encerrada',
+                description: 'Você saiu do sistema com sucesso. Até logo!',
+                variant: 'default',
+            });
+            // Pequeno atraso para permitir que o toast seja exibido
+            setTimeout(() => {
+                navigate("/login");
+            }, 1000);
+        } catch (error) {
+            console.error('Erro ao fazer logout:', error);
+            toast({
+                title: 'Erro ao sair',
+                description: 'Ocorreu um problema ao encerrar sua sessão. Tente novamente.',
+                variant: 'destructive',
+            });
+        }
     };
 
     return (

@@ -21,6 +21,8 @@ import {
   Palette,
   FileText
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 interface SidebarProps {
   showMobile: boolean;
@@ -31,9 +33,29 @@ interface SidebarProps {
 
 const Sidebar = ({ showMobile, setShowMobile, showDesktop = true, setShowDesktop }: SidebarProps) => {
   const { logout } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
   const handleLogout = async () => {
-    await logout();
+    try {
+      await logout();
+      toast({
+        title: 'Sessão encerrada',
+        description: 'Você saiu do sistema com sucesso. Até logo!',
+        variant: 'default',
+      });
+      // Pequeno atraso para permitir que o toast seja exibido
+      setTimeout(() => {
+        navigate("/login");
+      }, 1000);
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+      toast({
+        title: 'Erro ao sair',
+        description: 'Ocorreu um problema ao encerrar sua sessão. Tente novamente.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const closeMobileMenu = () => {
