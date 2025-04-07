@@ -13,6 +13,7 @@ interface DbMovement {
   notes: string | null;
   created_at: string;
   employee_id: string | null;
+  deleted?: boolean; // Adicionado o campo deleted
   products?: {
     id: string;
     name: string;
@@ -40,6 +41,7 @@ interface Movement {
   employee_code?: string | null;
   notes: string | null;
   created_at: string;
+  deleted?: boolean; // Adicionado o campo deleted
   products?: {
     id: string;
     name: string;
@@ -54,7 +56,7 @@ export const useSupabaseMovements = () => {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   
-  // Array para manter registro das movimentações excluídas
+  // Array para manter registro das movimentações excluídas (para compatibilidade)
   // Inicializar com os valores do localStorage se disponíveis
   const [deletedMovementIds] = useState<Set<string>>(() => {
     const savedIds = localStorage.getItem('deletedMovementIds');
@@ -70,7 +72,7 @@ export const useSupabaseMovements = () => {
     return new Set<string>();
   });
 
-  // Função auxiliar para salvar IDs excluídas no localStorage
+  // Função auxiliar para salvar IDs excluídas no localStorage (para compatibilidade)
   const saveDeletedIds = () => {
     try {
       localStorage.setItem('deletedMovementIds', JSON.stringify([...deletedMovementIds]));
@@ -79,10 +81,39 @@ export const useSupabaseMovements = () => {
     }
   };
 
-  // Função para adicionar um ID à lista de excluídos
+  // Função para adicionar um ID à lista de excluídos (para compatibilidade)
   const addToDeletedIds = (id: string) => {
     deletedMovementIds.add(id);
     saveDeletedIds();
+  };
+
+  // Função para migrar IDs excluídos do localStorage para o banco de dados
+  const migrateLocalDeletedIds = async () => {
+    if (deletedMovementIds.size === 0) return;
+    
+    try {
+      console.log(`[useSupabaseMovements] Migrando ${deletedMovementIds.size} IDs excluídos do localStorage...`);
+      
+      // Atualizar os registros no banco de dados em lote
+      const { error } = await supabase
+        .from('movements')
+        .update({ deleted: true })
+        .in('id', [...deletedMovementIds]);
+      
+      if (error) {
+        console.error('[useSupabaseMovements] Erro ao migrar IDs excluídos:', error);
+        return;
+      }
+      
+      console.log('[useSupabaseMovements] Migração concluída com sucesso.');
+      
+      // Limpar o localStorage após a migração
+      localStorage.removeItem('deletedMovementIds');
+      deletedMovementIds.clear();
+      
+    } catch (e) {
+      console.error('[useSupabaseMovements] Erro durante a migração:', e);
+    }
   };
 
   const fetchMovements = async () => {
@@ -91,13 +122,14 @@ export const useSupabaseMovements = () => {
       setLoading(true);
       console.log('Buscando movimentações...');
       
-      // Buscar todas as movimentações com informações dos produtos
+      // Buscar todas as movimentações não excluídas
       const { data, error } = await supabase
         .from('movements')
         .select(`
-          id, product_id, type, quantity, user_id, notes, created_at, employee_id,
+          id, product_id, type, quantity, user_id, notes, created_at, employee_id, deleted,
           products:products(id, name, code)
         `)
+        .eq('deleted', false) // Filtrar apenas registros não excluídos
         .order('created_at', { ascending: false });
         
       if (error) {
@@ -111,38 +143,34 @@ export const useSupabaseMovements = () => {
       
       console.log(`Recebidas ${data.length} movimentações do servidor`);
       
-      // Filtrar movimentações que foram excluídas anteriormente
+      // Filtrar movimentações que foram excluídas localmente (compatibilidade)
       let filteredData = (data as any[]).filter(m => !deletedMovementIds.has(m.id));
       
       if (data.length !== filteredData.length) {
         console.log(`Filtradas ${data.length - filteredData.length} movimentações excluídas anteriormente`);
+        
+        // Programar migração desses IDs para o banco de dados
+        setTimeout(() => {
+          migrateLocalDeletedIds();
+        }, 5000);
       }
       
-      // Formatar os dados para incluir informações do produto e garantir o tipo correto
-      let formattedData: Movement[] = (filteredData as unknown as DbMovement[]).map(movement => {
-        const validType = movement.type === 'entrada' || movement.type === 'saida' ? movement.type : 'entrada';
+      // Processar dados
+      let formattedData: Movement[] = filteredData.map((movement: any) => {
+        // Extrair informações do produto do objeto aninhado
+        const productName = movement.products ? movement.products.name : 'Produto Removido';
+        const productCode = movement.products ? movement.products.code : 'N/A';
         
         return {
-          id: movement.id,
-          product_id: movement.product_id,
-          type: validType,
-          quantity: movement.quantity,
-          user_id: movement.user_id,
-          notes: movement.notes,
-          created_at: movement.created_at,
-          employee_id: movement.employee_id,
-          product_name: movement.products?.name || 'Produto Removido',
-          product_code: movement.products?.code || 'N/A',
-          user_name: 'Usuário do Sistema',
-          employee_name: null,
-          employee_code: null,
-          products: movement.products,
-          employees: null
+          ...movement,
+          product_name: productName,
+          product_code: productCode,
+          // Se não tiver user_name, usar um valor padrão
+          user_name: 'Usuário do Sistema'
         };
       });
       
-      // Agora, buscar os dados dos colaboradores separadamente
-      // Primeiro, filtrar apenas movimentações com employee_id
+      // Buscar informações de funcionários para movimentações que têm employee_id
       const movementsWithEmployees = formattedData.filter(m => m.employee_id);
       
       if (movementsWithEmployees.length > 0) {
@@ -214,31 +242,49 @@ export const useSupabaseMovements = () => {
       return data;
     };
 
+    // Ignorar eventos de movimentações marcadas como excluídas
+    if (payload.new && payload.new.deleted === true) {
+      console.log(`Ignorando evento para movimento excluído: ${payload.new.id}`);
+      return;
+    }
+
+    // Nova condição para UPDATE quando um item é marcado como excluído
+    if (payload.eventType === 'UPDATE' && payload.new.deleted === true) {
+      const deletedId = payload.new.id;
+      console.log(`Evento UPDATE com deleted=true recebido para movimento ${deletedId}`);
+      
+      // Adicionar à lista de IDs excluídas para compatibilidade antiga
+      addToDeletedIds(deletedId);
+      
+      // Remover a movimentação da lista
+      setMovements(prevMovements => {
+        const filteredMovements = prevMovements.filter(movement => movement.id !== deletedId);
+        return [...filteredMovements];
+      });
+      
+      return;
+    }
+
     if (payload.eventType === 'DELETE') {
-      // Tratamento especial para exclusões - garantir que a movimentação seja removida
+      // Tratamento especial para exclusões físicas - garantir que a movimentação seja removida
       const deletedId = payload.old.id;
       console.log(`Evento DELETE recebido para movimento ${deletedId}`);
       
-      // Adicionar à lista de IDs excluídas para evitar que reapareça
+      // Adicionar à lista de IDs excluídas para compatibilidade antiga
       addToDeletedIds(deletedId);
       
       // Garantir que a movimentação excluída seja removida do estado
       setMovements(prevMovements => {
-        // Importante: criar uma cópia do array para garantir nova referência
-        const updatedMovements = [...prevMovements];
-        // Filtrar removendo a movimentação
-        const filteredMovements = updatedMovements.filter(movement => movement.id !== deletedId);
-        
-        console.log(`Movimento ${deletedId} removido via evento. Anterior: ${prevMovements.length}, Atual: ${filteredMovements.length}`);
-        
-        // Retornar como nova referência para forçar atualização da UI
+        const filteredMovements = prevMovements.filter(movement => movement.id !== deletedId);
         return [...filteredMovements];
       });
       
-      return; // Importante: não prosseguir com o restante da função
-    } else if (payload.eventType === 'INSERT') {
-      // Verificar se a movimentação não está na lista de excluídos
-      if (deletedMovementIds.has(payload.new.id)) {
+      return;
+    }
+
+    if (payload.eventType === 'INSERT') {
+      // Verificar se a movimentação não está na lista de excluídos e não está marcada como excluída
+      if (deletedMovementIds.has(payload.new.id) || payload.new.deleted === true) {
         console.log(`Ignorando INSERT de movimento excluído: ${payload.new.id}`);
         return;
       }
@@ -257,8 +303,8 @@ export const useSupabaseMovements = () => {
       };
       setMovements(prev => [newMovement, ...prev]);
     } else if (payload.eventType === 'UPDATE') {
-      // Verificar se a movimentação não está na lista de excluídos
-      if (deletedMovementIds.has(payload.new.id)) {
+      // Verificar se a movimentação não está na lista de excluídos e não está marcada como excluída
+      if (deletedMovementIds.has(payload.new.id) || payload.new.deleted === true) {
         console.log(`Ignorando UPDATE de movimento excluído: ${payload.new.id}`);
         return;
       }
@@ -305,7 +351,7 @@ export const useSupabaseMovements = () => {
     };
   }, []);
 
-  // Função auxiliar para excluir movimentações
+  // Função para marcar movimentação como excluída (soft delete)
   const deleteMovement = async (id: string, options?: { silent?: boolean, skipUIUpdate?: boolean }) => {
     try {
       console.log(`[useSupabaseMovements] Tentando excluir movimentação ${id}`);
@@ -313,7 +359,7 @@ export const useSupabaseMovements = () => {
       // 1. Buscar a movimentação para obter informações antes de excluir
       const { data: movementData, error: fetchError } = await supabase
         .from('movements')
-        .select('id, product_id, type, quantity')
+        .select('id, product_id, type, quantity, deleted')
         .eq('id', id)
         .single();
       
@@ -325,6 +371,12 @@ export const useSupabaseMovements = () => {
       if (!movementData) {
         console.error('[useSupabaseMovements] Movimentação não encontrada:', id);
         throw new Error('Movimentação não encontrada');
+      }
+
+      // Verificar se já está excluída
+      if (movementData.deleted) {
+        console.log('[useSupabaseMovements] Movimentação já está marcada como excluída:', id);
+        return { success: true };
       }
       
       console.log('[useSupabaseMovements] Detalhes da movimentação:', movementData);
@@ -353,6 +405,47 @@ export const useSupabaseMovements = () => {
       if (movementData.type === 'entrada') {
         // Se for entrada, diminuir a quantidade
         newQuantity = currentQuantity - movementQuantity;
+        
+        // Verificar se a nova quantidade seria negativa
+        if (newQuantity < 0) {
+          console.log('[useSupabaseMovements] A exclusão geraria estoque negativo. Realizando compensação.');
+          
+          // Quantidade necessária para compensação (apenas o que faltaria para zerar)
+          const compensationQuantity = Math.abs(newQuantity);
+          
+          // 1. Registrar entrada de compensação
+          const { data: compData, error: compError } = await supabase
+            .from('movements')
+            .insert({
+              product_id: movementData.product_id,
+              type: 'entrada',
+              quantity: compensationQuantity,
+              notes: `Compensação automática para exclusão da movimentação ${id}`,
+              created_at: new Date().toISOString()
+            })
+            .select('id, quantity')
+            .single();
+            
+          if (compError) {
+            console.error('[useSupabaseMovements] Erro ao criar compensação:', compError);
+            throw new Error(`Não foi possível criar a compensação: ${compError.message}`);
+          }
+          
+          console.log('[useSupabaseMovements] Compensação criada com sucesso:', compData);
+          
+          // 2. Atualizar para quantidade zero em vez de negativa
+          newQuantity = 0;
+          
+          // 3. Preparar notificação especial sobre a compensação
+          if (!options?.silent) {
+            toast({
+              title: 'Exclusão com compensação',
+              description: `A movimentação foi excluída, mas foi necessário registrar uma entrada de compensação de ${compensationQuantity.toFixed(4)} unidades para manter o estoque não-negativo.`,
+              variant: 'warning',
+              duration: 4000, // Duração mais longa para a mensagem de compensação
+            });
+          }
+        }
       } else {
         // Se for saída, aumentar a quantidade
         newQuantity = currentQuantity + movementQuantity;
@@ -376,15 +469,15 @@ export const useSupabaseMovements = () => {
         throw new Error(`Não foi possível atualizar o produto: ${updateError.message}`);
       }
       
-      // 5. Excluir a movimentação
-      console.log('[useSupabaseMovements] Excluindo movimentação:', id);
+      // 5. Marcar a movimentação como excluída (soft delete)
+      console.log('[useSupabaseMovements] Marcando movimentação como excluída:', id);
       const { error: deleteError } = await supabase
         .from('movements')
-        .delete()
+        .update({ deleted: true })
         .eq('id', id);
       
       if (deleteError) {
-        console.error('[useSupabaseMovements] Erro ao excluir movimentação:', deleteError);
+        console.error('[useSupabaseMovements] Erro ao marcar movimentação como excluída:', deleteError);
         // Reverter a alteração da quantidade do produto em caso de erro
         await supabase
           .from('products')
@@ -394,7 +487,7 @@ export const useSupabaseMovements = () => {
         throw new Error(`Não foi possível excluir a movimentação: ${deleteError.message}`);
       }
       
-      // 6. Registrar a exclusão localmente
+      // 6. Registrar a exclusão localmente (para compatibilidade)
       addToDeletedIds(id);
       
       // 7. Atualizar a UI, se necessário
@@ -410,6 +503,7 @@ export const useSupabaseMovements = () => {
           title: 'Movimentação excluída',
           description: 'A movimentação foi excluída com sucesso.',
           variant: 'default',
+          duration: 2000, // Reduzir para 2 segundos (era padrão 5000ms)
         });
       }
       
@@ -425,6 +519,7 @@ export const useSupabaseMovements = () => {
           title: 'Erro',
           description: errorMessage,
           variant: 'destructive',
+          duration: 3000, // Reduzir para 3 segundos
         });
       }
       
@@ -437,7 +532,7 @@ export const useSupabaseMovements = () => {
     loading,
     error,
     fetchMovements,
-    // Adicionar função para excluir movimentação (usar no componente)
+    // Função para marcação local de exclusão (para compatibilidade)
     deleteMovementLocally: (id: string) => {
       // Adicionar à lista de IDs excluídas
       addToDeletedIds(id);

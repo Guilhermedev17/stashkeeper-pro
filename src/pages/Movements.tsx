@@ -57,6 +57,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from '@/integrations/supabase/client';
 import { formatQuantity } from '@/lib/utils';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // Definições de interface para tipagem
 interface ProductItem {
@@ -128,6 +129,7 @@ const Movements = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedType, setSelectedType] = useState<string>('all');
+  const [showCompensations, setShowCompensations] = useState<boolean>(false);
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [dateRange, setDateRange] = useState<'day' | 'week' | 'month' | 'year' | undefined>(
     undefined
@@ -145,6 +147,9 @@ const Movements = () => {
   const [localMovements, setLocalMovements] = useState<Movement[]>([]);
   // Flag para controlar quando atualizar movimentações
   const [skipMovementUpdate, setSkipMovementUpdate] = useState(false);
+  const [isDeleteCompensationDialogOpen, setIsDeleteCompensationDialogOpen] = useState(false);
+  const [compensationToDelete, setCompensationToDelete] = useState<Movement | null>(null);
+  const [isDeletingCompensation, setIsDeletingCompensation] = useState(false);
 
   // Verificar parâmetros da URL ao carregar a página
   useEffect(() => {
@@ -420,7 +425,8 @@ const Movements = () => {
     console.log('[Movements] Iniciando exclusão de movimentação:', movementToDelete.id);
     
     try {
-      // Usar a função melhorada do hook useSupabaseMovements
+      // Usar a função melhorada do hook useSupabaseMovements com a opção silent
+      // para evitar duplicação de notificação
       const result = await deleteMovement(movementToDelete.id);
       
       if (!result.success) {
@@ -434,11 +440,7 @@ const Movements = () => {
       setIsDeleteDialogOpen(false);
       setMovementToDelete(null);
       
-      toast({
-        title: "Movimentação excluída",
-        description: "A movimentação foi removida com sucesso.",
-        variant: "default",
-      });
+      // Notificação removida daqui pois já é exibida pelo hook
       
     } catch (error: any) {
       console.error('[Movements] Erro ao excluir movimentação:', error);
@@ -450,6 +452,64 @@ const Movements = () => {
       });
     } finally {
       setIsDeletingMovement(false);
+    }
+  };
+
+  // Função para abrir diálogo de exclusão permanente de compensação
+  const handleDeleteCompensationPermanently = (movement: Movement) => {
+    setCompensationToDelete(movement);
+    setIsDeleteCompensationDialogOpen(true);
+  };
+
+  // Função para confirmar exclusão permanente da compensação
+  const confirmDeleteCompensationPermanently = async () => {
+    if (!compensationToDelete) return;
+    
+    setIsDeletingCompensation(true);
+    console.log('[Movements] Iniciando exclusão permanente da compensação:', compensationToDelete.id);
+    
+    try {
+      // Executar exclusão física no banco de dados
+      const { error } = await supabase
+        .from('movements')
+        .delete()
+        .eq('id', compensationToDelete.id);
+      
+      if (error) {
+        console.error('[Movements] Erro ao excluir compensação permanentemente:', error);
+        throw new Error(`Não foi possível excluir a compensação: ${error.message}`);
+      }
+      
+      console.log('[Movements] Compensação excluída permanentemente com sucesso');
+      
+      // Remover do estado local
+      setLocalMovements(current => 
+        current.filter(m => m.id !== compensationToDelete.id)
+      );
+      
+      // Fechar diálogo e limpar estado
+      setIsDeleteCompensationDialogOpen(false);
+      setCompensationToDelete(null);
+      
+      // Exibir notificação de sucesso
+      toast({
+        title: "Compensação excluída",
+        description: "A compensação automática foi excluída permanentemente.",
+        variant: "default",
+        duration: 2000,
+      });
+      
+    } catch (error: any) {
+      console.error('[Movements] Erro ao excluir compensação permanentemente:', error);
+      
+      toast({
+        title: "Erro ao excluir",
+        description: error.message || "Não foi possível excluir a compensação. Tente novamente.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    } finally {
+      setIsDeletingCompensation(false);
     }
   };
 
@@ -544,6 +604,23 @@ const Movements = () => {
                 />
               </div>
             </div>
+            
+            {/* Filtro para compensações */}
+            <div className="flex items-center pt-1 pb-0.5 text-xs">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="show-compensations"
+                  checked={showCompensations}
+                  onCheckedChange={(checked) => setShowCompensations(checked === true)}
+                />
+                <label
+                  htmlFor="show-compensations"
+                  className="text-sm text-gray-700 dark:text-gray-300 leading-none cursor-pointer"
+                >
+                  Mostrar compensações automáticas
+                </label>
+              </div>
+            </div>
           </ModernFilters>
 
           {/* Lista de movimentações */}
@@ -578,7 +655,11 @@ const Movements = () => {
                     // Verificar se corresponde ao filtro de data
                     const matchesDate = filterMovementsByDate(movement);
                     
-                    return matchesSearch && matchesCategory && matchesType && matchesDate;
+                    // Verificar se é uma compensação automática
+                    const isCompensation = movement.notes && movement.notes.includes('Compensação automática');
+                    const showBasedOnCompensationFilter = showCompensations || !isCompensation;
+                    
+                    return matchesSearch && matchesCategory && matchesType && matchesDate && showBasedOnCompensationFilter;
                   }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
                   
                   if (filteredMovements.length === 0) {
@@ -613,8 +694,16 @@ const Movements = () => {
                             const product = products.find(p => p.id === movement.product_id);
                             if (!product) return null;
                             
+                            // Verificar se é uma compensação
+                            const isCompensation = movement.notes && movement.notes.includes('Compensação automática');
+                            
                             return (
-                              <TableRow key={movement.id} className="border-b border-gray-100 dark:border-gray-800">
+                              <TableRow 
+                                key={movement.id} 
+                                className={`border-b border-gray-100 dark:border-gray-800 ${
+                                  isCompensation ? 'bg-yellow-50 dark:bg-yellow-900/20' : ''
+                                }`}
+                              >
                                 <TableCell className="whitespace-nowrap text-xs w-[150px]">
                                   {format(new Date(movement.created_at), 'dd/MM/yyyy HH:mm')}
                                 </TableCell>
@@ -653,27 +742,52 @@ const Movements = () => {
                                   </span>
                                 </TableCell>
                                 <TableCell className="text-xs w-[150px]">{movement.employee_name || '-'}</TableCell>
-                                <TableCell className="max-w-xs truncate text-xs w-[180px]">{movement.notes || '-'}</TableCell>
+                                <TableCell className="max-w-xs truncate text-xs w-[180px]">
+                                  {isCompensation ? (
+                                    <div className="flex items-center">
+                                      <span className="bg-yellow-100 text-amber-800 dark:bg-yellow-900/30 dark:text-amber-200 px-1.5 py-0.5 rounded text-xs mr-1 font-medium">
+                                        Compensação
+                                      </span>
+                                      <span className="truncate">{movement.notes || '-'}</span>
+                                    </div>
+                                  ) : (
+                                    movement.notes || '-'
+                                  )}
+                                </TableCell>
                                 <TableCell className="text-right w-[100px]">
                                   <div className="flex items-center justify-end space-x-1">
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-7 w-7 text-gray-500 hover:text-blue-600"
-                                      onClick={() => handleEditMovement(movement, product)}
-                                      title="Editar movimentação"
-                                    >
-                                      <Edit className="h-3.5 w-3.5" />
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-7 w-7 text-gray-500 hover:text-red-600"
-                                      onClick={() => handleDeleteMovement(movement)}
-                                      title="Excluir movimentação"
-                                    >
-                                      <Trash2 className="h-3.5 w-3.5" />
-                                    </Button>
+                                    {isCompensation ? (
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 text-gray-500 hover:text-red-800"
+                                        onClick={() => handleDeleteCompensationPermanently(movement)}
+                                        title="Excluir compensação permanentemente"
+                                      >
+                                        <AlertCircle className="h-3.5 w-3.5" />
+                                      </Button>
+                                    ) : (
+                                      <>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-7 w-7 text-gray-500 hover:text-blue-600"
+                                          onClick={() => handleEditMovement(movement, product)}
+                                          title="Editar movimentação"
+                                        >
+                                          <Edit className="h-3.5 w-3.5" />
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-7 w-7 text-gray-500 hover:text-red-600"
+                                          onClick={() => handleDeleteMovement(movement)}
+                                          title="Excluir movimentação"
+                                        >
+                                          <Trash2 className="h-3.5 w-3.5" />
+                                        </Button>
+                                      </>
+                                    )}
                                   </div>
                                 </TableCell>
                               </TableRow>
@@ -773,6 +887,46 @@ const Movements = () => {
                 </>
               ) : (
                 "Excluir"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog de confirmação de exclusão permanente de compensação */}
+      <AlertDialog open={isDeleteCompensationDialogOpen} onOpenChange={setIsDeleteCompensationDialogOpen}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Compensação Permanentemente</AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-muted-foreground">
+              <div className="space-y-2">
+                <p>Você está prestes a <strong>excluir permanentemente</strong> esta compensação automática.</p>
+                
+                <div className="mt-2 flex items-center p-2 rounded bg-red-50 text-red-800 text-xs border border-red-200">
+                  <AlertCircle className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <span>
+                    Esta ação é <strong>irreversível</strong> e pode causar inconsistências no estoque. O registro será completamente removido do banco de dados.
+                  </span>
+                </div>
+                
+                <p className="font-medium">Tem certeza que deseja continuar?</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeletingCompensation}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteCompensationPermanently}
+              disabled={isDeletingCompensation}
+              className="bg-red-700 text-white hover:bg-red-800"
+            >
+              {isDeletingCompensation ? (
+                <>
+                  <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                  Excluindo...
+                </>
+              ) : (
+                "Excluir Permanentemente"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
