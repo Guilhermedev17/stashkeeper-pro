@@ -58,6 +58,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { formatQuantity } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
+import { IntegrityCheck } from '@/components/IntegrityCheck';
 
 // Definições de interface para tipagem
 interface ProductItem {
@@ -80,6 +81,7 @@ interface Movement {
   employee_name?: string;
   employee_id?: string;
   notes?: string;
+  deleted?: boolean;
 }
 
 interface Category {
@@ -223,61 +225,173 @@ const Movements = () => {
   // Sincronizar movimentos do hook com o estado local
   useEffect(() => {
     if (!skipMovementUpdate) {
-      console.log("Sincronizando movimentos. Total recebido:", movements.length);
+      console.log("[Movements] Sincronizando movimentos. Total recebido:", movements.length);
+      
+      // Carregar IDs de movimentações excluídas do localStorage para segurança adicional
+      let deletedIdsFromStorage: string[] = [];
+      try {
+        const storedIds = localStorage.getItem('deletedMovementIds');
+        if (storedIds) {
+          deletedIdsFromStorage = JSON.parse(storedIds);
+          console.log(`[Movements] Carregados ${deletedIdsFromStorage.length} IDs de movimentações excluídas do armazenamento local`);
+        }
+      } catch (error) {
+        console.error('[Movements] Erro ao carregar IDs excluídos do localStorage:', error);
+      }
+      
+      // Criar Set para verificação rápida
+      const deletedIdSet = new Set(deletedIdsFromStorage);
+      
       // Preservar movimentações filtradas quando já estiverem no estado local
       setLocalMovements(prevLocalMovements => {
+        // Filtro de segurança para remover movimentações excluídas ou com ID na lista de excluídos
+        const filterSafely = (movs: Movement[]) => {
+          return movs.filter(m => 
+            !m.deleted && 
+            !deletedIdSet.has(m.id)
+          );
+        };
+        
         // Caso ainda não tenhamos dados locais ou estejamos recarregando todos os dados
         if (prevLocalMovements.length === 0) {
-          return movements;
+          // Verificação extra para garantir que nenhuma movimentação excluída apareça
+          const safeMovements = filterSafely(movements);
+          console.log(`[Movements] Verificação de segurança removeu ${movements.length - safeMovements.length} movimentações marcadas como excluídas`);
+          return safeMovements;
         }
         
-        // Criar nova lista a partir dos movements recebidos
-        const updatedMovements = [...movements];
+        // Criar nova lista a partir dos movements recebidos garantindo segurança
+        const safeMovements = filterSafely(movements);
         
-        // Filtrar todas as movimentações que acabamos de excluir e que possam 
-        // estar tentando reaparecer no estado via subscribe
-        const recentlyDeletedIds = prevLocalMovements
-          .filter(prevM => !movements.some(m => m.id === prevM.id))
-          .map(m => m.id);
+        // Obter IDs que existem no estado atual mas não no novo (potencialmente excluídos)
+        const prevIds = new Set(prevLocalMovements.map(m => m.id));
+        const newIds = new Set(safeMovements.map(m => m.id));
+        const potentiallyDeletedIds = new Set(
+          [...prevIds].filter(id => !newIds.has(id))
+        );
         
-        console.log("Movimentações potencialmente excluídas:", recentlyDeletedIds.length);
-        
-        // Se tivermos movimentações recentemente excluídas, não as adicione de volta
-        if (recentlyDeletedIds.length > 0) {
-          return prevLocalMovements.filter(m => 
-            !recentlyDeletedIds.includes(m.id) || 
-            updatedMovements.some(um => um.id === m.id)
-          );
+        if (potentiallyDeletedIds.size > 0) {
+          console.log(`[Movements] Detectados ${potentiallyDeletedIds.size} IDs potencialmente excluídos`);
         }
         
-        return updatedMovements;
+        // Criar listas de IDs para controlar o que incluir
+        const idsToKeep = new Set(safeMovements.map(m => m.id));
+        
+        // Filtrar as movimentações locais para evitar duplicatas e movimentações excluídas
+        const currentMovements = filterSafely(prevLocalMovements).filter(m => 
+          (idsToKeep.has(m.id) || !potentiallyDeletedIds.has(m.id))
+        );
+        
+        // Adicionar novas movimentações que não existem no estado local atual
+        const currentIds = new Set(currentMovements.map(m => m.id));
+        const newMovements = safeMovements.filter(m => !currentIds.has(m.id));
+        
+        console.log(`[Movements] Estado final: ${currentMovements.length} existentes + ${newMovements.length} novas = ${currentMovements.length + newMovements.length} total`);
+        
+        // Retornar a combinação de movimentações atuais + novas
+        return [...newMovements, ...currentMovements];
       });
     }
   }, [movements, skipMovementUpdate]);
 
   // Forçar a atualização da interface quando localMovements mudar
   useEffect(() => {
-    console.log(`Estado localMovements atualizado com ${localMovements.length} movimentações`);
-    // Este efeito força o React a re-renderizar quando localMovements muda
+    console.log(`[Movements] Estado localMovements atualizado com ${localMovements.length} movimentações`);
+    
+    // Verificação adicional para garantir que nenhuma movimentação excluída esteja presente
+    const anyDeleted = localMovements.some(m => m.deleted === true);
+    
+    if (anyDeleted) {
+      console.warn('[Movements] Detectadas movimentações marcadas como excluídas no estado localMovements. Realizando limpeza...');
+      setLocalMovements(current => current.filter(m => !m.deleted));
+    }
+    
   }, [localMovements]);
 
   // Efeito para limpeza periódica das movimentações (sanitização)
   useEffect(() => {
-    // A cada 2 segundos, verificar se temos movimentações que devem ser removidas
-    const cleanupInterval = setInterval(() => {
-      // Se não estamos em processo de exclusão, fazer limpeza
-      if (!isDeletingMovement) {
-        setLocalMovements(current => {
-          // Apenas chamar novamente se houver movimentações
-          if (current.length === 0) return current;
-          // Retornar cópia imutável do array atual para forçar refresh
-          return [...current];
-        });
+    // Definir função de limpeza para ser mais fácil de rastrear
+    const performCleanup = () => {
+      if (localMovements.length === 0 || isDeletingMovement) {
+        return; // Não fazer nada se não houver movimentações ou estiver em processo de exclusão
       }
-    }, 2000);
+      
+      try {
+        console.log('[Movements] Iniciando verificação de consistência...');
+        
+        // 1. Verificar se há movimentações marcadas como excluídas no estado local
+        const locallyDeleted = localMovements.filter(m => m.deleted === true);
+        
+        // 2. Verificar IDs que já foram excluídos anteriormente (no localStorage)
+        const deletedIds = JSON.parse(localStorage.getItem('deletedMovementIds') || '[]');
+        const deletedIdSet = new Set(deletedIds);
+        
+        // 3. Identificar movimentações que devem ser removidas pelo ID
+        const alsoRemoveById = localMovements.filter(m => 
+          !m.deleted && deletedIdSet.has(m.id)
+        );
+        
+        const totalToRemove = locallyDeleted.length + alsoRemoveById.length;
+        
+        if (totalToRemove > 0) {
+          console.log(`[Movements] Sanitização: removendo ${totalToRemove} movimentações inconsistentes (${locallyDeleted.length} marcadas como excluídas + ${alsoRemoveById.length} nos IDs excluídos)`);
+          
+          // Obter todos os IDs a remover
+          const idsToRemove = new Set([
+            ...locallyDeleted.map(m => m.id),
+            ...alsoRemoveById.map(m => m.id)
+          ]);
+          
+          // Atualizar estado removendo todas as movimentações problemáticas
+          setLocalMovements(current => 
+            current.filter(m => !idsToRemove.has(m.id) && m.deleted !== true)
+          );
+        }
+      } catch (error) {
+        console.error('[Movements] Erro durante sanitização:', error);
+      }
+    };
     
+    // Executar limpeza imediatamente na primeira renderização
+    performCleanup();
+    
+    // Configurar intervalo para verificações periódicas (a cada 30 segundos)
+    const cleanupInterval = setInterval(performCleanup, 30000);
+    
+    // Limpar intervalo quando o componente for desmontado
     return () => clearInterval(cleanupInterval);
-  }, [isDeletingMovement]);
+  }, [localMovements, isDeletingMovement]);
+
+  // Verificação de segurança extra ao montar o componente
+  useEffect(() => {
+    console.log('[Movements] Executando verificação de segurança inicial');
+    
+    // Verificar se há IDs excluídos no localStorage
+    try {
+      const deletedIds = JSON.parse(localStorage.getItem('deletedMovementIds') || '[]');
+      const deletedIdSet = new Set(deletedIds);
+      
+      if (deletedIdSet.size > 0) {
+        console.log(`[Movements] Encontrados ${deletedIdSet.size} IDs no registro de exclusões`);
+        
+        // Verificar se alguma movimentação no estado atual tem ID na lista de excluídos
+        const conflictingMovements = movements.filter(m => deletedIdSet.has(m.id) || m.deleted === true);
+        
+        if (conflictingMovements.length > 0) {
+          console.log(`[Movements] Detectadas ${conflictingMovements.length} movimentações que deveriam estar excluídas`);
+          
+          // Forçar atualização do estado para remover estas movimentações
+          setSkipMovementUpdate(true);
+          setLocalMovements(prev => prev.filter(m => !deletedIdSet.has(m.id) && m.deleted !== true));
+          
+          // Restaurar o comportamento normal após a limpeza
+          setTimeout(() => setSkipMovementUpdate(false), 500);
+        }
+      }
+    } catch (error) {
+      console.error('[Movements] Erro durante verificação inicial:', error);
+    }
+  }, []);
 
   const handleOpenDialog = (product: ProductItem, type: 'entrada' | 'saida') => {
     setSelectedProduct(product);
@@ -545,6 +659,11 @@ const Movements = () => {
               </Button>
             }
           />
+          
+          {/* Componente de verificação de integridade - executado em background sem exibição visual */}
+          <div className="hidden">
+            <IntegrityCheck />
+          </div>
 
           {/* Filtros de busca, categoria e data */}
           <ModernFilters className="mt-4">

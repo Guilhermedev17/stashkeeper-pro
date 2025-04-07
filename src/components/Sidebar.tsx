@@ -62,6 +62,22 @@ const Sidebar = ({ showMobile, setShowMobile, showDesktop = true, setShowDesktop
     setShowMobile(false);
   };
 
+  const toggleDesktopSidebar = () => {
+    if (setShowDesktop) {
+      const newState = !showDesktop;
+      setShowDesktop(newState);
+      
+      // Exibir toast com feedback da ação
+      toast({
+        title: newState ? "Menu expandido" : "Menu recolhido",
+        description: newState 
+          ? "O menu lateral foi expandido" 
+          : "O menu lateral foi recolhido. Clique no botão para expandir.",
+        duration: 1500,
+      });
+    }
+  };
+
   const sidebarContent = (
     <>
       <div className="px-5 py-4">
@@ -250,8 +266,10 @@ const Sidebar = ({ showMobile, setShowMobile, showDesktop = true, setShowDesktop
           <Button
             variant="ghost"
             size="icon"
-            className="absolute -right-12 top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-md rounded-full shadow-md shadow-primary/5 border border-border/30"
-            onClick={() => setShowDesktop(!showDesktop)}
+            className="absolute -right-12 top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-md rounded-full shadow-md shadow-primary/5 border border-border/30 hover:bg-accent hover:shadow-lg"
+            onClick={toggleDesktopSidebar}
+            title={showDesktop ? "Recolher menu" : "Expandir menu"}
+            aria-label={showDesktop ? "Recolher menu" : "Expandir menu"}
           >
             <ChevronLeft className={cn("h-5 w-5 transition-transform duration-300", !showDesktop && "rotate-180")} />
           </Button>

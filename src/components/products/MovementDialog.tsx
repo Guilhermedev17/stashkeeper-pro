@@ -32,6 +32,10 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { parseDecimal, formatQuantity } from '@/lib/utils';
+import { 
+    getFullUnitName,
+    getUnitInstruction
+} from '@/components/products/MeasurementUnitUtils';
 
 export interface Product {
   id: string;
@@ -43,52 +47,10 @@ export interface Product {
   categoryName: string;
 }
 
-// Função para obter o nome completo da unidade
-const getFullUnitName = (unitCode: string): string => {
-  const unitMap: Record<string, string> = {
-    'un': 'unidades',
-    'kg': 'quilogramas',
-    'g': 'gramas',
-    'mg': 'miligramas',
-    'l': 'litros',
-    'ml': 'mililitros',
-    'm': 'metros',
-    'cm': 'centímetros',
-    'mm': 'milímetros',
-    'cx': 'caixas',
-    'pct': 'pacotes',
-    'rl': 'rolos',
-    'par': 'pares',
-    'conj': 'conjuntos'
-  };
-
-  return unitMap[unitCode.toLowerCase()] || unitCode;
-};
-
 // Função para determinar se a unidade é do tipo que pode causar confusão
 const isConfusingUnit = (unit: string): boolean => {
   const unitLower = unit.toLowerCase();
   return ['kg', 'g', 'l', 'ml'].includes(unitLower);
-};
-
-// Função para obter a instrução baseada na unidade
-const getUnitInstruction = (unit: string): string => {
-  const unitLower = unit.toLowerCase();
-  
-  if (unitLower === 'kg') {
-    return "Exemplo: 90g = digite 0,090";
-  } 
-  else if (unitLower === 'g') {
-    return "Digite diretamente em gramas. Exemplo: 90g = digite 90";
-  }
-  else if (unitLower === 'l') {
-    return "Exemplo: 500ml = digite 0,5";
-  }
-  else if (unitLower === 'ml') {
-    return "Digite diretamente em mililitros. Exemplo: 500ml = digite 500";
-  }
-  
-  return "";
 };
 
 // Define o schema de validação para o formulário

@@ -1,0 +1,18 @@
+{
+  "syncedLocalStorage": {
+    "deletedMovementIds": "[\"9ae3217e-84cf-4ea5-8359-47dbf6400767\"]"
+  },
+  "partialLocalStorage": {
+    "deletedMovementIds": "[\"9ae3217e-84cf-4ea5-8359-47dbf6400767\"]"
+  },
+  "inconsistentLocalStorage": {
+    "deletedMovementIds": "[\"9ae3217e-84cf-4ea5-8359-47dbf6400767\",\"00000000-0000-0000-0000-000000000000\",\"11111111-1111-1111-1111-111111111111\"]"
+  },
+  "localOnlyLocalStorage": {
+    "deletedMovementIds": "[\"9ae3217e-84cf-4ea5-8359-47dbf6400767\",\"2d3f03a3-6cbf-4b96-a14a-d106a6611a88\"]"
+  },
+  "dbDeletedIds": [
+    "9ae3217e-84cf-4ea5-8359-47dbf6400767"
+  ],
+  "testMovementId": "2d3f03a3-6cbf-4b96-a14a-d106a6611a88"
+}

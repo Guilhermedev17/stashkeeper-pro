@@ -58,6 +58,7 @@ const ExcelImporter = ({ onClose, onImportComplete }: ExcelImporterProps) => {
   const [selectAll, setSelectAll] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const tableContainerRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { categories } = useSupabaseCategories();
   const { addProduct, updateProduct } = useSupabaseProducts();
@@ -471,6 +472,13 @@ const ExcelImporter = ({ onClose, onImportComplete }: ExcelImporterProps) => {
     });
     setImportStep('select');
     setSelectAll(true);
+    setSearchQuery('');
+    setSelectedCategory('');
+    
+    // Resetar o input de arquivo diretamente no DOM
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   // Filtrar dados de acordo com a pesquisa
@@ -545,6 +553,7 @@ const ExcelImporter = ({ onClose, onImportComplete }: ExcelImporterProps) => {
                         accept=".xlsx,.xls"
                         className="hidden"
                         onChange={handleFileChange}
+                        ref={fileInputRef}
                       />
                     </Label>
                   </div>
@@ -700,50 +709,44 @@ const ExcelImporter = ({ onClose, onImportComplete }: ExcelImporterProps) => {
               importStep === 'result' ? "block" : "hidden"
             )}
           >
-            <div className="space-y-6 flex flex-col items-center justify-center">
-              <div className="flex items-center justify-center w-full border-b pb-3">
+            <div className="space-y-6">
+              <div className="flex items-center justify-between border-b pb-3">
                 <h3 className="text-xl font-medium">Importação concluída</h3>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 w-full max-w-[600px]">
-                <Card className="shadow-sm">
-                  <CardContent className="pt-6 pb-4">
-                    <div className="text-center">
-                      <p className="text-muted-foreground text-sm mb-1">Total</p>
-                      <p className="text-3xl font-bold">{importStats.total}</p>
-                    </div>
+              <div className="grid grid-cols-3 gap-4 mx-auto max-w-3xl">
+                <Card className="shadow-sm flex flex-col items-center justify-center">
+                  <CardContent className="py-6 flex flex-col items-center justify-center w-full">
+                    <p className="text-muted-foreground text-sm mb-1">Total</p>
+                    <p className="text-3xl font-bold">{importStats.total}</p>
                   </CardContent>
                 </Card>
-                <Card className="bg-green-500/5 shadow-sm border-green-500/20">
-                  <CardContent className="pt-6 pb-4">
-                    <div className="text-center">
-                      <p className="text-muted-foreground text-sm mb-1">Adicionados</p>
-                      <p className="text-3xl font-bold text-green-500">{importStats.added}</p>
-                    </div>
+                <Card className="bg-green-500/5 shadow-sm border-green-500/20 flex flex-col items-center justify-center">
+                  <CardContent className="py-6 flex flex-col items-center justify-center w-full">
+                    <p className="text-muted-foreground text-sm mb-1">Adicionados</p>
+                    <p className="text-3xl font-bold text-green-500">{importStats.added}</p>
                   </CardContent>
                 </Card>
-                <Card className="bg-blue-500/5 shadow-sm border-blue-500/20">
-                  <CardContent className="pt-6 pb-4">
-                    <div className="text-center">
-                      <p className="text-muted-foreground text-sm mb-1">Atualizados</p>
-                      <p className="text-3xl font-bold text-blue-500">{importStats.updated}</p>
-                    </div>
+                <Card className="bg-blue-500/5 shadow-sm border-blue-500/20 flex flex-col items-center justify-center">
+                  <CardContent className="py-6 flex flex-col items-center justify-center w-full">
+                    <p className="text-muted-foreground text-sm mb-1">Atualizados</p>
+                    <p className="text-3xl font-bold text-blue-500">{importStats.updated}</p>
                   </CardContent>
                 </Card>
-
-                {importStats.errors > 0 ? (
-                  <Card className="bg-red-500/5 shadow-sm border-red-500/20">
-                    <CardContent className="pt-6 pb-4">
-                      <div className="text-center">
-                        <p className="text-muted-foreground text-sm mb-1">Erros</p>
-                        <p className="text-3xl font-bold text-red-500">{importStats.errors}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ) : null}
               </div>
 
-              <Alert variant={importStats.errors > 0 ? "destructive" : "default"} className="w-full max-w-[600px]">
+              {importStats.errors > 0 && (
+                <Card className="bg-red-500/5 shadow-sm border-red-500/20 max-w-xs mx-auto">
+                  <CardContent className="py-6">
+                    <div className="text-center">
+                      <p className="text-muted-foreground text-sm mb-1">Erros</p>
+                      <p className="text-3xl font-bold text-red-500">{importStats.errors}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              <Alert variant={importStats.errors > 0 ? "destructive" : "default"}>
                 {importStats.errors > 0 ? (
                   <AlertCircle className="h-4 w-4" />
                 ) : (
