@@ -700,12 +700,12 @@ const ExcelImporter = ({ onClose, onImportComplete }: ExcelImporterProps) => {
               importStep === 'result' ? "block" : "hidden"
             )}
           >
-            <div className="space-y-6">
-              <div className="flex items-center justify-between border-b pb-3">
+            <div className="space-y-6 flex flex-col items-center justify-center">
+              <div className="flex items-center justify-center w-full border-b pb-3">
                 <h3 className="text-xl font-medium">Importação concluída</h3>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 w-full max-w-[600px]">
                 <Card className="shadow-sm">
                   <CardContent className="pt-6 pb-4">
                     <div className="text-center">
@@ -743,7 +743,7 @@ const ExcelImporter = ({ onClose, onImportComplete }: ExcelImporterProps) => {
                 ) : null}
               </div>
 
-              <Alert variant={importStats.errors > 0 ? "destructive" : "default"}>
+              <Alert variant={importStats.errors > 0 ? "destructive" : "default"} className="w-full max-w-[600px]">
                 {importStats.errors > 0 ? (
                   <AlertCircle className="h-4 w-4" />
                 ) : (

@@ -1,4 +1,4 @@
-import { clsx, type ClassValue } from "clsx"
+import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
@@ -11,9 +11,41 @@ export function cn(...inputs: ClassValue[]) {
  * @returns boolean indicando se a unidade trabalha com frações
  */
 export function isDecimalUnit(unit: string): boolean {
-  const unitLower = unit.toLowerCase();
-  // Unidades que tipicamente usam valores fracionados
-  return ['kg', 'g', 'l', 'ml', 'litro', 'litros', 'quilograma', 'quilogramas', 'gramas', 'mililitros'].includes(unitLower);
+  if (!unit) return false;
+  
+  const normalizedUnit = unit.toLowerCase().trim();
+  return ['kg', 'g', 'l', 'ml', 'litro', 'litros', 'quilo', 'quilos'].includes(normalizedUnit);
+}
+
+/**
+ * Normaliza uma unidade para o formato padrão
+ */
+export function normalizeUnit(unit: string): string {
+  if (!unit) return '';
+  
+  const u = unit.toLowerCase().trim();
+  
+  // Normalizar unidades de litro
+  if (u === 'l' || u === 'litro' || u === 'litros' || u === 'lt' || u === 'lts') {
+      return 'l';
+  }
+  
+  // Normalizar unidades de mililitro
+  if (u === 'ml' || u === 'mililitro' || u === 'mililitros') {
+      return 'ml';
+  }
+  
+  // Normalizar unidades de quilograma
+  if (u === 'kg' || u === 'quilo' || u === 'quilos' || u === 'quilograma' || u === 'quilogramas' || u === 'kilo' || u === 'kilos') {
+      return 'kg';
+  }
+  
+  // Normalizar unidades de grama
+  if (u === 'g' || u === 'grama' || u === 'gramas') {
+      return 'g';
+  }
+  
+  return u;
 }
 
 /**
@@ -37,8 +69,9 @@ export function formatDecimal(value: number | string | null | undefined, decimal
 
 /**
  * Formata um número de acordo com a unidade de medida
- * Para unidades que trabalham com frações (kg, g, L, ml), usa casas decimais
- * Para outras unidades (un, cx, etc), usa número inteiro
+ * - Para ml e g: exibe números inteiros (sem decimais)
+ * - Para l e kg: exibe com até 3 casas decimais (remove zeros desnecessários)
+ * - Para outras unidades: mantém o formato padrão com 2 casas decimais
  * 
  * @param value - O número a ser formatado
  * @param unit - A unidade de medida
@@ -53,13 +86,32 @@ export function formatQuantity(value: number | string | null | undefined, unit: 
   // Verificar se é um número válido
   if (isNaN(numberValue)) return '0';
   
-  // Para unidades com decimais (kg, g, L, ml)
-  if (isDecimalUnit(unit)) {
-    return numberValue.toFixed(2).replace('.', ',');
+  const normalizedUnit = normalizeUnit(unit);
+  
+  // Para ml e g, mostra números inteiros
+  if (normalizedUnit === 'ml' || normalizedUnit === 'g') {
+    return Math.round(numberValue).toString();
   }
   
-  // Para outras unidades, sem decimais
-  return Math.round(numberValue).toString();
+  // Para l e kg, simplifica a exibição de decimais
+  if (normalizedUnit === 'l' || normalizedUnit === 'kg') {
+    // Verificar se o valor está próximo de um inteiro (diferença < 0.01)
+    if (Math.abs(Math.round(numberValue) - numberValue) < 0.01) {
+      return Math.round(numberValue).toString();
+    }
+    
+    // Verificar se o valor está próximo de 1 ou 2 casas decimais
+    const roundedTo2Dec = Math.round(numberValue * 100) / 100;
+    if (Math.abs(roundedTo2Dec - numberValue) < 0.001) {
+      return roundedTo2Dec.toFixed(2).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1').replace('.', ',');
+    }
+    
+    // Limita a 3 casas decimais e remove zeros no final
+    return parseFloat(numberValue.toFixed(3)).toString().replace('.', ',');
+  }
+  
+  // Para outras unidades
+  return numberValue.toFixed(2).replace('.', ',');
 }
 
 /**
