@@ -38,14 +38,6 @@ import PageLoading from '@/components/PageLoading';
 import { useSupabaseEmployees } from '@/hooks/useSupabaseEmployees';
 import { formatQuantity } from '@/lib/utils';
 
-// Adicionar cache para relatórios
-// Este objeto persiste entre renders para armazenar resultados já calculados
-const calculationCache = {
-  reports: new Map(),
-  productUsage: new Map(),
-  categoryData: new Map()
-};
-
 const Reports = () => {
   // Estado para o filtro de datas modernizado
   const [selectedDateRange, setSelectedDateRange] = useState<DateFilterRange>('last30Days');
@@ -97,7 +89,6 @@ const Reports = () => {
     setSelectedDate(date);
   };
 
-  // Efeito para simulação de carregamento inicial
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
@@ -105,14 +96,19 @@ const Reports = () => {
       // Iniciar o tempo para medir quanto leva para carregar os dados
       const startTime = performance.now();
 
-      // Pequeno delay para garantir que todos os dados sejam carregados
-      await new Promise(resolve => setTimeout(resolve, 10));
+      // Aqui você pode adicionar código para esperar que os relatórios sejam carregados
+      // Neste caso, vamos apenas medir o tempo total já que não há um estado loading específico
+
+      // Calcular os dados dos relatórios (pode ser um processo intensivo)
+      await new Promise(resolve => setTimeout(resolve, 10)); // Pequeno delay para garantir que processamentos async sejam contabilizados
 
       // Quando todas as operações de carregamento terminarem, verificamos o tempo
       const endTime = performance.now();
       const loadTime = endTime - startTime;
 
       // Garantir tempo mínimo de carregamento para evitar flash
+      // Se os dados carregarem muito rápido, mostramos o loading por pelo menos 450ms
+      // Se os dados demorarem mais que isso, não adicionamos atraso adicional
       const minLoadingTime = 450;
       const remainingTime = Math.max(0, minLoadingTime - loadTime);
 
@@ -126,321 +122,197 @@ const Reports = () => {
     loadData();
   }, []);
 
-  // Adicionar hook de cleanup para limpar o cache periodicamente (a cada 5 minutos)
-  useEffect(() => {
-    const cacheCleanupInterval = setInterval(() => {
-      // Limitar o tamanho do cache para evitar uso excessivo de memória
-      if (calculationCache.reports.size > 20) {
-        // Manter apenas as 10 entradas mais recentes
-        const reportsEntries = Array.from(calculationCache.reports.entries());
-        const sortedEntries = reportsEntries.sort((a, b) => b[1].timestamp - a[1].timestamp);
-        calculationCache.reports = new Map(sortedEntries.slice(0, 10));
-      }
-      
-      // Mesma lógica para outros caches
-      if (calculationCache.productUsage.size > 20) {
-        const usageEntries = Array.from(calculationCache.productUsage.entries());
-        const sortedUsage = usageEntries.sort((a, b) => b[1].timestamp - a[1].timestamp);
-        calculationCache.productUsage = new Map(sortedUsage.slice(0, 10));
-      }
-      
-      if (calculationCache.categoryData.size > 20) {
-        const categoryEntries = Array.from(calculationCache.categoryData.entries());
-        const sortedCategory = categoryEntries.sort((a, b) => b[1].timestamp - a[1].timestamp);
-        calculationCache.categoryData = new Map(sortedCategory.slice(0, 10));
-      }
-    }, 5 * 60 * 1000); // 5 minutos
-    
-    return () => clearInterval(cacheCleanupInterval);
-  }, []);
-
   useEffect(() => {
     if (movements.length > 0) {
-      // Gerar chave de cache única para esta combinação de filtros
-      const cacheKey = `${selectedDateRange}-${JSON.stringify(customDateRange)}-${selectedDate.getTime()}-${movements.length}-${products.length}`;
-      
-      // Verificar se temos um resultado em cache
-      if (calculationCache.reports.has(cacheKey)) {
-        const cachedResults = calculationCache.reports.get(cacheKey);
-        console.log('Usando resultados em cache para relatórios');
-        
-        // Usar resultados do cache
-        setTotalEntradas(cachedResults.totalEntradas);
-        setTotalSaidas(cachedResults.totalSaidas);
-        setStockMovementData(cachedResults.periodData);
-        setProductUsageData(cachedResults.productUsageArray);
-        return;
+      // Obter datas de início e fim com base no filtro selecionado
+      let startDate: Date;
+      let endDate = new Date();
+
+      if (selectedDateRange === 'custom' && customDateRange.from && customDateRange.to) {
+        startDate = startOfDay(customDateRange.from);
+        endDate = endOfDay(customDateRange.to);
       }
-      
-      // Se não temos cache, calcular normalmente com a lógica otimizada
-      console.log('Calculando novos resultados para relatórios');
-      const startTime = performance.now();
-      
-      // Reduzir o custo de processamento usando memoização de resultados
-      const memoizedResults = (() => {
-        // Obter datas de início e fim com base no filtro selecionado
-        let startDate: Date;
-        let endDate = new Date();
+      else if (selectedDateRange === 'specificDate') {
+        startDate = startOfDay(selectedDate);
+        endDate = endOfDay(selectedDate);
+      }
+      else {
+        // Filtros predefinidos
+        const today = new Date();
+        endDate = endOfDay(today);
 
-        if (selectedDateRange === 'custom' && customDateRange.from && customDateRange.to) {
-          startDate = startOfDay(customDateRange.from);
-          endDate = endOfDay(customDateRange.to);
+        switch (selectedDateRange) {
+          case 'today':
+            startDate = startOfDay(today);
+            break;
+          case 'yesterday':
+            startDate = startOfDay(addDays(today, -1));
+            endDate = endOfDay(addDays(today, -1));
+            break;
+          case 'thisWeek':
+            // Considera que a semana começa na segunda-feira
+            const day = today.getDay();
+            const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+            startDate = startOfDay(new Date(today.setDate(diff)));
+            break;
+          case 'lastWeek':
+            const lastWeekDay = today.getDay();
+            const lastWeekDiff = today.getDate() - lastWeekDay - 6;
+            startDate = startOfDay(new Date(new Date().setDate(lastWeekDiff)));
+            endDate = endOfDay(new Date(new Date(startDate).setDate(startDate.getDate() + 6)));
+            break;
+          case 'thisMonth':
+            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+            break;
+          case 'lastMonth':
+            const lastMonthDate = new Date(today);
+            lastMonthDate.setDate(1);
+            lastMonthDate.setMonth(lastMonthDate.getMonth() - 1);
+            startDate = startOfDay(lastMonthDate);
+            endDate = endOfDay(new Date(today.getFullYear(), today.getMonth(), 0));
+            break;
+          case 'last30Days':
+            startDate = startOfDay(addDays(today, -29));
+            break;
+          case 'last90Days':
+            startDate = startOfDay(addDays(today, -89));
+            break;
+          case 'thisYear':
+            startDate = new Date(today.getFullYear(), 0, 1);
+            break;
+          default:
+            startDate = startOfDay(addDays(today, -29)); // Default para last30Days
         }
-        else if (selectedDateRange === 'specificDate') {
-          startDate = startOfDay(selectedDate);
-          endDate = endOfDay(selectedDate);
-        }
-        else {
-          // Filtros predefinidos
-          const today = new Date();
-          endDate = endOfDay(today);
+      }
 
-          switch (selectedDateRange) {
-            case 'today':
-              startDate = startOfDay(today);
-              break;
-            case 'yesterday':
-              startDate = startOfDay(addDays(today, -1));
-              endDate = endOfDay(addDays(today, -1));
-              break;
-            case 'thisWeek':
-              // Considera que a semana começa na segunda-feira
-              const day = today.getDay();
-              const diff = today.getDate() - day + (day === 0 ? -6 : 1);
-              startDate = startOfDay(new Date(today.setDate(diff)));
-              break;
-            case 'lastWeek':
-              const lastWeekDay = today.getDay();
-              const lastWeekDiff = today.getDate() - lastWeekDay - 6;
-              startDate = startOfDay(new Date(new Date().setDate(lastWeekDiff)));
-              endDate = endOfDay(new Date(new Date(startDate).setDate(startDate.getDate() + 6)));
-              break;
-            case 'thisMonth':
-              startDate = new Date(today.getFullYear(), today.getMonth(), 1);
-              break;
-            case 'lastMonth':
-              const lastMonthDate = new Date(today);
-              lastMonthDate.setDate(1);
-              lastMonthDate.setMonth(lastMonthDate.getMonth() - 1);
-              startDate = startOfDay(lastMonthDate);
-              endDate = endOfDay(new Date(today.getFullYear(), today.getMonth(), 0));
-              break;
-            case 'last30Days':
-              startDate = startOfDay(addDays(today, -29));
-              break;
-            case 'last90Days':
-              startDate = startOfDay(addDays(today, -89));
-              break;
-            case 'thisYear':
-              startDate = new Date(today.getFullYear(), 0, 1);
-              break;
-            default:
-              startDate = startOfDay(addDays(today, -29)); // Default para last30Days
-          }
-        }
+      // Filtrar movimentos pelo período selecionado
+      const filteredMovements = movements.filter(m => {
+        const movementDate = new Date(m.created_at);
+        return movementDate >= startDate && movementDate <= endDate;
+      });
 
-        // Otimização: Usar estruturas de dados eficientes e operações em lote
-        // 1. Primeiro, criar um mapa indexado por período para evitar múltiplas iterações
-        const movementsByPeriod: { [key: string]: {entrances: number, exits: number, movements: any[]} } = {};
-        const startStamp = startDate.getTime();
-        const endStamp = endDate.getTime();
-        
-        // 2. Filtragem única por data, usando timestamp para melhor desempenho
-        const filteredMovements = movements.filter(m => {
-          const movementStamp = new Date(m.created_at).getTime();
-          return movementStamp >= startStamp && movementStamp <= endStamp;
+      // Calculate totals
+      const entradas = filteredMovements.filter(m => m.type === 'entrada').reduce((acc, m) => acc + m.quantity, 0);
+      const saidas = filteredMovements.filter(m => m.type === 'saida').reduce((acc, m) => acc + m.quantity, 0);
+
+      setTotalEntradas(entradas);
+      setTotalSaidas(saidas);
+
+      // Create monthly data for charts
+      const isShortPeriod =
+        selectedDateRange === 'today' ||
+        selectedDateRange === 'yesterday' ||
+        selectedDateRange === 'thisWeek' ||
+        selectedDateRange === 'lastWeek' ||
+        (selectedDateRange === 'custom' &&
+          customDateRange.from &&
+          customDateRange.to &&
+          ((customDateRange.to.getTime() - customDateRange.from.getTime()) / (1000 * 60 * 60 * 24) <= 30));
+
+      let months;
+      if (isShortPeriod) {
+        // Para períodos curtos, mostrar dias
+        const diffTime = endDate.getTime() - startDate.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const numPoints = Math.min(diffDays, 6);
+
+        months = Array.from({ length: numPoints }, (_, i) => {
+          const date = new Date(startDate);
+          date.setDate(startDate.getDate() + Math.floor(i * diffDays / numPoints));
+          return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
         });
-        
-        // 3. Calcular totais em uma única iteração
-        let totalEntradas = 0;
-        let totalSaidas = 0;
-        
-        filteredMovements.forEach(m => {
-          if (m.type === 'entrada') totalEntradas += m.quantity;
-          else if (m.type === 'saida') totalSaidas += m.quantity;
-        });
-        
-        // 4. Definir formato dos períodos (dias ou meses)
-        const isShortPeriod =
-          selectedDateRange === 'today' ||
-          selectedDateRange === 'yesterday' ||
-          selectedDateRange === 'thisWeek' ||
-          selectedDateRange === 'lastWeek' ||
-          (selectedDateRange === 'custom' &&
-            customDateRange.from &&
-            customDateRange.to &&
-            ((customDateRange.to.getTime() - customDateRange.from.getTime()) / (1000 * 60 * 60 * 24) <= 30));
+      } else {
+        // Para períodos longos, mostrar meses
+        const diffTime = endDate.getTime() - startDate.getTime();
+        const diffMonths = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 30));
+        const numPoints = Math.min(diffMonths, 6);
 
-        // 5. Criar index temporal para classificação eficiente
-        filteredMovements.forEach(m => {
-          const date = new Date(m.created_at);
-          let periodKey;
-          
+        months = Array.from({ length: numPoints }, (_, i) => {
+          const date = new Date(startDate);
+          date.setMonth(startDate.getMonth() + Math.floor(i * diffMonths / numPoints));
+          return date.toLocaleString('pt-BR', { month: 'short' });
+        });
+      }
+
+      const monthlyData = months.map(month => {
+        const monthMovements = filteredMovements.filter(m => {
+          const movementDate = new Date(m.created_at);
           if (isShortPeriod) {
-            periodKey = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+            return movementDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) === month;
           } else {
-            periodKey = date.toLocaleString('pt-BR', { month: 'short' });
-          }
-          
-          if (!movementsByPeriod[periodKey]) {
-            movementsByPeriod[periodKey] = {
-              entrances: 0,
-              exits: 0,
-              movements: []
-            };
-          }
-          
-          movementsByPeriod[periodKey].movements.push(m);
-          if (m.type === 'entrada') {
-            movementsByPeriod[periodKey].entrances += m.quantity;
-          } else if (m.type === 'saida') {
-            movementsByPeriod[periodKey].exits += m.quantity;
+            return movementDate.toLocaleString('pt-BR', { month: 'short' }) === month;
           }
         });
-        
-        // 6. Determinar as datas a serem exibidas no gráfico com intervalos uniformes
-        let periods;
-        if (isShortPeriod) {
-          const diffTime = endDate.getTime() - startDate.getTime();
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-          const numPoints = Math.min(diffDays, 6);
 
-          periods = Array.from({ length: numPoints }, (_, i) => {
-            const date = new Date(startDate);
-            date.setDate(startDate.getDate() + Math.floor(i * diffDays / numPoints));
-            return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-          });
-        } else {
-          const diffTime = endDate.getTime() - startDate.getTime();
-          const diffMonths = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 30));
-          const numPoints = Math.min(diffMonths, 6);
+        const entradas = monthMovements.filter(m => m.type === 'entrada').reduce((acc, m) => acc + m.quantity, 0);
+        const saidas = monthMovements.filter(m => m.type === 'saida').reduce((acc, m) => acc + m.quantity, 0);
 
-          periods = Array.from({ length: numPoints }, (_, i) => {
-            const date = new Date(startDate);
-            date.setMonth(startDate.getMonth() + Math.floor(i * diffMonths / numPoints));
-            return date.toLocaleString('pt-BR', { month: 'short' });
-          });
-        }
-        
-        // 7. Gerar dados dos gráficos a partir do mapa indexado
-        const periodData = periods.map(period => {
-          const periodData = movementsByPeriod[period] || { entrances: 0, exits: 0 };
-          
-          return {
-            month: period,
-            entradas: periodData.entrances || 0,
-            saidas: periodData.exits || 0,
-            total: products.reduce((acc, p) => acc + p.quantity, 0)
-          };
-        });
-        
-        // 8. Calcular dados de uso de produtos de forma otimizada
-        const productUsage: { [key: string]: { quantity: number, name: string } } = {};
-        
-        filteredMovements
-          .filter(m => m.type === 'saida')
-          .forEach(m => {
-            const productId = m.product_id;
-            if (!productUsage[productId]) {
-              const product = products.find(p => p.id === productId);
-              productUsage[productId] = {
-                quantity: 0,
-                name: product ? product.name : 'Produto Desconhecido'
-              };
-            }
-            productUsage[productId].quantity += m.quantity;
-          });
-        
-        // 9. Transformar em array e ordenar uma única vez
-        const productUsageArray = Object.values(productUsage)
-          .sort((a, b) => b.quantity - a.quantity)
-          .slice(0, 8)
-          .map(item => ({
-            name: item.name,
-            quantidade: item.quantity
-          }));
-        
-        // Após calcular tudo, retornar os resultados
-        const results = {
-          totalEntradas,
-          totalSaidas,
-          periodData,
-          productUsageArray,
-          timestamp: Date.now() // Adicionar timestamp para gerenciamento do cache
+        return {
+          month,
+          entradas,
+          saidas,
+          total: products.reduce((acc, p) => acc + p.quantity, 0)
         };
-        
-        // Armazenar no cache para uso futuro
-        calculationCache.reports.set(cacheKey, results);
-        
-        return results;
-      })();
-      
-      // Medir tempo de processamento para diagnóstico
-      const endTime = performance.now();
-      console.log(`Tempo de processamento de relatórios: ${(endTime - startTime).toFixed(2)}ms`);
-      
-      // Atualizar estado com resultados memoizados
-      setTotalEntradas(memoizedResults.totalEntradas);
-      setTotalSaidas(memoizedResults.totalSaidas);
-      setStockMovementData(memoizedResults.periodData);
-      setProductUsageData(memoizedResults.productUsageArray);
+      });
+
+      setStockMovementData(monthlyData);
+
+      // Create product usage data
+      const productUsage: Record<string, number> = {};
+      filteredMovements.filter(m => m.type === 'saida').forEach(m => {
+        const productId = m.product_id;
+        if (productUsage[productId]) {
+          productUsage[productId] += m.quantity;
+        } else {
+          productUsage[productId] = m.quantity;
+        }
+      });
+
+      const productUsageArray = Object.entries(productUsage)
+        .map(([id, quantidade]) => {
+          const product = products.find(p => p.id === id);
+          return {
+            name: product ? product.name : 'Produto Desconhecido',
+            quantidade
+          };
+        })
+        .sort((a, b) => b.quantidade - a.quantidade)
+        .slice(0, 8);
+
+      setProductUsageData(productUsageArray);
     }
   }, [movements, products, selectedDateRange, customDateRange, selectedDate]);
 
-  // Adicionar otimização com uso de cache para cálculos de categorias
   useEffect(() => {
     if (products.length > 0 && categories.length > 0) {
-      // Gerar chave de cache para esta combinação
-      const cacheKey = `${category}-${products.length}-${categories.length}`;
-      
-      // Verificar se temos resultados em cache
-      if (calculationCache.categoryData.has(cacheKey)) {
-        setCategoryData(calculationCache.categoryData.get(cacheKey).data);
-        return;
+      // Filter products by category if specified
+      let filteredProducts = [...products];
+      if (category !== 'all') {
+        filteredProducts = products.filter(p => p.category_id === category);
       }
-      
-      // Processar dados de categoria de forma otimizada
-      const processCategories = () => {
-        // Filter products by category if specified
-        let filteredProducts = [...products];
-        if (category !== 'all') {
-          filteredProducts = products.filter(p => p.category_id === category);
-        }
-        
-        // Utilizar Map para agrupar produtos por categoria de forma eficiente
-        const categoryMap = new Map();
-        
-        // Processar em uma única iteração
-        filteredProducts.forEach(product => {
-          if (product.category_id) {
-            const currentTotal = categoryMap.get(product.category_id) || 0;
-            categoryMap.set(product.category_id, currentTotal + product.quantity);
+
+      // Group products by category
+      const catCounts: Record<string, number> = {};
+
+      filteredProducts.forEach(product => {
+        if (product.category_id) {
+          if (catCounts[product.category_id]) {
+            catCounts[product.category_id] += product.quantity;
+          } else {
+            catCounts[product.category_id] = product.quantity;
           }
-        });
-        
-        // Converter para o formato esperado
-        const catData = Array.from(categoryMap.entries()).map(([id, value]) => {
-          const cat = categories.find(c => c.id === id);
-          return {
-            name: cat ? cat.name : 'Sem categoria',
-            value
-          };
-        }).sort((a, b) => b.value - a.value);
-        
-        const result = catData.length > 0 ? catData : [{ name: 'Sem dados', value: 1 }];
-        
-        // Armazenar no cache
-        calculationCache.categoryData.set(cacheKey, {
-          data: result,
-          timestamp: Date.now()
-        });
-        
-        return result;
-      };
-      
-      // Processar de forma otimizada
-      const catData = processCategories();
-      setCategoryData(catData);
+        }
+      });
+
+      const catData = Object.entries(catCounts).map(([id, value]) => {
+        const cat = categories.find(c => c.id === id);
+        return {
+          name: cat ? cat.name : 'Sem categoria',
+          value
+        };
+      }).sort((a, b) => b.value - a.value);
+
+      setCategoryData(catData.length > 0 ? catData : [{ name: 'Sem dados', value: 1 }]);
     }
   }, [products, categories, category]);
 

@@ -19,6 +19,7 @@ import Settings from "./pages/Settings";
 import Movements from "./pages/Movements";
 import NotFound from "./pages/NotFound";
 import Employees from "./pages/Employees";
+import DateComponentsDemo from "./pages/DateComponentsDemo";
 import DesignSystem from "./pages/DesignSystem";
 import ExcelImporter from "./components/ExcelImporter";
 import { Fragment, Suspense, lazy } from "react";

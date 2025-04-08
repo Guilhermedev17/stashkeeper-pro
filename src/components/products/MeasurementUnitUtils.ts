@@ -73,7 +73,89 @@ export const isDecimalUnit = (unit: string): boolean => {
 };
 
 /**
+ * Converte um valor para a unidade base (ml ou g) para comparação de estoque
+ * Arredonda para inteiros apenas quando necessário para validação
+ * @param value Valor a ser convertido
+ * @param unit Unidade do valor
+ * @returns Objeto com valor convertido para unidade base
+ */
+export const convertToBaseUnit = (
+  value: number,
+  unit: string
+): { value: number; unit: string } => {
+  const normalizedUnit = normalizeUnit(unit);
+  
+  // Para litros, converter para mililitros
+  if (normalizedUnit === 'l') {
+    return {
+      value: Math.round(value * CONVERSION_FACTORS.LITERS_TO_ML),
+      unit: 'ml'
+    };
+  }
+  
+  // Para quilos, converter para gramas
+  if (normalizedUnit === 'kg') {
+    return {
+      value: Math.round(value * CONVERSION_FACTORS.KG_TO_GRAMS),
+      unit: 'g'
+    };
+  }
+  
+  // Para mililitros e gramas, apenas arredondar
+  return {
+    value: Math.round(value),
+    unit: normalizedUnit
+  };
+};
+
+/**
+ * Converte a quantidade entre unidades com precisão exata (sem arredondamento)
+ * Utilizada para cálculos de estoque que precisam manter precisão total
+ * @param value Valor a ser convertido
+ * @param fromUnit Unidade de origem
+ * @param toUnit Unidade de destino
+ * @returns Valor convertido com precisão exata
+ */
+export const convertQuantityExact = (
+  value: number,
+  fromUnit: string,
+  toUnit: string
+): number => {
+  const fromUnitNormalized = normalizeUnit(fromUnit);
+  const toUnitNormalized = normalizeUnit(toUnit);
+  
+  // Se as unidades são iguais, não há conversão necessária
+  if (fromUnitNormalized === toUnitNormalized || fromUnit === 'default') {
+    return value;
+  }
+  
+  // ml para L
+  if (fromUnitNormalized === 'ml' && toUnitNormalized === 'l') {
+    return value * CONVERSION_FACTORS.ML_TO_LITERS;
+  }
+  
+  // L para ml
+  if (fromUnitNormalized === 'l' && toUnitNormalized === 'ml') {
+    return value * CONVERSION_FACTORS.LITERS_TO_ML;
+  }
+  
+  // g para kg
+  if (fromUnitNormalized === 'g' && toUnitNormalized === 'kg') {
+    return value * CONVERSION_FACTORS.GRAMS_TO_KG;
+  }
+  
+  // kg para g
+  if (fromUnitNormalized === 'kg' && toUnitNormalized === 'g') {
+    return value * CONVERSION_FACTORS.KG_TO_GRAMS;
+  }
+  
+  // Sem conversão específica disponível
+  return value;
+};
+
+/**
  * Converte a quantidade de uma unidade para outra para fins de comparação
+ * Mantida por compatibilidade com código existente
  * @param value Valor a ser convertido
  * @param fromUnit Unidade de origem
  * @param toUnit Unidade de destino
@@ -84,47 +166,13 @@ export const normalizeQuantityForComparison = (
   fromUnit: string,
   toUnit: string
 ): number => {
-  // Normalizar unidades
-  const fromUnitNormalized = normalizeUnit(fromUnit);
-  const toUnitNormalized = normalizeUnit(toUnit);
-  
-  // Se as unidades são iguais, não é necessário converter
-  if (fromUnitNormalized === toUnitNormalized || fromUnit === 'default') {
-      return Number(value.toFixed(3)); // Limitar a 3 casas decimais
-  }
-  
-  let convertedValue;
-  
-  // ml para L (0.09L = 90ml)
-  if (fromUnitNormalized === 'ml' && toUnitNormalized === 'l') {
-      convertedValue = value * CONVERSION_FACTORS.ML_TO_LITERS;
-  }
-  
-  // L para ml
-  else if (fromUnitNormalized === 'l' && toUnitNormalized === 'ml') {
-      convertedValue = value * CONVERSION_FACTORS.LITERS_TO_ML;
-  }
-  
-  // g para kg (0.09kg = 90g)
-  else if (fromUnitNormalized === 'g' && toUnitNormalized === 'kg') {
-      convertedValue = value * CONVERSION_FACTORS.GRAMS_TO_KG;
-  }
-  
-  // kg para g
-  else if (fromUnitNormalized === 'kg' && toUnitNormalized === 'g') {
-      convertedValue = value * CONVERSION_FACTORS.KG_TO_GRAMS;
-  }
-  else {
-      // Nenhuma conversão específica encontrada
-      convertedValue = value;
-  }
-  
-  // Limitar a 3 casas decimais para evitar problemas de precisão
-  return Number(convertedValue.toFixed(3));
+  // Usar a nova função de conversão exata
+  return convertQuantityExact(value, fromUnit, toUnit);
 };
 
 /**
  * Valida se a quantidade solicitada não excede o estoque disponível
+ * Usa unidades base (ml, g) para validação com precisão inteira
  * @param productQuantity Quantidade disponível no estoque
  * @param requestedQuantity Quantidade solicitada
  * @param requestedUnit Unidade da quantidade solicitada
@@ -137,25 +185,41 @@ export const validateStock = (
   requestedUnit: string, 
   productUnit: string
 ): { valid: boolean; message: string | null } => {
-  // Converter a quantidade solicitada para a unidade do produto
-  const convertedQuantity = normalizeQuantityForComparison(
-      requestedQuantity,
-      requestedUnit === 'default' ? productUnit : requestedUnit,
-      productUnit
-  );
+  const normalizedProductUnit = normalizeUnit(productUnit);
+  const normalizedRequestedUnit = normalizeUnit(requestedUnit === 'default' ? productUnit : requestedUnit);
+  
+  // Verificar compatibilidade de unidades (volume vs peso)
+  const isVolumeCompatible = 
+    (normalizedProductUnit === 'l' || normalizedProductUnit === 'ml') && 
+    (normalizedRequestedUnit === 'l' || normalizedRequestedUnit === 'ml');
+  
+  const isWeightCompatible = 
+    (normalizedProductUnit === 'kg' || normalizedProductUnit === 'g') && 
+    (normalizedRequestedUnit === 'kg' || normalizedRequestedUnit === 'g');
+  
+  if (!isVolumeCompatible && !isWeightCompatible && 
+      normalizedProductUnit !== normalizedRequestedUnit) {
+    return {
+      valid: false,
+      message: `Unidades incompatíveis: ${normalizedProductUnit} e ${normalizedRequestedUnit}`
+    };
+  }
 
-  // Verificação simplificada - comparamos sempre na unidade base do produto
-  // Tolerância de 0.01 para evitar problemas de precisão com decimais
-  if (convertedQuantity > (productQuantity + 0.01)) {
-      return {
-          valid: false,
-          message: 'Quantidade não pode ser maior que o estoque disponível'
-      };
+  // Converter para unidades base (ml, g) para comparação precisa
+  const productBase = convertToBaseUnit(productQuantity, productUnit);
+  const requestedBase = convertToBaseUnit(requestedQuantity, normalizedRequestedUnit);
+  
+  // Verificar estoque (comparação com valores inteiros)
+  if (requestedBase.value > productBase.value) {
+    return {
+      valid: false,
+      message: 'Quantidade não pode ser maior que o estoque disponível'
+    };
   }
 
   return {
-      valid: true,
-      message: null
+    valid: true,
+    message: null
   };
 };
 
@@ -203,7 +267,7 @@ export const getUnitInstruction = (unit: string): string | null => {
 /**
  * Formata um número de acordo com a unidade
  * - Para ml e g: exibe números inteiros (sem decimais)
- * - Para l e kg: exibe com até 3 casas decimais (remove zeros desnecessários)
+ * - Para l e kg: exibe com até 2 casas decimais (remove zeros desnecessários)
  * - Para outras unidades: mantém o formato padrão com 2 casas decimais
  * 
  * @param value O valor a ser formatado
@@ -218,10 +282,10 @@ export const formatNumberByUnit = (value: number, unit: string): string => {
     return Math.round(value).toString();
   }
   
-  // Para l e kg, mostra até 3 casas decimais (remove zeros desnecessários)
+  // Para l e kg, mostra até 2 casas decimais (remove zeros desnecessários)
   if (normalizedUnit === 'l' || normalizedUnit === 'kg') {
-    // Limita a 3 casas decimais e remove zeros no final
-    return parseFloat(value.toFixed(3)).toString().replace('.', ',');
+    // Limita a 2 casas decimais e remove zeros no final
+    return parseFloat(value.toFixed(2)).toString().replace('.', ',');
   }
   
   // Para outras unidades

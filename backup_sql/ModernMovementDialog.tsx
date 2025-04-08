@@ -32,18 +32,6 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { formatQuantity, parseDecimal } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
-// Importar as funções e constantes do arquivo de utilitários
-import {
-    CONVERSION_FACTORS,
-    normalizeUnit,
-    getRelatedUnits as getUnitRelations,
-    normalizeQuantityForComparison,
-    validateStock,
-    getFullUnitName,
-    getUnitInstruction,
-    convertToBaseUnit,
-    convertQuantityExact
-} from '@/components/products/MeasurementUnitUtils';
 
 export interface Product {
     id: string;
@@ -100,49 +88,65 @@ interface ModernMovementDialogProps {
     movementToEdit?: MovementData | null;
 }
 
-// Para depuração
-const DEBUG = true;
+// Função para obter o nome completo da unidade
+const getFullUnitName = (unitCode: string): string => {
+    const unitMap: Record<string, string> = {
+        'un': 'unidades',
+        'kg': 'quilogramas',
+        'g': 'gramas',
+        'mg': 'miligramas',
+        'l': 'litros',
+        'ml': 'mililitros',
+        'm': 'metros',
+        'cm': 'centímetros',
+        'mm': 'milímetros',
+        'cx': 'caixas',
+        'pct': 'pacotes',
+        'rl': 'rolos',
+        'par': 'pares',
+        'conj': 'conjuntos'
+    };
 
-/**
- * Função para obter as unidades relacionadas para conversão
- * Retorna as possibilidades de conversão para a unidade fornecida
- */
+    return unitMap[unitCode.toLowerCase()] || unitCode;
+};
+
+// Função para obter as unidades relacionadas para conversão
 const getRelatedUnits = (unit: string): { value: string, label: string, conversionFactor: number }[] => {
-    // Normalizar para comparação
-    const unitNormalized = normalizeUnit(unit);
+    // Normalizar para minúsculo para comparação
+    const unitLower = unit.toLowerCase();
     
-    console.log(`Detectando unidades relacionadas para: ${unit} (normalizado: ${unitNormalized})`);
+    console.log(`Detectando unidades relacionadas para: ${unit} (normalizado: ${unitLower})`);
 
     // Unidades de peso
-    if (unitNormalized === 'kg') {
+    if (unitLower === 'kg') {
         return [
             { value: 'default', label: 'kg (padrão)', conversionFactor: 1 },
-            { value: 'g', label: 'g (gramas)', conversionFactor: CONVERSION_FACTORS.KG_TO_GRAMS }
+            { value: 'g', label: 'g (gramas)', conversionFactor: 1000 }
         ];
     }
-    else if (unitNormalized === 'g') {
+    else if (unitLower === 'g') {
         return [
             { value: 'default', label: 'g (padrão)', conversionFactor: 1 },
-            { value: 'kg', label: 'kg (quilogramas)', conversionFactor: CONVERSION_FACTORS.GRAMS_TO_KG }
+            { value: 'kg', label: 'kg (quilogramas)', conversionFactor: 0.001 }
         ];
     }
 
-    // Unidades de volume
-    else if (unitNormalized === 'l') {
+    // Unidades de volume - checar 'l' ou 'L'
+    else if (unitLower === 'l' || unitLower === 'litro' || unitLower === 'litros') {
         return [
             { value: 'default', label: 'L (padrão)', conversionFactor: 1 },
-            { value: 'ml', label: 'ml (mililitros)', conversionFactor: CONVERSION_FACTORS.LITERS_TO_ML }
+            { value: 'ml', label: 'ml (mililitros)', conversionFactor: 1000 }
         ];
     }
-    else if (unitNormalized === 'ml') {
+    else if (unitLower === 'ml' || unitLower === 'mililitro' || unitLower === 'mililitros') {
         return [
             { value: 'default', label: 'ml (padrão)', conversionFactor: 1 },
-            { value: 'l', label: 'L (litros)', conversionFactor: CONVERSION_FACTORS.ML_TO_LITERS }
+            { value: 'l', label: 'L (litros)', conversionFactor: 0.001 }
         ];
     }
 
     // Unidades para rolos/etiquetas
-    else if (unitNormalized === 'rl' || unitNormalized === 'rolo' || unitNormalized === 'rolos') {
+    else if (unitLower === 'rl' || unitLower === 'rolo' || unitLower === 'rolos') {
         return [
             { value: 'default', label: 'Rolo (padrão)', conversionFactor: 1 },
             { value: 'un', label: 'Etiquetas', conversionFactor: 100 } // Assumindo 100 etiquetas por rolo
@@ -158,43 +162,30 @@ const getRelatedUnits = (unit: string): { value: string, label: string, conversi
 
 // Função para obter a explicação com base na unidade selecionada
 const getUnitExplanation = (unitType: string, baseUnit: string): string => {
-    // Normalizar unidades
-    const unitTypeNormalized = normalizeUnit(unitType);
-    const baseUnitNormalized = normalizeUnit(baseUnit);
-    
-    // Se estiver usando a unidade padrão do produto
-    if (unitType === 'default' || unitTypeNormalized === baseUnitNormalized) {
-        return ""; // Sem explicação necessária
-    }
-    
     // Unidades de peso
-    if (baseUnitNormalized === 'kg' && unitTypeNormalized === 'g') {
+    if (baseUnit.toLowerCase() === 'kg' && unitType === 'g') {
         return "Digite diretamente em gramas. Exemplo: 90g = digite 90";
     } 
-    else if (baseUnitNormalized === 'g' && unitTypeNormalized === 'kg') {
+    else if (baseUnit.toLowerCase() === 'g' && unitType === 'kg') {
         return "Digite em quilogramas. Exemplo: 90g = digite 0,090";
     }
-    
     // Unidades de volume
-    else if (baseUnitNormalized === 'l' && unitTypeNormalized === 'ml') {
+    else if (baseUnit.toLowerCase() === 'l' && unitType === 'ml') {
         return "Digite diretamente em mililitros. Exemplo: 500ml = digite 500";
     }
-    else if (baseUnitNormalized === 'ml' && unitTypeNormalized === 'l') {
+    else if (baseUnit.toLowerCase() === 'ml' && unitType === 'l') {
         return "Digite em litros. Exemplo: 500ml = digite 0,5";
-    }
-    
-    // Para rolos e etiquetas
-    else if ((baseUnitNormalized === 'rl' || baseUnitNormalized === 'rolo') && unitTypeNormalized === 'un') {
-        return "Digite o número de etiquetas. Exemplo: 100 etiquetas = digite 100";
     }
     
     return "";
 };
 
+// Para depuração
+const DEBUG = true;
+
 /**
  * Função auxiliar para converter valores entre unidades
  * Garante consistência na conversão em todos os pontos do componente
- * Mantém a precisão exata nos cálculos (sem arredondamento)
  */
 const convertQuantityBetweenUnits = (
     value: number, 
@@ -208,48 +199,80 @@ const convertQuantityBetweenUnits = (
         return value;
     }
     
-    // Usar a nova função de conversão exata para manter precisão total
-    const result = convertQuantityExact(value, fromUnitType, toUnitType);
+    let result = value;
+    
+    // Cenários específicos de conversão
+    if (conversionFactor === 1000) {
+        // Caso ml para L ou g para kg (unidade menor para maior)
+        result = value / conversionFactor;
+        console.log(`Convertendo de unidade menor para maior: ${value} / ${conversionFactor} = ${result}`);
+    } 
+    else if (conversionFactor === 0.001) {
+        // Caso L para ml ou kg para g (unidade maior para menor)
+        result = value * 1000; // Equivalente a value / conversionFactor
+        console.log(`Convertendo de unidade maior para menor: ${value} * 1000 = ${result}`);
+    }
+    else {
+        // Caso genérico utilizando o fator de conversão
+        if (conversionFactor > 1) {
+            result = value / conversionFactor;
+            console.log(`Conversão genérica (divisão): ${value} / ${conversionFactor} = ${result}`);
+        } else {
+            result = value * (1 / conversionFactor);
+            console.log(`Conversão genérica (multiplicação): ${value} * (1/${conversionFactor}) = ${result}`);
+        }
+    }
     
     console.log(`FINAL: Convertido ${value} na unidade ${fromUnitType} para ${result} na unidade ${toUnitType}`);
     return result;
 };
 
 /**
- * Função para validação de quantidade para saídas (a ser usada em onSubmit e handleSubmitButtonClick)
- * Usa a nova implementação com unidades base (ml, g) para validação de estoque
- * Retorna { valid: boolean, message: string | null }
+ * Converte um valor para a unidade base do produto para comparação de estoque
+ * com limitação de casas decimais para evitar problemas de arredondamento
  */
-const validateQuantityForMovement = (
-    type, // 'entrada' ou 'saida'
-    product, 
-    parsedValue, // valor numérico inserido
-    selectedUnitType, // unidade selecionada (ou default)
-    form // referência ao formulário para gerenciar erros
-) => {
-    // Ignorar verificação para entradas
-    if (type !== 'saida' || !product) {
-        return { valid: true, message: null };
-    }
-
-    // Log detalhado do produto
-    console.log("DEBUG - VALIDAÇÃO DE QUANTIDADE:", {
-        id: product.id,
-        name: product.name,
-        code: product.code,
-        unit: product.unit,
-        quantity: product.quantity,
-        selectedUnitType,
-        parsedValue
-    });
+const normalizeQuantityForComparison = (
+    value: number,
+    fromUnit: string,
+    toUnit: string
+): number => {
+    // Normalizar unidades para minúsculas
+    const fromUnitLower = fromUnit.toLowerCase();
+    const toUnitLower = toUnit.toLowerCase();
     
-    // Usar a função de validação do utilitário (nova implementação)
-    return validateStock(
-        product.quantity,
-        parsedValue,
-        selectedUnitType === 'default' ? product.unit : selectedUnitType,
-        product.unit
-    );
+    // Se as unidades são iguais, não é necessário converter
+    if (fromUnitLower === toUnitLower || fromUnit === 'default') {
+        return Number(value.toFixed(3)); // Limitar a 3 casas decimais
+    }
+    
+    let convertedValue;
+    
+    // ml para L (0.09L = 90ml)
+    if (fromUnitLower === 'ml' && toUnitLower === 'l') {
+        convertedValue = value / 1000;
+        return Number(convertedValue.toFixed(3)); // Limitar a 3 casas decimais
+    }
+    
+    // L para ml
+    if (fromUnitLower === 'l' && toUnitLower === 'ml') {
+        convertedValue = value * 1000;
+        return Number(convertedValue.toFixed(3)); // Limitar a 3 casas decimais
+    }
+    
+    // g para kg (0.09kg = 90g)
+    if (fromUnitLower === 'g' && toUnitLower === 'kg') {
+        convertedValue = value / 1000;
+        return Number(convertedValue.toFixed(3)); // Limitar a 3 casas decimais
+    }
+    
+    // kg para g
+    if (fromUnitLower === 'kg' && toUnitLower === 'g') {
+        convertedValue = value * 1000;
+        return Number(convertedValue.toFixed(3)); // Limitar a 3 casas decimais
+    }
+    
+    // Nenhuma conversão específica encontrada
+    return Number(value.toFixed(3)); // Limitar a 3 casas decimais
 };
 
 /**
@@ -356,8 +379,9 @@ export function ModernMovementDialog({
         const parsedValue = parseFloat(numericValue);
         
         if (!isNaN(parsedValue)) {
-            // Não limitar casas decimais para manter precisão no cálculo
-            form.setValue('quantity', parsedValue);
+            // Limitar a 3 casas decimais para evitar problemas de comparação
+            const roundedValue = Number(parsedValue.toFixed(3));
+            form.setValue('quantity', roundedValue);
         } else {
             form.setValue('quantity', null);
         }
@@ -386,19 +410,21 @@ export function ModernMovementDialog({
             // Unidade selecionada no formulário (ou unidade padrão do produto)
             const selectedUnitType = form.watch('unitType') === 'default' ? product.unit : form.watch('unitType');
             
-            // Usar a nova função de validação
-            const validationResult = validateQuantityForMovement(
-                type,
-                product,
+            // Converter para unidade do produto para comparação com arredondamento
+            const convertedValue = normalizeQuantityForComparison(
                 parsedValue,
                 selectedUnitType,
-                form
+                product.unit
             );
             
-            if (!validationResult.valid) {
+            // Adicionar uma pequena tolerância para evitar problemas de arredondamento
+            const TOLERANCE = 0.001; // Tolerância de 0.001 unidades
+            
+            // Verificar se a quantidade convertida é maior que o estoque disponível
+            if (convertedValue > (product.quantity + TOLERANCE)) {
                 form.setError('quantity', { 
                     type: 'manual', 
-                    message: validationResult.message 
+                    message: 'Quantidade não pode ser maior que o estoque disponível' 
                 });
                 return;
             }
@@ -417,14 +443,14 @@ export function ModernMovementDialog({
 
         try {
             // Converter o valor inserido para a unidade base do produto, se necessário
-            let finalQuantity = parsedValue; // Manter valor original sem limitação de casas
+            let finalQuantity = Number(parsedValue.toFixed(3)); // Limitar a 3 casas decimais
             
             if (form.watch('unitType') !== 'default') {
                 // Unidade selecionada no formulário
                 const selectedUnitType = form.watch('unitType');
                 
-                // Converter para unidade do produto usando conversão exata
-                finalQuantity = convertQuantityExact(
+                // Converter para unidade do produto para armazenar com limitação de casas decimais
+                finalQuantity = normalizeQuantityForComparison(
                     parsedValue,
                     selectedUnitType,
                     product.unit
@@ -445,148 +471,75 @@ export function ModernMovementDialog({
 
             // Se estiver editando uma movimentação existente
             if (editMode && movementToEdit) {
-                // Log para depuração de edição
-                console.log('[TESTE-EDIÇÃO] Iniciando teste de edição de movimentação', {
-                    movimentoId: movementToEdit.id,
-                    tipoOriginal: movementToEdit.type,
-                    quantidadeOriginal: movementToEdit.quantity,
-                    tipoNovo: type,
-                    quantidadeNova: finalQuantity,
-                    estoqueAtual: currentQuantity
-                });
-
                 // 1. Primeiro reverter a movimentação antiga
                 if (movementToEdit.type === 'entrada') {
                     // Se a entrada original for revertida, diminuir do estoque
                     newQuantity = currentQuantity - movementToEdit.quantity;
-                    console.log('[TESTE-EDIÇÃO] Revertendo entrada:', { 
-                        quantidadeRevertida: movementToEdit.quantity,
-                        novoEstoqueAposReversao: newQuantity
-                    });
                 } else {
                     // Se a saída original for revertida, adicionar ao estoque
                     newQuantity = currentQuantity + movementToEdit.quantity;
-                    console.log('[TESTE-EDIÇÃO] Revertendo saída:', { 
-                        quantidadeRevertida: movementToEdit.quantity,
-                        novoEstoqueAposReversao: newQuantity
-                    });
                 }
 
                 // 2. Verifica se podemos continuar após a reversão
                 if (newQuantity < 0) {
-                    console.error('[TESTE-EDIÇÃO] Erro: A reversão causaria estoque negativo');
                     throw new Error('Não é possível reverter a movimentação original, pois deixaria o estoque negativo.');
                 }
 
                 // 3. Agora aplicar a nova movimentação
-                const estoqueIntermediario = newQuantity;
                 newQuantity = type === 'entrada'
                     ? newQuantity + finalQuantity
                     : newQuantity - finalQuantity;
-                    
-                console.log('[TESTE-EDIÇÃO] Aplicando nova movimentação:', { 
-                    tipo: type,
-                    quantidade: finalQuantity,
-                    estoqueIntermediario,
-                    novoEstoqueFinal: newQuantity
-                });
 
                 // 4. Verificar se há quantidade suficiente para a nova saída
                 if (newQuantity < 0) {
-                    console.error('[TESTE-EDIÇÃO] Erro: A nova quantidade causaria estoque negativo');
                     throw new Error('Quantidade insuficiente em estoque para a nova saída');
                 }
 
-                // 5. Implementar uma transação manual
-                try {
-                    // Iniciar transação desativando o autocommit (configuração isolada)
-                    console.log('[TESTE-EDIÇÃO] Iniciando transação manual');
-                    
-                    // 5.1 Atualizar a movimentação
-                    const { error: updateMovementError } = await supabase
-                        .from('movements')
-                        .update({
-                            type,
-                            quantity: finalQuantity,
-                            notes: finalValues.notes || null,
-                            employee_id: type === 'saida' ? finalValues.employee_id : null,
-                        })
-                        .eq('id', movementToEdit.id);
+                // 5. Atualizar a movimentação existente
+                const { error: updateMovementError } = await supabase
+                    .from('movements')
+                    .update({
+                        type,
+                        quantity: finalQuantity,
+                        notes: finalValues.notes || null,
+                        employee_id: type === 'saida' ? finalValues.employee_id : null,
+                    })
+                    .eq('id', movementToEdit.id);
 
-                    if (updateMovementError) throw updateMovementError;
-                    
-                    // 5.2 Atualizar o produto
-                    const { error: updateProductError } = await supabase
-                        .from('products')
-                        .update({ quantity: newQuantity })
-                        .eq('id', product.id);
-                    
-                    if (updateProductError) throw updateProductError;
-                    
-                    console.log('[TESTE-EDIÇÃO] Transação manual de edição concluída com sucesso');
-                } catch (txError) {
-                    console.error('[TESTE-EDIÇÃO] Erro na transação manual:', txError);
-                    // Se qualquer operação falhar, a exceção será propagada
-                    throw new Error(`Erro ao editar movimentação: ${txError instanceof Error ? txError.message : 'Erro desconhecido'}`);
-                }
+                if (updateMovementError) throw updateMovementError;
             } else {
                 // Fluxo para nova movimentação
-                console.log('[TESTE-NOVO] Iniciando teste de nova movimentação', {
-                    produtoId: product.id,
-                    tipo: type,
-                    quantidade: finalQuantity,
-                    estoqueAtual: currentQuantity
-                });
-                
                 // 1. Calcular a nova quantidade
                 newQuantity = type === 'entrada'
                     ? currentQuantity + finalQuantity
                     : currentQuantity - finalQuantity;
 
-                console.log('[TESTE-NOVO] Quantidade calculada:', {
-                    tipo: type,
-                    quantidadeMovimento: finalQuantity,
-                    estoqueAnterior: currentQuantity,
-                    novoEstoque: newQuantity
-                });
-
                 // Verifica se há quantidade suficiente para saída
                 if (type === 'saida' && newQuantity < 0) {
-                    console.error('[TESTE-NOVO] Erro: Quantidade insuficiente para saída');
                     throw new Error('Quantidade insuficiente em estoque');
                 }
 
-                // 2. Implementar uma transação manual para nova movimentação
-                try {
-                    console.log('[TESTE-NOVO] Iniciando transação manual para nova movimentação');
-                    
-                    // 2.1 Registrar a nova movimentação
-                    const { error: movementError } = await supabase
-                        .from('movements')
-                        .insert({
-                            product_id: product.id,
-                            type: type,
-                            quantity: finalQuantity,
-                            notes: finalValues.notes || null,
-                            employee_id: type === 'saida' ? finalValues.employee_id : null,
-                        });
+                // 2. Registrar a nova movimentação
+                const { error: movementError } = await supabase
+                    .from('movements')
+                    .insert({
+                        product_id: product.id,
+                        type: type,
+                        quantity: finalQuantity,
+                        notes: finalValues.notes || null,
+                        employee_id: type === 'saida' ? finalValues.employee_id : null,
+                    });
 
-                    if (movementError) throw movementError;
-                    
-                    // 2.2 Atualizar o estoque do produto
-                    const { error: updateError } = await supabase
-                        .from('products')
-                        .update({ quantity: newQuantity })
-                        .eq('id', product.id);
-
-                    if (updateError) throw updateError;
-                    
-                    console.log('[TESTE-NOVO] Transação manual para nova movimentação concluída com sucesso');
-                } catch (txError) {
-                    console.error('[TESTE-NOVO] Erro na transação manual (nova movimentação):', txError);
-                    throw new Error(`Erro ao registrar movimentação: ${txError instanceof Error ? txError.message : 'Erro desconhecido'}`);
-                }
+                if (movementError) throw movementError;
             }
+
+            // Atualizar a quantidade do produto
+            const { error: updateError } = await supabase
+                .from('products')
+                .update({ quantity: newQuantity })
+                .eq('id', product.id);
+
+            if (updateError) throw updateError;
 
             // Atualizar dados
             await fetchMovements();
@@ -623,17 +576,6 @@ export function ModernMovementDialog({
         const numericValue = quantityInput.replace(',', '.');
         const parsedValue = parseFloat(numericValue);
         
-        console.log("DEBUG - Valores de entrada:", {
-            numericValue,
-            parsedValue,
-            product: product ? {
-                id: product.id,
-                name: product.name,
-                unit: product.unit,
-                quantity: product.quantity
-            } : 'null'
-        });
-        
         // Verificar se é um número válido
         if (isNaN(parsedValue) || parsedValue <= 0) {
             form.setError('quantity', { 
@@ -648,19 +590,21 @@ export function ModernMovementDialog({
             // Unidade selecionada no formulário (ou unidade padrão do produto)
             const selectedUnitType = form.watch('unitType') === 'default' ? product.unit : form.watch('unitType');
             
-            // Usar a função de validação atualizada
-            const validationResult = validateQuantityForMovement(
-                type,
-                product,
+            // Converter para unidade do produto para comparação com arredondamento
+            const convertedValue = normalizeQuantityForComparison(
                 parsedValue,
                 selectedUnitType,
-                form
+                product.unit
             );
             
-            if (!validationResult.valid) {
+            // Adicionar uma pequena tolerância para evitar problemas de arredondamento
+            const TOLERANCE = 0.001; // Tolerância de 0.001 unidades
+            
+            // Verificar se a quantidade convertida é maior que o estoque disponível
+            if (convertedValue > (product.quantity + TOLERANCE)) {
                 form.setError('quantity', { 
                     type: 'manual', 
-                    message: validationResult.message 
+                    message: 'Quantidade não pode ser maior que o estoque disponível' 
                 });
                 return;
             }
@@ -671,7 +615,7 @@ export function ModernMovementDialog({
         
         // Obter os valores do formulário e adicionar a quantidade manualmente
         const values = form.getValues() as FormValues;
-        values.quantity = parsedValue; // Manter valor original sem limitação de casas
+        values.quantity = Number(parsedValue.toFixed(3)); // Limitar a 3 casas decimais
         
         // Chamar onSubmit com os valores combinados
         onSubmit(values);
