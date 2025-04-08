@@ -19,8 +19,10 @@ import {
   Layout,
   Calendar,
   Palette,
-  FileText
+  FileText,
+  ChevronRight
 } from 'lucide-react';
+import { useEffect, useState, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
@@ -31,10 +33,66 @@ interface SidebarProps {
   setShowDesktop?: (show: boolean) => void;
 }
 
+// Adicionar definição do componente SubmenuGroup
+interface SubmenuGroupProps {
+  icon: ReactNode;
+  label: string;
+  children: ReactNode;
+  defaultOpen?: boolean;
+}
+
+const SubmenuGroup = ({ icon, label, children, defaultOpen = false }: SubmenuGroupProps) => {
+  const [isOpen, setIsOpen] = useState(() => {
+    // Se já tiver salvo no localStorage, use esse valor, senão use o defaultOpen
+    const savedState = localStorage.getItem(`sidebar-submenu-${label}`);
+    return savedState !== null ? savedState === 'open' : defaultOpen;
+  });
+  
+  const toggleSubmenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const newState = !isOpen;
+    setIsOpen(newState);
+    // Salvar estado no localStorage
+    localStorage.setItem(`sidebar-submenu-${label}`, newState ? 'open' : 'closed');
+  };
+
+  return (
+    <div className="relative">
+      <div
+        className="flex items-center rounded-lg px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all cursor-pointer"
+        onClick={toggleSubmenu}
+      >
+        {icon && <span className="flex-shrink-0 mr-3">{icon}</span>}
+        <span className="truncate">{label}</span>
+        <ChevronRight className={cn(
+          "ml-auto h-4 w-4 transition-transform",
+          isOpen && "transform rotate-90"
+        )} />
+      </div>
+      
+      {isOpen && (
+        <div className="mt-1 space-y-1.5 pl-5">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const Sidebar = ({ showMobile, setShowMobile, showDesktop = true, setShowDesktop }: SidebarProps) => {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Usar o showDesktop do localStorage se disponível
+  useEffect(() => {
+    if (setShowDesktop) {
+      const savedState = localStorage.getItem('sidebar-desktop-state');
+      if (savedState !== null) {
+        setShowDesktop(savedState === 'open');
+      }
+    }
+  }, [setShowDesktop]);
 
   const handleLogout = async () => {
     try {
@@ -61,20 +119,13 @@ const Sidebar = ({ showMobile, setShowMobile, showDesktop = true, setShowDesktop
   const closeMobileMenu = () => {
     setShowMobile(false);
   };
-
-  const toggleDesktopSidebar = () => {
+  
+  // Atualiza o localStorage quando o estado da sidebar é alterado
+  const handleToggleDesktop = () => {
     if (setShowDesktop) {
       const newState = !showDesktop;
       setShowDesktop(newState);
-      
-      // Exibir toast com feedback da ação
-      toast({
-        title: newState ? "Menu expandido" : "Menu recolhido",
-        description: newState 
-          ? "O menu lateral foi expandido" 
-          : "O menu lateral foi recolhido. Clique no botão para expandir.",
-        duration: 1500,
-      });
+      localStorage.setItem('sidebar-desktop-state', newState ? 'open' : 'closed');
     }
   };
 
@@ -92,8 +143,8 @@ const Sidebar = ({ showMobile, setShowMobile, showDesktop = true, setShowDesktop
             }
             onClick={closeMobileMenu}
           >
-            <Home className="mr-3 h-4 w-4" />
-            <span>Dashboard</span>
+            <Home className="mr-3 h-4 w-4 flex-shrink-0" />
+            <span className="truncate">Dashboard</span>
           </NavLink>
           <NavLink
             to="/new-dashboard"
@@ -105,8 +156,8 @@ const Sidebar = ({ showMobile, setShowMobile, showDesktop = true, setShowDesktop
             }
             onClick={closeMobileMenu}
           >
-            <Sparkles className="mr-3 h-4 w-4" />
-            <span>Dashboard Moderno</span>
+            <Sparkles className="mr-3 h-4 w-4 flex-shrink-0" />
+            <span className="truncate">Dashboard Moderno</span>
           </NavLink>
           <NavLink
             to="/integrated"
@@ -118,48 +169,59 @@ const Sidebar = ({ showMobile, setShowMobile, showDesktop = true, setShowDesktop
             }
             onClick={closeMobileMenu}
           >
-            <Layout className="mr-3 h-4 w-4" />
-            <span>Interface Integrada</span>
+            <Layout className="mr-3 h-4 w-4 flex-shrink-0" />
+            <span className="truncate">Interface Integrada</span>
           </NavLink>
-          <NavLink
-            to="/products"
-            className={({ isActive }) =>
-              cn(
-                'flex items-center rounded-lg px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all',
-                isActive && 'bg-primary/10 text-primary font-semibold shadow-sm'
-              )
-            }
-            onClick={closeMobileMenu}
+          
+          {/* Submenu de Estoque */}
+          <SubmenuGroup 
+            icon={<Package className="h-4 w-4 flex-shrink-0" />}
+            label="Estoque"
+            defaultOpen={window.location.pathname.includes('/products') || 
+                        window.location.pathname.includes('/movements') ||
+                        window.location.pathname.includes('/categories')}
           >
-            <Package className="mr-3 h-4 w-4" />
-            <span>Produtos</span>
-          </NavLink>
-          <NavLink
-            to="/movements"
-            className={({ isActive }) =>
-              cn(
-                'flex items-center rounded-lg px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all',
-                isActive && 'bg-primary/10 text-primary font-semibold shadow-sm'
-              )
-            }
-            onClick={closeMobileMenu}
-          >
-            <ArrowDownUp className="mr-3 h-4 w-4" />
-            <span>Movimentações</span>
-          </NavLink>
-          <NavLink
-            to="/categories"
-            className={({ isActive }) =>
-              cn(
-                'flex items-center rounded-lg px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all',
-                isActive && 'bg-primary/10 text-primary font-semibold shadow-sm'
-              )
-            }
-            onClick={closeMobileMenu}
-          >
-            <ListTodo className="mr-3 h-4 w-4" />
-            <span>Categorias</span>
-          </NavLink>
+            <NavLink
+              to="/products"
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center rounded-lg px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all',
+                  isActive && 'bg-primary/10 text-primary font-semibold shadow-sm'
+                )
+              }
+              onClick={closeMobileMenu}
+            >
+              <Package className="mr-3 h-4 w-4 flex-shrink-0" />
+              <span className="truncate">Produtos</span>
+            </NavLink>
+            <NavLink
+              to="/movements"
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center rounded-lg px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all',
+                  isActive && 'bg-primary/10 text-primary font-semibold shadow-sm'
+                )
+              }
+              onClick={closeMobileMenu}
+            >
+              <ArrowDownUp className="mr-3 h-4 w-4 flex-shrink-0" />
+              <span className="truncate">Movimentações</span>
+            </NavLink>
+            <NavLink
+              to="/categories"
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center rounded-lg px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all',
+                  isActive && 'bg-primary/10 text-primary font-semibold shadow-sm'
+                )
+              }
+              onClick={closeMobileMenu}
+            >
+              <ListTodo className="mr-3 h-4 w-4 flex-shrink-0" />
+              <span className="truncate">Categorias</span>
+            </NavLink>
+          </SubmenuGroup>
+          
           <NavLink
             to="/employees"
             className={({ isActive }) =>
@@ -170,8 +232,8 @@ const Sidebar = ({ showMobile, setShowMobile, showDesktop = true, setShowDesktop
             }
             onClick={closeMobileMenu}
           >
-            <Users className="mr-3 h-4 w-4" />
-            <span>Colaboradores</span>
+            <Users className="mr-3 h-4 w-4 flex-shrink-0" />
+            <span className="truncate">Colaboradores</span>
           </NavLink>
           <NavLink
             to="/history"
@@ -183,35 +245,45 @@ const Sidebar = ({ showMobile, setShowMobile, showDesktop = true, setShowDesktop
             }
             onClick={closeMobileMenu}
           >
-            <FileBox className="mr-3 h-4 w-4" />
-            <span>Histórico</span>
+            <FileBox className="mr-3 h-4 w-4 flex-shrink-0" />
+            <span className="truncate">Histórico</span>
           </NavLink>
-          <NavLink
-            to="/reports"
-            className={({ isActive }) =>
-              cn(
-                'flex items-center rounded-lg px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all',
-                isActive && 'bg-primary/10 text-primary font-semibold shadow-sm'
-              )
-            }
-            onClick={closeMobileMenu}
+          
+          {/* Submenu de Relatórios */}
+          <SubmenuGroup 
+            icon={<BarChart3 className="h-4 w-4 flex-shrink-0" />}
+            label="Relatórios"
+            defaultOpen={window.location.pathname.includes('/reports') || 
+                        window.location.pathname.includes('/employee-output-report')}
           >
-            <BarChart3 className="mr-3 h-4 w-4" />
-            <span>Relatórios</span>
-          </NavLink>
-          <NavLink
-            to="/employee-output-report"
-            className={({ isActive }) =>
-              cn(
-                'flex items-center rounded-lg px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all',
-                isActive && 'bg-primary/10 text-primary font-semibold shadow-sm'
-              )
-            }
-            onClick={closeMobileMenu}
-          >
-            <FileText className="mr-3 h-4 w-4" />
-            <span>Relatório de Saídas</span>
-          </NavLink>
+            <NavLink
+              to="/reports"
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center rounded-lg px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all',
+                  isActive && 'bg-primary/10 text-primary font-semibold shadow-sm'
+                )
+              }
+              onClick={closeMobileMenu}
+            >
+              <BarChart3 className="mr-3 h-4 w-4 flex-shrink-0" />
+              <span className="truncate">Relatórios Gerais</span>
+            </NavLink>
+            <NavLink
+              to="/employee-output-report"
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center rounded-lg px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-all',
+                  isActive && 'bg-primary/10 text-primary font-semibold shadow-sm'
+                )
+              }
+              onClick={closeMobileMenu}
+            >
+              <FileText className="mr-3 h-4 w-4 flex-shrink-0" />
+              <span className="truncate">Relatório de Saídas</span>
+            </NavLink>
+          </SubmenuGroup>
+          
           <NavLink
             to="/settings"
             className={({ isActive }) =>
@@ -222,8 +294,8 @@ const Sidebar = ({ showMobile, setShowMobile, showDesktop = true, setShowDesktop
             }
             onClick={closeMobileMenu}
           >
-            <Settings className="mr-3 h-4 w-4" />
-            <span>Configurações</span>
+            <Settings className="mr-3 h-4 w-4 flex-shrink-0" />
+            <span className="truncate">Configurações</span>
           </NavLink>
           <NavLink
             to="/design-system"
@@ -235,8 +307,8 @@ const Sidebar = ({ showMobile, setShowMobile, showDesktop = true, setShowDesktop
             }
             onClick={closeMobileMenu}
           >
-            <Palette className="mr-3 h-4 w-4" />
-            <span>Design System</span>
+            <Palette className="mr-3 h-4 w-4 flex-shrink-0" />
+            <span className="truncate">Design System</span>
           </NavLink>
         </div>
       </div>
@@ -246,8 +318,8 @@ const Sidebar = ({ showMobile, setShowMobile, showDesktop = true, setShowDesktop
           className="w-full justify-start gap-2 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20 rounded-lg transition-all"
           onClick={handleLogout}
         >
-          <LogOut className="h-4 w-4" />
-          Sair
+          <LogOut className="h-4 w-4 flex-shrink-0" />
+          <span className="truncate">Sair</span>
         </Button>
       </div>
     </>
@@ -266,19 +338,17 @@ const Sidebar = ({ showMobile, setShowMobile, showDesktop = true, setShowDesktop
           <Button
             variant="ghost"
             size="icon"
-            className="absolute -right-12 top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-md rounded-full shadow-md shadow-primary/5 border border-border/30 hover:bg-accent hover:shadow-lg"
-            onClick={toggleDesktopSidebar}
-            title={showDesktop ? "Recolher menu" : "Expandir menu"}
-            aria-label={showDesktop ? "Recolher menu" : "Expandir menu"}
+            className="absolute top-3 -right-10 bg-primary/5 text-muted-foreground"
+            onClick={handleToggleDesktop}
           >
-            <ChevronLeft className={cn("h-5 w-5 transition-transform duration-300", !showDesktop && "rotate-180")} />
+            <ChevronLeft className={cn("h-5 w-5", !showDesktop && "rotate-180")} />
           </Button>
         )}
       </div>
 
-      {/* Mobile Sidebar (Sheet) */}
+      {/* Mobile Sidebar */}
       <Sheet open={showMobile} onOpenChange={setShowMobile}>
-        <SheetContent side="left" className="p-0 pt-10 backdrop-blur-xl bg-background/90 border-r border-border/40">
+        <SheetContent side="left" className="p-0 w-72">
           <ScrollArea className="h-full py-6">{sidebarContent}</ScrollArea>
         </SheetContent>
       </Sheet>

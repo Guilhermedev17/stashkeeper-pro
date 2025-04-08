@@ -6,40 +6,29 @@ import { Toaster } from '@/components/ui/toaster';
 import { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import PageTransition from '@/components/layout/PageTransition';
-import { STORAGE_KEYS, APP_SETTINGS } from '@/lib/constants';
 
 const MainLayout = () => {
   const { isAuthenticated, isLoading } = useAuth();
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
-  const [showDesktopSidebar, setShowDesktopSidebar] = useState(APP_SETTINGS.SIDEBAR_EXPANDED_DEFAULT);
+  const [showDesktopSidebar, setShowDesktopSidebar] = useState(true);
   const [scrollY, setScrollY] = useState(0);
   
   const toggleMobileMenu = () => {
     setShowMobileSidebar(prev => !prev);
   };
 
-  // Recupera o estado do menu desktop do localStorage ao carregar a página
+  // Salva o estado do menu desktop no localStorage
   useEffect(() => {
-    try {
-      const savedState = localStorage.getItem(STORAGE_KEYS.SIDEBAR_STATE);
-      if (savedState !== null) {
-        const parsedState = JSON.parse(savedState);
-        setShowDesktopSidebar(parsedState === true);
-      }
-    } catch (error) {
-      console.error('Erro ao recuperar estado da barra lateral:', error);
-      // Em caso de erro, mantém o valor padrão (expandido)
+    localStorage.setItem('showDesktopSidebar', showDesktopSidebar.toString());
+  }, [showDesktopSidebar]);
+
+  // Recupera o estado do menu desktop do localStorage
+  useEffect(() => {
+    const savedState = localStorage.getItem('showDesktopSidebar');
+    if (savedState !== null) {
+      setShowDesktopSidebar(savedState === 'true');
     }
   }, []);
-
-  // Salva o estado do menu desktop no localStorage sempre que mudar
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEYS.SIDEBAR_STATE, JSON.stringify(showDesktopSidebar));
-    } catch (error) {
-      console.error('Erro ao salvar estado da barra lateral:', error);
-    }
-  }, [showDesktopSidebar]);
   
   // Controla o scroll para calcular a altura dinâmica do header
   useEffect(() => {

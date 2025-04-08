@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { NavLink, useLocation, Outlet } from 'react-router-dom';
@@ -6,7 +6,7 @@ import {
     BarChart3, FileBox, Home, ListTodo, LogOut,
     Package, Settings, ArrowDownUp, Users, Sparkles,
     Menu, X, Bell, Search, User, ChevronDown,
-    Calendar, FileText
+    Calendar, FileText, ChevronRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ModernThemeSwitcher from '@/components/layout/modern/ModernThemeSwitcher';
@@ -26,9 +26,14 @@ import NavigationProgress from '@/components/NavigationProgress';
 import { AnimatePresence } from 'framer-motion';
 import PageTransition from '@/components/layout/PageTransition';
 import { useToast } from '@/hooks/use-toast';
+import { Link } from 'react-router-dom';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const IntegratedLayout = () => {
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+        const savedState = localStorage.getItem('sidebar-state');
+        return savedState !== null ? savedState === 'open' : true;
+    });
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { logout, user } = useAuth();
     const location = useLocation();
@@ -36,7 +41,9 @@ const IntegratedLayout = () => {
     const { toast } = useToast();
 
     const toggleSidebar = () => {
-        setIsSidebarOpen(!isSidebarOpen);
+        const newState = !isSidebarOpen;
+        setIsSidebarOpen(newState);
+        localStorage.setItem('sidebar-state', newState ? 'open' : 'closed');
     };
 
     const toggleMobileMenu = () => {
@@ -55,7 +62,6 @@ const IntegratedLayout = () => {
                 description: 'Você saiu do sistema com sucesso. Até logo!',
                 variant: 'default',
             });
-            // Pequeno atraso para permitir que o toast seja exibido
             setTimeout(() => {
                 navigate("/login");
             }, 1000);
@@ -149,20 +155,30 @@ const IntegratedLayout = () => {
                             isActive={isActive('/history')}
                             collapsed={!isSidebarOpen}
                         />
-                        <SidebarItem
-                            to="/reports"
+                        
+                        {/* Submenu de Relatórios */}
+                        <SubmenuItem
                             icon={<BarChart3 className="size-5" />}
                             label="Relatórios"
-                            isActive={isActive('/reports')}
                             collapsed={!isSidebarOpen}
-                        />
-                        <SidebarItem
-                            to="/employee-output-report"
-                            icon={<FileText className="size-5" />}
-                            label="Relatório de Saídas"
-                            isActive={isActive('/employee-output-report')}
-                            collapsed={!isSidebarOpen}
-                        />
+                            defaultOpen={isActive('/reports') || isActive('/employee-output-report')}
+                        >
+                            <SidebarItem
+                                to="/reports"
+                                icon={<BarChart3 className="size-4" />}
+                                label="Geral"
+                                isActive={isActive('/reports')}
+                                collapsed={!isSidebarOpen}
+                            />
+                            <SidebarItem
+                                to="/employee-output-report"
+                                icon={<FileText className="size-4" />}
+                                label="Relatório de Saídas"
+                                isActive={isActive('/employee-output-report')}
+                                collapsed={!isSidebarOpen}
+                            />
+                        </SubmenuItem>
+                        
                         <SidebarItem
                             to="/settings"
                             icon={<Settings className="size-5" />}
@@ -182,8 +198,8 @@ const IntegratedLayout = () => {
                             !isSidebarOpen && "px-0"
                         )}
                     >
-                        <LogOut className="size-5" />
-                        {isSidebarOpen && <span className="ml-3">Sair</span>}
+                        <LogOut className="size-5 flex-shrink-0" />
+                        {isSidebarOpen && <span className="ml-3 truncate">Sair</span>}
                     </button>
                 </div>
             </aside>
@@ -310,20 +326,29 @@ const IntegratedLayout = () => {
                                     isActive={isActive('/history')}
                                     onClick={toggleMobileMenu}
                                 />
-                                <MobileSidebarItem
-                                    to="/reports"
+                                
+                                {/* Submenu de Relatórios para mobile */}
+                                <MobileSubmenuItem
                                     icon={<BarChart3 className="size-5" />}
                                     label="Relatórios"
-                                    isActive={isActive('/reports')}
-                                    onClick={toggleMobileMenu}
-                                />
-                                <MobileSidebarItem
-                                    to="/employee-output-report"
-                                    icon={<FileText className="size-5" />}
-                                    label="Relatório de Saídas"
-                                    isActive={isActive('/employee-output-report')}
-                                    onClick={toggleMobileMenu}
-                                />
+                                    defaultOpen={isActive('/reports') || isActive('/employee-output-report')}
+                                >
+                                    <MobileSidebarItem
+                                        to="/reports"
+                                        icon={<BarChart3 className="size-4" />}
+                                        label="Geral"
+                                        isActive={isActive('/reports')}
+                                        onClick={toggleMobileMenu}
+                                    />
+                                    <MobileSidebarItem
+                                        to="/employee-output-report"
+                                        icon={<FileText className="size-4" />}
+                                        label="Relatório de Saídas"
+                                        isActive={isActive('/employee-output-report')}
+                                        onClick={toggleMobileMenu}
+                                    />
+                                </MobileSubmenuItem>
+                                
                                 <MobileSidebarItem
                                     to="/settings"
                                     icon={<Settings className="size-5" />}
@@ -340,8 +365,8 @@ const IntegratedLayout = () => {
                                 onClick={handleLogout}
                                 className="flex items-center text-muted-foreground hover:text-foreground focus:outline-none"
                             >
-                                <LogOut className="size-5" />
-                                <span className="ml-2">Sair</span>
+                                <LogOut className="size-5 flex-shrink-0" />
+                                <span className="ml-2 truncate">Sair</span>
                             </button>
                         </div>
                     </div>
@@ -373,7 +398,7 @@ const SidebarItem = ({ to, icon, label, isActive, collapsed }: SidebarItemProps)
                 )}
             >
                 <div className={cn(
-                    "flex items-center justify-center transition-transform w-5 h-5",
+                    "flex items-center justify-center transition-transform w-5 h-5 flex-shrink-0",
                     isActive && "text-primary",
                     !isActive && "text-muted-foreground group-hover:text-foreground"
                 )}>
@@ -381,7 +406,7 @@ const SidebarItem = ({ to, icon, label, isActive, collapsed }: SidebarItemProps)
                 </div>
                 {!collapsed && (
                     <span className={cn(
-                        "ml-3 transition-opacity",
+                        "ml-3 transition-opacity truncate",
                         isActive && "text-primary"
                     )}>
                         {label}
@@ -414,19 +439,132 @@ const MobileSidebarItem = ({ to, icon, label, isActive, onClick }: MobileSidebar
                 onClick={onClick}
             >
                 <div className={cn(
-                    "flex items-center justify-center transition-transform w-5 h-5",
+                    "flex items-center justify-center transition-transform w-5 h-5 flex-shrink-0",
                     isActive && "text-primary",
                     !isActive && "text-muted-foreground group-hover:text-foreground"
                 )}>
                     {icon}
                 </div>
                 <span className={cn(
-                    "ml-3 transition-opacity",
+                    "ml-3 transition-opacity truncate",
                     isActive && "text-primary"
                 )}>
                     {label}
                 </span>
             </NavLink>
+        </li>
+    );
+};
+
+interface SubmenuItemProps {
+    icon: ReactNode;
+    label: string;
+    collapsed: boolean;
+    children: ReactNode;
+    defaultOpen?: boolean;
+}
+
+const SubmenuItem = ({ icon, label, collapsed, children, defaultOpen = false }: SubmenuItemProps) => {
+    const [isOpen, setIsOpen] = useState(() => {
+        // Se já tiver salvo no localStorage, use esse valor, senão use o defaultOpen
+        const savedState = localStorage.getItem(`sidebar-submenu-${label}`);
+        return savedState !== null ? savedState === 'open' : defaultOpen;
+    });
+    
+    const toggleSubmenu = () => {
+        const newState = !isOpen;
+        setIsOpen(newState);
+        // Salvar estado no localStorage
+        localStorage.setItem(`sidebar-submenu-${label}`, newState ? 'open' : 'closed');
+    };
+
+    return (
+        <li className="relative">
+            <div
+                className={cn(
+                    "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 h-11 cursor-pointer",
+                    "text-foreground hover:bg-accent hover:text-accent-foreground",
+                    collapsed && "justify-center"
+                )}
+                onClick={toggleSubmenu}
+            >
+                <div className="flex items-center justify-center transition-transform w-5 h-5 flex-shrink-0 text-muted-foreground group-hover:text-foreground">
+                    {icon}
+                </div>
+                {!collapsed && (
+                    <>
+                        <span className="ml-3 transition-opacity truncate">
+                            {label}
+                        </span>
+                        <ChevronRight className={cn(
+                            "ml-auto h-4 w-4 transition-transform",
+                            isOpen && "transform rotate-90"
+                        )} />
+                    </>
+                )}
+            </div>
+            
+            {/* Submenu items */}
+            {(isOpen || collapsed) && (
+                <ul className={cn(
+                    "mt-1 space-y-1 transition-all",
+                    collapsed ? "pl-0" : "pl-4",
+                )}>
+                    {children}
+                </ul>
+            )}
+        </li>
+    );
+};
+
+interface MobileSubmenuItemProps {
+    icon: ReactNode;
+    label: string;
+    children: ReactNode;
+    defaultOpen?: boolean;
+}
+
+const MobileSubmenuItem = ({ icon, label, children, defaultOpen = false }: MobileSubmenuItemProps) => {
+    const [isOpen, setIsOpen] = useState(() => {
+        // Se já tiver salvo no localStorage, use esse valor, senão use o defaultOpen
+        const savedState = localStorage.getItem(`mobile-sidebar-submenu-${label}`);
+        return savedState !== null ? savedState === 'open' : defaultOpen;
+    });
+    
+    const toggleSubmenu = () => {
+        const newState = !isOpen;
+        setIsOpen(newState);
+        // Salvar estado no localStorage
+        localStorage.setItem(`mobile-sidebar-submenu-${label}`, newState ? 'open' : 'closed');
+    };
+
+    return (
+        <li className="relative">
+            <div
+                className={cn(
+                    "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 h-11 cursor-pointer",
+                    "text-foreground hover:bg-accent hover:text-accent-foreground"
+                )}
+                onClick={toggleSubmenu}
+            >
+                <div className="flex items-center justify-center transition-transform w-5 h-5 flex-shrink-0 text-muted-foreground group-hover:text-foreground">
+                    {icon}
+                </div>
+                <span className="ml-3 transition-opacity truncate">
+                    {label}
+                </span>
+                <ChevronRight className={cn(
+                    "ml-auto h-4 w-4 transition-transform",
+                    isOpen && "transform rotate-90"
+                )} />
+            </div>
+            
+            {/* Submenu items */}
+            {isOpen && (
+                <ul className="mt-1 space-y-1 pl-4 transition-all">
+                    {children}
+                </ul>
+            )}
         </li>
     );
 };

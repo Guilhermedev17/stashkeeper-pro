@@ -4,7 +4,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { STORAGE_KEYS } from '@/lib/constants';
 
 export const IntegrityCheck = () => {
   const { toast } = useToast();
@@ -25,7 +24,7 @@ export const IntegrityCheck = () => {
       setChecking(true);
       
       // 1. Obter IDs de movimentações excluídas do localStorage
-      const storedIds = localStorage.getItem(STORAGE_KEYS.DELETED_MOVEMENT_IDS);
+      const storedIds = localStorage.getItem('deletedMovementIds');
       if (!storedIds) {
         console.log('[IntegrityCheck] Nenhum ID de movimentação excluída encontrado no localStorage');
         setIssues({ inconsistentMovements: 0, fixedMovements: 0 });
@@ -93,7 +92,7 @@ export const IntegrityCheck = () => {
         
         // Apenas atualizar se houver diferença
         if (mergedIds.length !== localDeletedIds.length) {
-          localStorage.setItem(STORAGE_KEYS.DELETED_MOVEMENT_IDS, JSON.stringify(mergedIds));
+          localStorage.setItem('deletedMovementIds', JSON.stringify(mergedIds));
           console.log(`[IntegrityCheck] Lista de IDs excluídos atualizada no localStorage: ${mergedIds.length} IDs`);
         }
       }
@@ -134,7 +133,7 @@ export const IntegrityCheck = () => {
 
   // Verificar integridade na inicialização
   useEffect(() => {
-    const lastCheckTime = localStorage.getItem(STORAGE_KEYS.LAST_INTEGRITY_CHECK);
+    const lastCheckTime = localStorage.getItem('lastIntegrityCheck');
     
     if (lastCheckTime) {
       setLastCheck(new Date(lastCheckTime));
@@ -157,7 +156,7 @@ export const IntegrityCheck = () => {
   // Salvar timestamp da última verificação
   useEffect(() => {
     if (lastCheck) {
-      localStorage.setItem(STORAGE_KEYS.LAST_INTEGRITY_CHECK, lastCheck.toISOString());
+      localStorage.setItem('lastIntegrityCheck', lastCheck.toISOString());
     }
   }, [lastCheck]);
 

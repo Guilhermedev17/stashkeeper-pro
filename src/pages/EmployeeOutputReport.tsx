@@ -274,11 +274,13 @@ const EmployeeOutputReport = () => {
     reportArray.sort((a, b) => a.employee_name.localeCompare(b.employee_name));
 
     setReportData(reportArray);
-    setIsLoading(false);
-    setReportGenerated(true);
     
-    // Exibir mensagem de sucesso ou sem dados
+    // Verificar se há dados para mostrar
     if (reportArray.length === 0) {
+      setIsLoading(false);
+      // Não marcar como gerado quando não há dados
+      setReportGenerated(false);
+      
       toast({
         title: "Nenhum dado encontrado",
         description: "Não há registros de saída para o período e colaborador selecionados.",
@@ -292,6 +294,17 @@ const EmployeeOutputReport = () => {
         variant: "default",
         duration: 3000 // 3 segundos
       });
+      
+      // Calcular páginas depois que o relatório for gerado
+      setTimeout(() => {
+        calculatePages();
+        
+        setIsLoading(false);
+        setReportGenerated(true);
+        
+        // Resetar para a primeira página
+        setCurrentPage(1);
+      }, 500);
     }
   };
 
@@ -947,44 +960,47 @@ const EmployeeOutputReport = () => {
                 </Button>
               </div>
               
-              {/* Wrapper para simular o papel A4 com visualização paginada */}
-              <div className="flex justify-center py-6 bg-card dark:bg-card relative">
-                <div className="absolute top-0 left-0 right-0 text-center mt-1 text-xs text-muted-foreground">
-                  Pré-visualização de impressão (a folha será sempre branca)
+              {reportData.length === 0 ? (
+                <div className="text-center py-10 border-2 border-dashed rounded-lg">
+                  <FileText className="h-12 w-12 mx-auto mb-3 opacity-40 text-muted-foreground" />
+                  <p className="text-lg font-medium text-foreground mb-2">Nenhum registro encontrado</p>
+                  <p className="text-muted-foreground max-w-md mx-auto">
+                    Não foram encontrados registros de saída para o período e colaborador selecionados.
+                  </p>
                 </div>
-                <div 
-                  className="w-full flex justify-center overflow-hidden"
-                  style={{
-                    height: `calc(297mm * ${zoomLevel})`,
-                    transition: 'height 0.2s ease-in-out'
-                  }}
-                >
+              ) : (
+                /* Wrapper para simular o papel A4 com visualização paginada */
+                <div className="flex justify-center py-6 bg-card dark:bg-card relative">
+                  <div className="absolute top-0 left-0 right-0 text-center mt-1 text-xs text-muted-foreground">
+                    Pré-visualização de impressão (a folha será sempre branca)
+                  </div>
                   <div 
-                    className="bg-white shadow-lg dark:shadow-primary/20 mx-auto relative border-2 dark:border-primary/30"
+                    className="w-full flex justify-center overflow-hidden"
                     style={{
-                      width: '210mm',
-                      height: '297mm',
-                      boxSizing: 'border-box',
-                      overflow: 'hidden',
-                      transform: `scale(${zoomLevel})`,
-                      transformOrigin: 'top center',
+                      height: `calc(297mm * ${zoomLevel})`,
+                      transition: 'height 0.2s ease-in-out'
                     }}
                   >
-                    {/* Container para permitir deslocamento vertical do conteúdo conforme a página */}
                     <div 
-                      ref={pageContentRef}
-                      className="absolute top-0 left-0 right-0 bottom-0 overflow-hidden"
+                      className="bg-white shadow-lg dark:shadow-primary/20 mx-auto relative border-2 dark:border-primary/30"
                       style={{
-                        padding: '10mm',
+                        width: '210mm',
+                        height: '297mm',
+                        boxSizing: 'border-box',
+                        overflow: 'hidden',
+                        transform: `scale(${zoomLevel})`,
+                        transformOrigin: 'top center',
                       }}
                     >
-                      <div ref={printRef} className="text-sm text-black">
-                        {reportData.length === 0 ? (
-                          <div className="text-center py-6 text-gray-800">
-                            <FileText className="h-10 w-10 mx-auto mb-3 opacity-40 text-gray-800" />
-                            <p className="text-base text-gray-900">Nenhum registro de saída encontrado para o período selecionado.</p>
-                          </div>
-                        ) : (
+                      {/* Container para permitir deslocamento vertical do conteúdo conforme a página */}
+                      <div 
+                        ref={pageContentRef}
+                        className="absolute top-0 left-0 right-0 bottom-0 overflow-hidden"
+                        style={{
+                          padding: '10mm',
+                        }}
+                      >
+                        <div ref={printRef} className="text-sm text-black">
                           <div>
                             {/* Cabeçalho do relatório - igual ao impresso */}
                             <div className="border-b-2 border-black pb-2 mb-4 flex justify-between">
@@ -1080,12 +1096,12 @@ const EmployeeOutputReport = () => {
                               ))}
                             </div>
                           </div>
-                        )}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </div>
