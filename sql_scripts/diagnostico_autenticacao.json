@@ -1,0 +1,11 @@
+{
+  "timestamp": "2025-04-08T04:08:38.653Z",
+  "authenticated": true,
+  "userId": "e1593b62-5d6c-4e74-b30e-ef78a912f2f1",
+  "email": "guissantos50@gmail.com",
+  "productsAccess": true,
+  "movementsAccess": true,
+  "employeesAccess": true,
+  "rpcProductsAccess": true,
+  "rpcMovementsAccess": true
+}

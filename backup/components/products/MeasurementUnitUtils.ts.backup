@@ -1,0 +1,231 @@
+// Importar funções existentes
+import { isDecimalUnit as isDecimalUnitBase } from '@/lib/utils';
+
+// Constantes para fatores de conversão
+export const CONVERSION_FACTORS = {
+  GRAMS_TO_KG: 0.001,    // 1g = 0.001kg
+  KG_TO_GRAMS: 1000,     // 1kg = 1000g
+  ML_TO_LITERS: 0.001,   // 1ml = 0.001L
+  LITERS_TO_ML: 1000,    // 1L = 1000ml
+};
+
+/**
+ * Normaliza a unidade de medida para um formato padrão
+ * @param unit Unidade de medida a ser normalizada
+ * @returns Unidade normalizada (l, ml, kg, g)
+ */
+export const normalizeUnit = (unit: string): string => {
+  const u = unit.toLowerCase().trim();
+  
+  // Normalizar unidades de litro
+  if (u === 'l' || u === 'litro' || u === 'litros' || u === 'lt' || u === 'lts') {
+      return 'l';
+  }
+  
+  // Normalizar unidades de mililitro
+  if (u === 'ml' || u === 'mililitro' || u === 'mililitros') {
+      return 'ml';
+  }
+  
+  // Normalizar unidades de quilograma
+  if (u === 'kg' || u === 'quilo' || u === 'quilos' || u === 'quilograma' || u === 'quilogramas' || u === 'kilo' || u === 'kilos') {
+      return 'kg';
+  }
+  
+  // Normalizar unidades de grama
+  if (u === 'g' || u === 'grama' || u === 'gramas') {
+      return 'g';
+  }
+  
+  return u;
+};
+
+/**
+ * Retorna as unidades relacionadas a uma unidade específica (ex: para 'l', retorna ['ml'])
+ * @param unit Unidade de medida
+ * @returns Array de unidades relacionadas
+ */
+export const getRelatedUnits = (unit: string): string[] => {
+  const normalizedUnit = normalizeUnit(unit);
+  
+  switch (normalizedUnit) {
+    case 'l':
+      return ['ml'];
+    case 'ml':
+      return ['l'];
+    case 'kg':
+      return ['g'];
+    case 'g':
+      return ['kg'];
+    default:
+      return [];
+  }
+};
+
+/**
+ * Verifica se a unidade pode trabalhar com valores fracionados
+ * Reexporta a função do utils.ts com implementação consistente
+ * @param unit Unidade de medida
+ * @returns true se a unidade aceita valores fracionados
+ */
+export const isDecimalUnit = (unit: string): boolean => {
+  return isDecimalUnitBase(unit);
+};
+
+/**
+ * Converte a quantidade de uma unidade para outra para fins de comparação
+ * @param value Valor a ser convertido
+ * @param fromUnit Unidade de origem
+ * @param toUnit Unidade de destino
+ * @returns Valor convertido
+ */
+export const normalizeQuantityForComparison = (
+  value: number,
+  fromUnit: string,
+  toUnit: string
+): number => {
+  // Normalizar unidades
+  const fromUnitNormalized = normalizeUnit(fromUnit);
+  const toUnitNormalized = normalizeUnit(toUnit);
+  
+  // Se as unidades são iguais, não é necessário converter
+  if (fromUnitNormalized === toUnitNormalized || fromUnit === 'default') {
+      return value; // Remover o toFixed(3) para preservar precisão
+  }
+  
+  let convertedValue;
+  
+  // ml para L - usar divisão direta para melhor precisão
+  if (fromUnitNormalized === 'ml' && toUnitNormalized === 'l') {
+      convertedValue = value / 1000;
+  }
+  
+  // L para ml - usar multiplicação direta para melhor precisão
+  else if (fromUnitNormalized === 'l' && toUnitNormalized === 'ml') {
+      convertedValue = value * 1000;
+  }
+  
+  // g para kg - usar divisão direta
+  else if (fromUnitNormalized === 'g' && toUnitNormalized === 'kg') {
+      convertedValue = value / 1000;
+  }
+  
+  // kg para g - usar multiplicação direta
+  else if (fromUnitNormalized === 'kg' && toUnitNormalized === 'g') {
+      convertedValue = value * 1000;
+  }
+  else {
+      // Nenhuma conversão específica encontrada
+      convertedValue = value;
+  }
+  
+  // Retornar valor sem arredondamento para preservar a precisão
+  return convertedValue;
+};
+
+/**
+ * Valida se a quantidade solicitada não excede o estoque disponível
+ * @param productQuantity Quantidade disponível no estoque
+ * @param requestedQuantity Quantidade solicitada
+ * @param requestedUnit Unidade da quantidade solicitada
+ * @param productUnit Unidade do produto no estoque
+ * @returns Objeto com a validação (valid e message)
+ */
+export const validateStock = (
+  productQuantity: number, 
+  requestedQuantity: number, 
+  requestedUnit: string, 
+  productUnit: string
+): { valid: boolean; message: string | null } => {
+  // Converter a quantidade solicitada para a unidade do produto
+  const convertedQuantity = normalizeQuantityForComparison(
+      requestedQuantity,
+      requestedUnit === 'default' ? productUnit : requestedUnit,
+      productUnit
+  );
+
+  // Verificação com tolerância proporcional (0.1% do valor)
+  // Isso ajuda a lidar com imprecisões de ponto flutuante em valores maiores
+  const tolerance = Math.max(0.001, productQuantity * 0.001); // No mínimo 0.001 ou 0.1% do estoque
+  
+  if (convertedQuantity > (productQuantity + tolerance)) {
+      return {
+          valid: false,
+          message: 'Quantidade não pode ser maior que o estoque disponível'
+      };
+  }
+
+  return {
+      valid: true,
+      message: null
+  };
+};
+
+/**
+ * Retorna o nome completo da unidade de medida
+ * @param unit Unidade de medida abreviada
+ * @returns Nome completo da unidade
+ */
+export const getFullUnitName = (unit: string): string => {
+  const normalizedUnit = normalizeUnit(unit);
+  
+  switch (normalizedUnit) {
+    case 'l':
+      return 'litro(s)';
+    case 'ml':
+      return 'mililitro(s)';
+    case 'kg':
+      return 'quilo(s)';
+    case 'g':
+      return 'grama(s)';
+    case 'un':
+      return 'unidade(s)';
+    case 'cx':
+      return 'caixa(s)';
+    default:
+      return unit;
+  }
+};
+
+/**
+ * Retorna instruções específicas para a unidade, como uso de valores fracionados
+ * @param unit Unidade de medida
+ * @returns Texto com instruções para a unidade
+ */
+export const getUnitInstruction = (unit: string): string | null => {
+  const normalizedUnit = normalizeUnit(unit);
+  
+  if (['l', 'ml', 'kg', 'g'].includes(normalizedUnit)) {
+    return 'Valores fracionados são permitidos (ex: 1.5)';
+  }
+  
+  return null;
+};
+
+/**
+ * Formata um número de acordo com a unidade
+ * - Para ml e g: exibe números inteiros (sem decimais)
+ * - Para l e kg: exibe com até 3 casas decimais (remove zeros desnecessários)
+ * - Para outras unidades: mantém o formato padrão com 2 casas decimais
+ * 
+ * @param value O valor a ser formatado
+ * @param unit A unidade (ml, l, g, kg, etc)
+ * @returns String formatada de acordo com a unidade
+ */
+export const formatNumberByUnit = (value: number, unit: string): string => {
+  const normalizedUnit = normalizeUnit(unit);
+  
+  // Para ml e g, mostra números inteiros
+  if (normalizedUnit === 'ml' || normalizedUnit === 'g') {
+    return Math.round(value).toString();
+  }
+  
+  // Para l e kg, mostra até 3 casas decimais (remove zeros desnecessários)
+  if (normalizedUnit === 'l' || normalizedUnit === 'kg') {
+    // Limita a 3 casas decimais e remove zeros no final
+    return parseFloat(value.toFixed(3)).toString().replace('.', ',');
+  }
+  
+  // Para outras unidades
+  return value.toFixed(2).replace('.', ',');
+}; 

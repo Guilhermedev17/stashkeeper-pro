@@ -1,0 +1,30 @@
+{
+  "dataHora": "2025-04-09T01:28:00.521Z",
+  "produtos": {
+    "litros": {
+      "id": "afea02db-4067-4705-9e69-3cf238863a1d",
+      "codigo": "L8122",
+      "nome": "Água Mineral (1744162078122)"
+    },
+    "kilos": {
+      "id": "df7f0bae-4a42-40b0-a25d-37ad8b0dd4f4",
+      "codigo": "K8122",
+      "nome": "Arroz (1744162078122)"
+    },
+    "gramas": {
+      "id": "5b8de1d1-357d-46db-9cb2-53d8a3d97498",
+      "codigo": "G8122",
+      "nome": "Café (1744162078122)"
+    },
+    "mililitros": {
+      "id": "e5df005c-0a39-4227-9107-78a3ac4989cc",
+      "codigo": "ML8122",
+      "nome": "Álcool Gel (1744162078122)"
+    },
+    "unidades": {
+      "id": "997e13c6-b8be-43a3-a41d-437647dbf9ed",
+      "codigo": "U8122",
+      "nome": "Caderno (1744162078122)"
+    }
+  }
+}

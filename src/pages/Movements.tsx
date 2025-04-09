@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -11,12 +10,11 @@ import ModernMovementDialog from '@/components/products/ModernMovementDialog';
 import {
   Package,
   ArrowDownUp,
-  PlusCircle,
   MinusCircle,
   PlusSquare,
   CalendarDays,
   Calendar as CalendarIcon,
-  CirclePlus,
+  FilePlus,
   SearchIcon,
   ArrowDownIcon,
   ArrowUpIcon,
@@ -36,7 +34,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/components/ui/use-toast";
 import DateRangeFilter from '@/components/ui/DateRangeFilter';
@@ -57,6 +55,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from '@/integrations/supabase/client';
 import { formatQuantity } from '@/lib/utils';
+import { getUnitAbbreviation } from '@/lib/formatters';
 import { Checkbox } from '@/components/ui/checkbox';
 import { IntegrityCheck } from '@/components/IntegrityCheck';
 
@@ -96,30 +95,6 @@ interface MovementProductSelectorProps {
   categories: Category[];
   onSelectProduct: (product: ProductItem, type: 'entrada' | 'saida') => void;
 }
-
-const getUnitAbbreviation = (unit: string): string => {
-  switch (unit.toLowerCase()) {
-    case 'un': return 'UN';
-    case 'unidade': return 'UN';
-    case 'kg': return 'KG';
-    case 'g': return 'G';
-    case 'gramas': return 'G';
-    case 'l': return 'L';
-    case 'litros': return 'L';
-    case 'ml': return 'ML';
-    case 'cx': return 'CX';
-    case 'caixa': return 'CX';
-    case 'pct': return 'PCT';
-    case 'pacote': return 'PCT';
-    case 'rl': return 'RL';
-    case 'rolo': return 'RL';
-    case 'par': return 'PAR';
-    case 'm': return 'M';
-    case 'metros': return 'M';
-    case 'cm': return 'CM';
-    default: return unit.toUpperCase();
-  }
-};
 
 const Movements = () => {
   const { products, loading: loadingProducts, fetchProducts } = useSupabaseProducts();
@@ -225,15 +200,12 @@ const Movements = () => {
   // Sincronizar movimentos do hook com o estado local
   useEffect(() => {
     if (!skipMovementUpdate) {
-      console.log("[Movements] Sincronizando movimentos. Total recebido:", movements.length);
-      
       // Carregar IDs de movimentações excluídas do localStorage para segurança adicional
       let deletedIdsFromStorage: string[] = [];
       try {
         const storedIds = localStorage.getItem('deletedMovementIds');
         if (storedIds) {
           deletedIdsFromStorage = JSON.parse(storedIds);
-          console.log(`[Movements] Carregados ${deletedIdsFromStorage.length} IDs de movimentações excluídas do armazenamento local`);
         }
       } catch (error) {
         console.error('[Movements] Erro ao carregar IDs excluídos do localStorage:', error);
@@ -256,7 +228,6 @@ const Movements = () => {
         if (prevLocalMovements.length === 0) {
           // Verificação extra para garantir que nenhuma movimentação excluída apareça
           const safeMovements = filterSafely(movements);
-          console.log(`[Movements] Verificação de segurança removeu ${movements.length - safeMovements.length} movimentações marcadas como excluídas`);
           return safeMovements;
         }
         
@@ -270,10 +241,6 @@ const Movements = () => {
           [...prevIds].filter(id => !newIds.has(id))
         );
         
-        if (potentiallyDeletedIds.size > 0) {
-          console.log(`[Movements] Detectados ${potentiallyDeletedIds.size} IDs potencialmente excluídos`);
-        }
-        
         // Criar listas de IDs para controlar o que incluir
         const idsToKeep = new Set(safeMovements.map(m => m.id));
         
@@ -286,8 +253,6 @@ const Movements = () => {
         const currentIds = new Set(currentMovements.map(m => m.id));
         const newMovements = safeMovements.filter(m => !currentIds.has(m.id));
         
-        console.log(`[Movements] Estado final: ${currentMovements.length} existentes + ${newMovements.length} novas = ${currentMovements.length + newMovements.length} total`);
-        
         // Retornar a combinação de movimentações atuais + novas
         return [...newMovements, ...currentMovements];
       });
@@ -296,8 +261,6 @@ const Movements = () => {
 
   // Forçar a atualização da interface quando localMovements mudar
   useEffect(() => {
-    console.log(`[Movements] Estado localMovements atualizado com ${localMovements.length} movimentações`);
-    
     // Verificação adicional para garantir que nenhuma movimentação excluída esteja presente
     const anyDeleted = localMovements.some(m => m.deleted === true);
     
@@ -305,50 +268,66 @@ const Movements = () => {
       console.warn('[Movements] Detectadas movimentações marcadas como excluídas no estado localMovements. Realizando limpeza...');
       setLocalMovements(current => current.filter(m => !m.deleted));
     }
-    
   }, [localMovements]);
 
   // Efeito para limpeza periódica das movimentações (sanitização)
   useEffect(() => {
-    // Definir função de limpeza para ser mais fácil de rastrear
-    const performCleanup = () => {
-      if (localMovements.length === 0 || isDeletingMovement) {
-        return; // Não fazer nada se não houver movimentações ou estiver em processo de exclusão
+    // Função auxiliar para sanitizar movimentações
+    const sanitizeMovements = (movements) => {
+      if (movements.length === 0) {
+        return { sanitized: movements, removed: 0 };
       }
       
       try {
-        console.log('[Movements] Iniciando verificação de consistência...');
-        
         // 1. Verificar se há movimentações marcadas como excluídas no estado local
-        const locallyDeleted = localMovements.filter(m => m.deleted === true);
+        const locallyDeleted = movements.filter(m => m.deleted === true);
         
         // 2. Verificar IDs que já foram excluídos anteriormente (no localStorage)
         const deletedIds = JSON.parse(localStorage.getItem('deletedMovementIds') || '[]');
         const deletedIdSet = new Set(deletedIds);
         
         // 3. Identificar movimentações que devem ser removidas pelo ID
-        const alsoRemoveById = localMovements.filter(m => 
+        const alsoRemoveById = movements.filter(m => 
           !m.deleted && deletedIdSet.has(m.id)
         );
         
         const totalToRemove = locallyDeleted.length + alsoRemoveById.length;
         
         if (totalToRemove > 0) {
-          console.log(`[Movements] Sanitização: removendo ${totalToRemove} movimentações inconsistentes (${locallyDeleted.length} marcadas como excluídas + ${alsoRemoveById.length} nos IDs excluídos)`);
-          
           // Obter todos os IDs a remover
           const idsToRemove = new Set([
             ...locallyDeleted.map(m => m.id),
             ...alsoRemoveById.map(m => m.id)
           ]);
           
-          // Atualizar estado removendo todas as movimentações problemáticas
-          setLocalMovements(current => 
-            current.filter(m => !idsToRemove.has(m.id) && m.deleted !== true)
+          // Filtrar movimentações problemáticas
+          const sanitized = movements.filter(m => 
+            !idsToRemove.has(m.id) && m.deleted !== true
           );
+          
+          return { sanitized, removed: totalToRemove };
         }
+        
+        return { sanitized: movements, removed: 0 };
       } catch (error) {
         console.error('[Movements] Erro durante sanitização:', error);
+        return { sanitized: movements, removed: 0 };
+      }
+    };
+  
+    // Definir função de limpeza para ser mais fácil de rastrear
+    const performCleanup = () => {
+      if (localMovements.length === 0 || isDeletingMovement) {
+        return; // Não fazer nada se não houver movimentações ou estiver em processo de exclusão
+      }
+      
+      console.log('[Movements] Iniciando verificação de consistência...');
+      
+      const { sanitized, removed } = sanitizeMovements(localMovements);
+      
+      if (removed > 0) {
+        console.log(`[Movements] Sanitização: removidas ${removed} movimentações inconsistentes`);
+        setLocalMovements(sanitized);
       }
     };
     
@@ -437,54 +416,96 @@ const Movements = () => {
 
   // Filtra os movimentos de acordo com a data selecionada
   const filterMovementsByDate = (productMovements: Movement) => {
-    const movementDate = new Date(productMovements.created_at);
-
-    // Se não há filtro de data ativo
+    // Se não há filtro de data ativo, retorna true imediatamente
     if (!date && !dateRange && !startDate && !endDate) return true;
-
-    // Filtro por intervalo personalizado
+    
+    // Converter a data da movimentação para objeto Date
+    const movementDate = new Date(productMovements.created_at);
+    // Definir para início do dia (00:00:00) para comparações consistentes
+    const movementDay = new Date(
+      movementDate.getFullYear(),
+      movementDate.getMonth(),
+      movementDate.getDate(),
+      0, 0, 0, 0
+    );
+    
+    // Filtro por intervalo personalizado - alta prioridade
     if (startDate && endDate) {
-      // Ajustar endDate para incluir o final do dia
+      // Ajustar datas para início e fim do dia para garantir inclusão completa
+      const adjustedStartDate = new Date(startDate);
+      adjustedStartDate.setHours(0, 0, 0, 0);
+      
       const adjustedEndDate = new Date(endDate);
       adjustedEndDate.setHours(23, 59, 59, 999);
-
-      return movementDate >= startDate && movementDate <= adjustedEndDate;
-    }
-
-    // Filtro por data específica
-    if (date) {
+      
+      const movementTime = movementDate.getTime();
       return (
-        movementDate.getDate() === date.getDate() &&
-        movementDate.getMonth() === date.getMonth() &&
-        movementDate.getFullYear() === date.getFullYear()
+        movementTime >= adjustedStartDate.getTime() && 
+        movementTime <= adjustedEndDate.getTime()
       );
     }
-
-    // Filtro por intervalo predefinido
+    
+    // Filtro por data específica - segunda prioridade
+    if (date) {
+      const specificDate = new Date(date);
+      const specificDay = new Date(
+        specificDate.getFullYear(),
+        specificDate.getMonth(),
+        specificDate.getDate()
+      );
+      
+      // Comparar apenas data (dia/mês/ano), ignorando horário
+      return (
+        movementDay.getTime() === specificDay.getTime()
+      );
+    }
+    
+    // Filtro por intervalo predefinido - terceira prioridade
     if (dateRange) {
-      const today = new Date();
-
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // início de hoje
+      const todayEnd = new Date(today); // fim de hoje
+      todayEnd.setHours(23, 59, 59, 999);
+      
+      // Hoje (dia atual completo)
       if (dateRange === 'day') {
         return (
-          movementDate.getDate() === today.getDate() &&
-          movementDate.getMonth() === today.getMonth() &&
-          movementDate.getFullYear() === today.getFullYear()
+          movementDay.getTime() === today.getTime()
         );
-      } else if (dateRange === 'week') {
-        const weekAgo = new Date();
-        weekAgo.setDate(today.getDate() - 7);
-        return movementDate >= weekAgo;
-      } else if (dateRange === 'month') {
-        const monthAgo = new Date();
-        monthAgo.setMonth(today.getMonth() - 1);
-        return movementDate >= monthAgo;
-      } else if (dateRange === 'year') {
-        const yearAgo = new Date();
-        yearAgo.setFullYear(today.getFullYear() - 1);
-        return movementDate >= yearAgo;
       }
+      
+      // Calcular a data inicial com base no intervalo selecionado
+      let rangeStartDate: Date;
+      
+      if (dateRange === 'week') {
+        // Últimos 7 dias
+        rangeStartDate = new Date(today);
+        rangeStartDate.setDate(today.getDate() - 7);
+      } else if (dateRange === 'month') {
+        // Últimos 30 dias
+        rangeStartDate = new Date(today);
+        rangeStartDate.setDate(today.getDate() - 30);
+      } else if (dateRange === 'year') {
+        // Últimos 365 dias
+        rangeStartDate = new Date(today);
+        rangeStartDate.setFullYear(today.getFullYear() - 1);
+      } else {
+        // Caso inválido - não filtrar
+        return true;
+      }
+      
+      // Garantir que a data inicial está no início do dia
+      rangeStartDate.setHours(0, 0, 0, 0);
+      
+      // Verificar se a data está no intervalo
+      const movementTime = movementDate.getTime();
+      return (
+        movementTime >= rangeStartDate.getTime() && 
+        movementTime <= todayEnd.getTime()
+      );
     }
-
+    
+    // Se chegou aqui, nenhum filtro foi aplicado corretamente
     return true;
   };
 

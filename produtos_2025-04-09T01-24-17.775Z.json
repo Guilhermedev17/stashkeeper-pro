@@ -1,0 +1,233 @@
+[
+  {
+    "id": "9f8ae928-fffc-4a61-92d4-3ad84833a409",
+    "code": "P0619",
+    "name": "Produto Teste 1744149510619 (Atualizado)",
+    "description": null,
+    "category_id": null,
+    "quantity": 10,
+    "min_quantity": 2,
+    "created_at": "2025-04-08T21:58:30.979718+00:00",
+    "unit": "unidade"
+  },
+  {
+    "id": "7e54ddad-faf0-4f30-9151-3e57ec63db77",
+    "code": "P4505",
+    "name": "Produto Teste 1744149464505 (Atualizado)",
+    "description": null,
+    "category_id": null,
+    "quantity": 10,
+    "min_quantity": 2,
+    "created_at": "2025-04-08T21:57:44.895322+00:00",
+    "unit": "unidade"
+  },
+  {
+    "id": "d90e7226-d117-483a-b1aa-377c0997e735",
+    "code": "T0719",
+    "name": "Teste Após Migração 1744149430719",
+    "description": null,
+    "category_id": null,
+    "quantity": 1,
+    "min_quantity": 0,
+    "created_at": "2025-04-08T21:57:11.097229+00:00",
+    "unit": "unidade"
+  },
+  {
+    "id": "fa198b16-e249-4571-a3d5-d4dc057ccddc",
+    "code": "AF718",
+    "name": "TESTE AUTH FINAL",
+    "description": "Produto atualizado pelo teste",
+    "category_id": null,
+    "quantity": 1,
+    "min_quantity": 0,
+    "created_at": "2025-04-08T03:56:53.499873+00:00",
+    "unit": "un"
+  },
+  {
+    "id": "26a0fca0-51a9-462e-97f8-9ac1ced54abc",
+    "code": "T45",
+    "name": "TESTE RLS ATUALIZADO",
+    "description": "Produto de teste RLS",
+    "category_id": null,
+    "quantity": 1,
+    "min_quantity": 0,
+    "created_at": "2025-04-08T03:56:48.379639+00:00",
+    "unit": "un"
+  },
+  {
+    "id": "ea32a0ef-90c7-4d00-a65d-87e6e93b88ab",
+    "code": "T424",
+    "name": "TESTE RLS ATUALIZADO",
+    "description": "Produto de teste RLS",
+    "category_id": null,
+    "quantity": 1,
+    "min_quantity": 0,
+    "created_at": "2025-04-08T03:56:37.897123+00:00",
+    "unit": "un"
+  },
+  {
+    "id": "0a9ee65c-17c2-4d57-93b1-3816f8e50112",
+    "code": "AF468",
+    "name": "TESTE AUTH FINAL",
+    "description": "Produto atualizado pelo teste",
+    "category_id": null,
+    "quantity": 1,
+    "min_quantity": 0,
+    "created_at": "2025-04-08T03:49:18.599094+00:00",
+    "unit": "un"
+  },
+  {
+    "id": "81949e9b-e047-48dc-90c9-746a9db600dc",
+    "code": "T866",
+    "name": "TESTE RLS ATUALIZADO",
+    "description": "Produto de teste RLS",
+    "category_id": null,
+    "quantity": 1,
+    "min_quantity": 0,
+    "created_at": "2025-04-08T03:49:15.144793+00:00",
+    "unit": "un"
+  },
+  {
+    "id": "b63d41b4-5f40-46aa-a8de-a52388154e53",
+    "code": "T532",
+    "name": "TESTE RLS ATUALIZADO",
+    "description": "Produto de teste RLS",
+    "category_id": null,
+    "quantity": 1,
+    "min_quantity": 0,
+    "created_at": "2025-04-08T03:49:07.719457+00:00",
+    "unit": "un"
+  },
+  {
+    "id": "90363ed4-c4cf-45ec-898b-ead6b708f11e",
+    "code": "AF634",
+    "name": "TESTE AUTH FINAL",
+    "description": "Produto atualizado pelo teste",
+    "category_id": null,
+    "quantity": 1,
+    "min_quantity": 0,
+    "created_at": "2025-04-08T03:47:21.069164+00:00",
+    "unit": "un"
+  },
+  {
+    "id": "e1250f28-e3f6-45f4-83c4-aa8e5d1a5b6f",
+    "code": "T306",
+    "name": "TESTE RLS ATUALIZADO",
+    "description": "Produto de teste RLS",
+    "category_id": null,
+    "quantity": 1,
+    "min_quantity": 0,
+    "created_at": "2025-04-08T03:46:58.506354+00:00",
+    "unit": "un"
+  },
+  {
+    "id": "3c031f39-d8e6-4a84-b79b-36415f2f62f5",
+    "code": "AF344",
+    "name": "TESTE AUTH FINAL",
+    "description": "Produto atualizado pelo teste",
+    "category_id": null,
+    "quantity": 1,
+    "min_quantity": 0,
+    "created_at": "2025-04-08T03:44:04.585622+00:00",
+    "unit": "un"
+  },
+  {
+    "id": "366e618a-fda5-4953-8dcd-4684931720fe",
+    "code": "T183",
+    "name": "TESTE RLS ATUALIZADO",
+    "description": "Produto de teste RLS",
+    "category_id": null,
+    "quantity": 1,
+    "min_quantity": 0,
+    "created_at": "2025-04-08T03:43:53.621148+00:00",
+    "unit": "un"
+  },
+  {
+    "id": "8488165c-42fa-400a-80ae-10384909fcb5",
+    "code": "T235",
+    "name": "TESTE RLS ATUALIZADO",
+    "description": "Produto de teste RLS",
+    "category_id": null,
+    "quantity": 1,
+    "min_quantity": 0,
+    "created_at": "2025-04-08T03:41:32.694949+00:00",
+    "unit": "un"
+  },
+  {
+    "id": "9ca801c7-e524-46e8-9820-356f93193d32",
+    "code": "AF271",
+    "name": "TESTE AUTH FINAL",
+    "description": "Atualizado por anônimo",
+    "category_id": null,
+    "quantity": 1,
+    "min_quantity": 0,
+    "created_at": "2025-04-08T03:36:36.1308+00:00",
+    "unit": "un"
+  },
+  {
+    "id": "35b6e0f7-9647-4a28-a208-275a89ec6cb4",
+    "code": "T591",
+    "name": "TESTE RLS ATUALIZADO",
+    "description": "Atualizado por anônimo",
+    "category_id": null,
+    "quantity": 1,
+    "min_quantity": 0,
+    "created_at": "2025-04-08T03:36:15.332162+00:00",
+    "unit": "un"
+  },
+  {
+    "id": "6dd0b979-ca3f-4cf2-a9d9-e86054929c36",
+    "code": "AF362",
+    "name": "TESTE AUTH FINAL",
+    "description": "Atualizado por anônimo",
+    "category_id": null,
+    "quantity": 1,
+    "min_quantity": 0,
+    "created_at": "2025-04-08T03:32:57.248185+00:00",
+    "unit": "un"
+  },
+  {
+    "id": "6ede9a5d-1969-42fb-86eb-bd00bb0ab3c9",
+    "code": "T87",
+    "name": "TESTE RLS ATUALIZADO",
+    "description": "Atualizado por anônimo",
+    "category_id": null,
+    "quantity": 1,
+    "min_quantity": 0,
+    "created_at": "2025-04-08T03:32:52.501646+00:00",
+    "unit": "un"
+  },
+  {
+    "id": "0560046e-d27b-4cfc-adf6-985384f2b8e0",
+    "code": "T101",
+    "name": "TESTE RLS FINAL",
+    "description": "Atualizado por anônimo",
+    "category_id": null,
+    "quantity": 1,
+    "min_quantity": 0,
+    "created_at": "2025-04-08T03:22:01.741168+00:00",
+    "unit": "un"
+  },
+  {
+    "id": "bd7fc74b-063b-469c-8acd-5b759d9b6206",
+    "code": "RLS-1744081048660",
+    "name": "Produto Teste RLS 1744081048660",
+    "description": "Atualizado por anônimo",
+    "category_id": null,
+    "quantity": 10,
+    "min_quantity": 1,
+    "created_at": "2025-04-08T02:57:28.734552+00:00",
+    "unit": "un"
+  },
+  {
+    "id": "d23248c7-367b-4e29-a8c9-1f1189a0382f",
+    "code": "123",
+    "name": "Produto Atualizado RLS 1744081048837",
+    "description": "Atualizado por anônimo",
+    "category_id": "13424aa6-7b9b-4bcb-98a1-4afce4350657",
+    "quantity": 15.979,
+    "min_quantity": 0,
+    "created_at": "2025-04-08T01:06:58.897223+00:00",
+    "unit": "l"
+  }
+]

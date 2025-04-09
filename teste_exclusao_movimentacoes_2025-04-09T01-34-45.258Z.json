@@ -1,0 +1,165 @@
+{
+  "timestamp": "2025-04-09T01:34:45.258Z",
+  "produtos": {
+    "produto1": {
+      "id": "6055979b-281b-461c-980e-6da19c089a5c",
+      "nome": "Cimento (1744162482128)",
+      "estoque_inicial": 1000,
+      "estoque_final": 700,
+      "unidade": "kg"
+    },
+    "produto2": {
+      "id": "bddf9aec-655d-4f93-b3aa-af94bcb7fc0a",
+      "nome": "Tinta (1744162482128)",
+      "estoque_inicial": 200,
+      "estoque_final": 60,
+      "unidade": "l"
+    }
+  },
+  "operacoes": {
+    "produtos": [
+      {
+        "id": "6055979b-281b-461c-980e-6da19c089a5c",
+        "nome": "Cimento (1744162482128)",
+        "codigo": "CIM2128",
+        "unidade": "kg",
+        "quantidade_inicial": 1000,
+        "timestamp": "2025-04-09T01:34:42.330Z"
+      },
+      {
+        "id": "bddf9aec-655d-4f93-b3aa-af94bcb7fc0a",
+        "nome": "Tinta (1744162482128)",
+        "codigo": "TIN2128",
+        "unidade": "l",
+        "quantidade_inicial": 200,
+        "timestamp": "2025-04-09T01:34:42.406Z"
+      }
+    ],
+    "movimentacoes": [
+      {
+        "id": "0e39d15d-cfac-4577-bb3e-5728aedd0861",
+        "produto_id": "6055979b-281b-461c-980e-6da19c089a5c",
+        "produto_nome": "Cimento (1744162482128)",
+        "tipo": "saida",
+        "quantidade": 150,
+        "estoque_anterior": 1000,
+        "estoque_atual": 850,
+        "observacao": "Saída para obra A",
+        "timestamp": "2025-04-09T01:34:42.589Z"
+      },
+      {
+        "id": "f8557eba-1db6-4947-bfce-72070d5f4717",
+        "produto_id": "6055979b-281b-461c-980e-6da19c089a5c",
+        "produto_nome": "Cimento (1744162482128)",
+        "tipo": "saida",
+        "quantidade": 300,
+        "estoque_anterior": 850,
+        "estoque_atual": 550,
+        "observacao": "Saída para obra B",
+        "timestamp": "2025-04-09T01:34:42.767Z"
+      },
+      {
+        "id": "8bdb7ff9-552c-4119-9170-562902056d6b",
+        "produto_id": "bddf9aec-655d-4f93-b3aa-af94bcb7fc0a",
+        "produto_nome": "Tinta (1744162482128)",
+        "tipo": "saida",
+        "quantidade": 50,
+        "estoque_anterior": 200,
+        "estoque_atual": 150,
+        "observacao": "Saída para obra A",
+        "timestamp": "2025-04-09T01:34:42.950Z"
+      },
+      {
+        "id": "613119ef-5813-49fc-9a35-d7096de4c575",
+        "produto_id": "bddf9aec-655d-4f93-b3aa-af94bcb7fc0a",
+        "produto_nome": "Tinta (1744162482128)",
+        "tipo": "entrada",
+        "quantidade": 100,
+        "estoque_anterior": 150,
+        "estoque_atual": 250,
+        "observacao": "Reposição de estoque",
+        "timestamp": "2025-04-09T01:34:43.120Z"
+      },
+      {
+        "id": "af1ce60e-2458-435c-a667-01cf5b229237",
+        "produto_id": "6055979b-281b-461c-980e-6da19c089a5c",
+        "produto_nome": "Cimento (1744162482128)",
+        "tipo": "saida",
+        "quantidade": 200,
+        "estoque_anterior": 700,
+        "estoque_atual": 500,
+        "observacao": "Saída para teste de exclusão",
+        "timestamp": "2025-04-09T01:34:43.943Z"
+      },
+      {
+        "id": "c302c19a-4a6a-4ae1-8fa7-106d661271de",
+        "produto_id": "bddf9aec-655d-4f93-b3aa-af94bcb7fc0a",
+        "produto_nome": "Tinta (1744162482128)",
+        "tipo": "entrada",
+        "quantidade": 50,
+        "estoque_anterior": 150,
+        "estoque_atual": 200,
+        "observacao": "Entrada para teste de exclusão",
+        "timestamp": "2025-04-09T01:34:44.439Z"
+      }
+    ],
+    "exclusoes": [
+      {
+        "movimentacao_id": "0e39d15d-cfac-4577-bb3e-5728aedd0861",
+        "produto_id": "6055979b-281b-461c-980e-6da19c089a5c",
+        "produto_nome": "Cimento (1744162482128)",
+        "tipo_movimentacao": "saida",
+        "quantidade_movimentacao": 150,
+        "estoque_antes": 550,
+        "estoque_depois": 700,
+        "tipo_exclusao": "logica",
+        "timestamp": "2025-04-09T01:34:43.425Z"
+      },
+      {
+        "movimentacao_id": "613119ef-5813-49fc-9a35-d7096de4c575",
+        "produto_id": "bddf9aec-655d-4f93-b3aa-af94bcb7fc0a",
+        "produto_nome": "Tinta (1744162482128)",
+        "tipo_movimentacao": "entrada",
+        "quantidade_movimentacao": 100,
+        "estoque_antes": 250,
+        "estoque_depois": 150,
+        "tipo_exclusao": "logica",
+        "timestamp": "2025-04-09T01:34:43.713Z"
+      },
+      {
+        "movimentacao_id": "af1ce60e-2458-435c-a667-01cf5b229237",
+        "produto_id": "6055979b-281b-461c-980e-6da19c089a5c",
+        "produto_nome": "Cimento (1744162482128)",
+        "tipo_movimentacao": "saida",
+        "quantidade_movimentacao": 200,
+        "estoque_antes": 500,
+        "estoque_depois": 700,
+        "tipo_exclusao": "logica",
+        "timestamp": "2025-04-09T01:34:44.208Z"
+      },
+      {
+        "movimentacao_id": "c302c19a-4a6a-4ae1-8fa7-106d661271de",
+        "produto_id": "bddf9aec-655d-4f93-b3aa-af94bcb7fc0a",
+        "produto_nome": "Tinta (1744162482128)",
+        "tipo_movimentacao": "entrada",
+        "quantidade_movimentacao": 50,
+        "estoque_antes": 200,
+        "estoque_depois": 150,
+        "tipo_exclusao": "logica",
+        "timestamp": "2025-04-09T01:34:44.735Z"
+      },
+      {
+        "movimentacao_id": "8bdb7ff9-552c-4119-9170-562902056d6b",
+        "produto_id": "bddf9aec-655d-4f93-b3aa-af94bcb7fc0a",
+        "produto_nome": "Tinta (1744162482128)",
+        "tipo_movimentacao": "saida",
+        "quantidade_movimentacao": 50,
+        "estoque_antes": 10,
+        "estoque_depois": 60,
+        "tipo_exclusao": "logica",
+        "timestamp": "2025-04-09T01:34:45.109Z"
+      }
+    ],
+    "erros": []
+  }
+}

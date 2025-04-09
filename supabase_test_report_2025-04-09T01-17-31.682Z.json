@@ -1,0 +1,18 @@
+{
+  "timestamp": "2025-04-09T01-17-31.682Z",
+  "startTime": "2025-04-09T01:17:31.683Z",
+  "endTime": "2025-04-09T01:17:32.175Z",
+  "testsRun": 1,
+  "testsPassed": 0,
+  "testsFailed": 1,
+  "results": [
+    {
+      "name": "Conexão com Supabase",
+      "success": false,
+      "timestamp": "2025-04-09T01:17:32.171Z",
+      "details": {
+        "error": "Erro na conexão: "
+      }
+    }
+  ]
+}

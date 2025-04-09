@@ -1,0 +1,338 @@
+{
+  "timestamp": "2025-04-09T01:31:38.329Z",
+  "configuracao": {
+    "logs": true,
+    "salvarArquivos": true,
+    "validarEstoqueNegativo": true,
+    "registrarHistorico": true
+  },
+  "resultado_lote": {
+    "sucesso": [
+      {
+        "movimento": {
+          "produto_id": "fcfbad42-3179-410b-883c-35d0bb5d73c6",
+          "tipo": "entrada",
+          "quantidade": 20,
+          "observacao": "Entrada em lote - teste 1"
+        },
+        "resultado": {
+          "movimentacao": {
+            "id": "1559204e-891e-4127-8095-f981d6aeb1cc",
+            "product_id": "fcfbad42-3179-410b-883c-35d0bb5d73c6",
+            "type": "entrada",
+            "quantity": 20,
+            "user_id": null,
+            "notes": "Entrada em lote - teste 1",
+            "created_at": "2025-04-09T01:31:37.274035+00:00",
+            "employee_id": null,
+            "deleted": false
+          },
+          "produtoAtualizado": {
+            "id": "fcfbad42-3179-410b-883c-35d0bb5d73c6",
+            "code": "PL14995",
+            "name": "Produto Lote 1 (1744162294995)",
+            "description": "Produto de teste avançado para movimentação (unidade)",
+            "category_id": null,
+            "quantity": 70,
+            "min_quantity": 10,
+            "created_at": "2025-04-09T01:31:35.712894+00:00",
+            "unit": "unidade"
+          }
+        }
+      },
+      {
+        "movimento": {
+          "produto_id": "7dc210cb-ba3a-49d4-9a62-e5dc38bf154b",
+          "tipo": "saida",
+          "quantidade": 10,
+          "observacao": "Saída em lote - teste 1"
+        },
+        "resultado": {
+          "movimentacao": {
+            "id": "efa64367-82f3-46f4-9b97-c85d0fc22aca",
+            "product_id": "7dc210cb-ba3a-49d4-9a62-e5dc38bf154b",
+            "type": "saida",
+            "quantity": 10,
+            "user_id": null,
+            "notes": "Saída em lote - teste 1",
+            "created_at": "2025-04-09T01:31:37.456775+00:00",
+            "employee_id": null,
+            "deleted": false
+          },
+          "produtoAtualizado": {
+            "id": "7dc210cb-ba3a-49d4-9a62-e5dc38bf154b",
+            "code": "PL24995",
+            "name": "Produto Lote 2 (1744162294995)",
+            "description": "Produto de teste avançado para movimentação (unidade)",
+            "category_id": null,
+            "quantity": 40,
+            "min_quantity": 10,
+            "created_at": "2025-04-09T01:31:35.767779+00:00",
+            "unit": "unidade"
+          }
+        }
+      },
+      {
+        "movimento": {
+          "produto_id": "c9cb1315-3334-43eb-b725-a21b97443f5b",
+          "tipo": "entrada",
+          "quantidade": 15,
+          "observacao": "Entrada em lote - teste 2"
+        },
+        "resultado": {
+          "movimentacao": {
+            "id": "7c50fde4-9eef-43c1-a6ae-a72b1a0136c3",
+            "product_id": "c9cb1315-3334-43eb-b725-a21b97443f5b",
+            "type": "entrada",
+            "quantity": 15,
+            "user_id": null,
+            "notes": "Entrada em lote - teste 2",
+            "created_at": "2025-04-09T01:31:37.633215+00:00",
+            "employee_id": null,
+            "deleted": false
+          },
+          "produtoAtualizado": {
+            "id": "c9cb1315-3334-43eb-b725-a21b97443f5b",
+            "code": "PL34995",
+            "name": "Produto Lote 3 (1744162294995)",
+            "description": "Produto de teste avançado para movimentação (unidade)",
+            "category_id": null,
+            "quantity": 65,
+            "min_quantity": 10,
+            "created_at": "2025-04-09T01:31:35.825577+00:00",
+            "unit": "unidade"
+          }
+        }
+      }
+    ],
+    "falha": [
+      {
+        "movimento": {
+          "produto_id": "id-inexistente",
+          "tipo": "entrada",
+          "quantidade": 5,
+          "observacao": "Erro esperado"
+        },
+        "erro": "invalid input syntax for type uuid: \"id-inexistente\""
+      }
+    ]
+  },
+  "historico": {
+    "produtos": [
+      {
+        "id": "52b41df1-8f3a-47e2-a2e6-99eed4a6a6a3",
+        "nome": "Água em Litros (1744162294995)",
+        "codigo": "AL4995",
+        "unidade": "l",
+        "quantidade_inicial": 100,
+        "timestamp": "2025-04-09T01:31:35.249Z"
+      },
+      {
+        "id": "62509440-2074-4df5-8fdf-00575848a9ee",
+        "nome": "Água em Mililitros (1744162294995)",
+        "codigo": "AML4995",
+        "unidade": "ml",
+        "quantidade_inicial": 2000,
+        "timestamp": "2025-04-09T01:31:35.320Z"
+      },
+      {
+        "id": "697ef144-41c8-4e5c-be23-787d200ffb20",
+        "nome": "Arroz em Kg (1744162294995)",
+        "codigo": "AK4995",
+        "unidade": "kg",
+        "quantidade_inicial": 50,
+        "timestamp": "2025-04-09T01:31:35.402Z"
+      },
+      {
+        "id": "b5b47995-6829-4870-b801-212ca176c669",
+        "nome": "Arroz em Gramas (1744162294995)",
+        "codigo": "AG4995",
+        "unidade": "g",
+        "quantidade_inicial": 5000,
+        "timestamp": "2025-04-09T01:31:35.479Z"
+      },
+      {
+        "id": "3f5dc4a5-2089-482b-972e-c8d7edbcf67e",
+        "nome": "Item Limitado (1744162294995)",
+        "codigo": "IL4995",
+        "unidade": "unidade",
+        "quantidade_inicial": 5,
+        "timestamp": "2025-04-09T01:31:35.542Z"
+      },
+      {
+        "id": "fcfbad42-3179-410b-883c-35d0bb5d73c6",
+        "nome": "Produto Lote 1 (1744162294995)",
+        "codigo": "PL14995",
+        "unidade": "unidade",
+        "quantidade_inicial": 50,
+        "timestamp": "2025-04-09T01:31:35.598Z"
+      },
+      {
+        "id": "7dc210cb-ba3a-49d4-9a62-e5dc38bf154b",
+        "nome": "Produto Lote 2 (1744162294995)",
+        "codigo": "PL24995",
+        "unidade": "unidade",
+        "quantidade_inicial": 50,
+        "timestamp": "2025-04-09T01:31:35.652Z"
+      },
+      {
+        "id": "c9cb1315-3334-43eb-b725-a21b97443f5b",
+        "nome": "Produto Lote 3 (1744162294995)",
+        "codigo": "PL34995",
+        "unidade": "unidade",
+        "quantidade_inicial": 50,
+        "timestamp": "2025-04-09T01:31:35.715Z"
+      }
+    ],
+    "movimentacoes": [
+      {
+        "produto_id": "52b41df1-8f3a-47e2-a2e6-99eed4a6a6a3",
+        "produto_nome": "Água em Litros (1744162294995)",
+        "tipo": "saida",
+        "quantidade": 5,
+        "unidade": "l",
+        "estoque_anterior": 100,
+        "estoque_atual": 95,
+        "observacao": "Saída para conversão em Água em Mililitros (1744162294995)",
+        "timestamp": "2025-04-09T01:31:35.998Z"
+      },
+      {
+        "produto_id": "62509440-2074-4df5-8fdf-00575848a9ee",
+        "produto_nome": "Água em Mililitros (1744162294995)",
+        "tipo": "entrada",
+        "quantidade": 5000,
+        "unidade": "ml",
+        "estoque_anterior": 2000,
+        "estoque_atual": 7000,
+        "observacao": "Entrada por conversão de Água em Litros (1744162294995)",
+        "timestamp": "2025-04-09T01:31:36.154Z"
+      },
+      {
+        "produto_id": "697ef144-41c8-4e5c-be23-787d200ffb20",
+        "produto_nome": "Arroz em Kg (1744162294995)",
+        "tipo": "saida",
+        "quantidade": 2,
+        "unidade": "kg",
+        "estoque_anterior": 50,
+        "estoque_atual": 48,
+        "observacao": "Saída para conversão em Arroz em Gramas (1744162294995)",
+        "timestamp": "2025-04-09T01:31:36.536Z"
+      },
+      {
+        "produto_id": "b5b47995-6829-4870-b801-212ca176c669",
+        "produto_nome": "Arroz em Gramas (1744162294995)",
+        "tipo": "entrada",
+        "quantidade": 2000,
+        "unidade": "g",
+        "estoque_anterior": 5000,
+        "estoque_atual": 7000,
+        "observacao": "Entrada por conversão de Arroz em Kg (1744162294995)",
+        "timestamp": "2025-04-09T01:31:36.717Z"
+      },
+      {
+        "produto_id": "3f5dc4a5-2089-482b-972e-c8d7edbcf67e",
+        "produto_nome": "Item Limitado (1744162294995)",
+        "tipo": "saida",
+        "quantidade": 10,
+        "unidade": "unidade",
+        "estoque_anterior": 5,
+        "estoque_atual": 0,
+        "observacao": "Tentativa de saída maior que o estoque",
+        "timestamp": "2025-04-09T01:31:37.001Z"
+      },
+      {
+        "produto_id": "fcfbad42-3179-410b-883c-35d0bb5d73c6",
+        "produto_nome": "Produto Lote 1 (1744162294995)",
+        "tipo": "entrada",
+        "quantidade": 20,
+        "unidade": "unidade",
+        "estoque_anterior": 50,
+        "estoque_atual": 70,
+        "observacao": "Entrada em lote - teste 1",
+        "timestamp": "2025-04-09T01:31:37.215Z"
+      },
+      {
+        "produto_id": "7dc210cb-ba3a-49d4-9a62-e5dc38bf154b",
+        "produto_nome": "Produto Lote 2 (1744162294995)",
+        "tipo": "saida",
+        "quantidade": 10,
+        "unidade": "unidade",
+        "estoque_anterior": 50,
+        "estoque_atual": 40,
+        "observacao": "Saída em lote - teste 1",
+        "timestamp": "2025-04-09T01:31:37.393Z"
+      },
+      {
+        "produto_id": "c9cb1315-3334-43eb-b725-a21b97443f5b",
+        "produto_nome": "Produto Lote 3 (1744162294995)",
+        "tipo": "entrada",
+        "quantidade": 15,
+        "unidade": "unidade",
+        "estoque_anterior": 50,
+        "estoque_atual": 65,
+        "observacao": "Entrada em lote - teste 2",
+        "timestamp": "2025-04-09T01:31:37.581Z"
+      },
+      {
+        "produto_id": "52b41df1-8f3a-47e2-a2e6-99eed4a6a6a3",
+        "produto_nome": "Água em Litros (1744162294995)",
+        "tipo": "entrada",
+        "quantidade": 1.753,
+        "unidade": "l",
+        "estoque_anterior": 95,
+        "estoque_atual": 96.753,
+        "observacao": "Teste com decimal preciso",
+        "timestamp": "2025-04-09T01:31:38.030Z"
+      },
+      {
+        "produto_id": "697ef144-41c8-4e5c-be23-787d200ffb20",
+        "produto_nome": "Arroz em Kg (1744162294995)",
+        "tipo": "saida",
+        "quantidade": 0.125,
+        "unidade": "kg",
+        "estoque_anterior": 48,
+        "estoque_atual": 47.875,
+        "observacao": "Teste com decimal preciso",
+        "timestamp": "2025-04-09T01:31:38.221Z"
+      }
+    ],
+    "conversoes": [
+      {
+        "origem_id": "52b41df1-8f3a-47e2-a2e6-99eed4a6a6a3",
+        "origem_nome": "Água em Litros (1744162294995)",
+        "origem_unidade": "l",
+        "origem_quantidade": 5,
+        "destino_id": "62509440-2074-4df5-8fdf-00575848a9ee",
+        "destino_nome": "Água em Mililitros (1744162294995)",
+        "destino_unidade": "ml",
+        "destino_quantidade": 5000,
+        "fator_conversao": 1000,
+        "timestamp": "2025-04-09T01:31:36.154Z"
+      },
+      {
+        "origem_id": "697ef144-41c8-4e5c-be23-787d200ffb20",
+        "origem_nome": "Arroz em Kg (1744162294995)",
+        "origem_unidade": "kg",
+        "origem_quantidade": 2,
+        "destino_id": "b5b47995-6829-4870-b801-212ca176c669",
+        "destino_nome": "Arroz em Gramas (1744162294995)",
+        "destino_unidade": "g",
+        "destino_quantidade": 2000,
+        "fator_conversao": 1000,
+        "timestamp": "2025-04-09T01:31:36.717Z"
+      }
+    ],
+    "erros": [
+      {
+        "operacao": "registrar_movimentacao",
+        "dados": {
+          "produtoId": "id-inexistente",
+          "tipo": "entrada",
+          "quantidade": 5
+        },
+        "erro": "invalid input syntax for type uuid: \"id-inexistente\"",
+        "timestamp": "2025-04-09T01:31:37.631Z"
+      }
+    ]
+  }
+}

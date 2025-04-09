@@ -1,0 +1,294 @@
+{
+  "timestamp": "2025-04-09T01:37:37.734Z",
+  "produtos": {
+    "produto1": {
+      "id": "a6774e59-22cc-4038-bb82-489531a51b2c",
+      "nome": "Areia (1744162654706)",
+      "estoque_inicial": 2000,
+      "estoque_final": 2000,
+      "unidade": "kg"
+    },
+    "produto2": {
+      "id": "1afc88f3-4628-4ec0-81d0-60534d121805",
+      "nome": "Óleo (1744162654706)",
+      "estoque_inicial": 500,
+      "estoque_final": 600,
+      "unidade": "l"
+    }
+  },
+  "historico": {
+    "produto1": [
+      {
+        "id": "0865e907-cb54-4fdd-9883-faf05b68d1ae",
+        "product_id": "a6774e59-22cc-4038-bb82-489531a51b2c",
+        "type": "saida",
+        "quantity": 200,
+        "user_id": null,
+        "notes": "Saída correta 1",
+        "created_at": "2025-04-09T01:37:35.296518+00:00",
+        "employee_id": null,
+        "deleted": false
+      },
+      {
+        "id": "c9303476-7857-4089-8134-b71084ff927d",
+        "product_id": "a6774e59-22cc-4038-bb82-489531a51b2c",
+        "type": "saida",
+        "quantity": 500,
+        "user_id": null,
+        "notes": "Saída errada - quantidade incorreta",
+        "created_at": "2025-04-09T01:37:35.748769+00:00",
+        "employee_id": null,
+        "deleted": false
+      },
+      {
+        "id": "d453f85f-5ee2-4000-b9b6-baf0f75adcbf",
+        "product_id": "a6774e59-22cc-4038-bb82-489531a51b2c",
+        "type": "entrada",
+        "quantity": 500,
+        "user_id": null,
+        "notes": "Compensação de quantidade errada",
+        "created_at": "2025-04-09T01:37:36.262519+00:00",
+        "employee_id": null,
+        "deleted": false
+      },
+      {
+        "id": "34c5b716-64e5-4846-bb54-59d9dcc00226",
+        "product_id": "a6774e59-22cc-4038-bb82-489531a51b2c",
+        "type": "saida",
+        "quantity": 300,
+        "user_id": null,
+        "notes": "Saída correta após compensação",
+        "created_at": "2025-04-09T01:37:36.510858+00:00",
+        "employee_id": null,
+        "deleted": false
+      },
+      {
+        "id": "79d836e0-9e02-4ecd-9331-47ce38aab251",
+        "product_id": "a6774e59-22cc-4038-bb82-489531a51b2c",
+        "type": "entrada",
+        "quantity": 500,
+        "user_id": null,
+        "notes": "Ajuste manual de estoque: Ajuste após inventário - estoque real maior que o sistema",
+        "created_at": "2025-04-09T01:37:37.300047+00:00",
+        "employee_id": null,
+        "deleted": false
+      }
+    ],
+    "produto2": [
+      {
+        "id": "f1ca5dfb-5cae-42dd-a36b-7308c1225589",
+        "product_id": "1afc88f3-4628-4ec0-81d0-60534d121805",
+        "type": "entrada",
+        "quantity": 50,
+        "user_id": null,
+        "notes": "Entrada correta 1",
+        "created_at": "2025-04-09T01:37:35.470921+00:00",
+        "employee_id": null,
+        "deleted": false
+      },
+      {
+        "id": "6dfd5dc9-3160-4d79-bfcd-b1cbec9614e1",
+        "product_id": "1afc88f3-4628-4ec0-81d0-60534d121805",
+        "type": "saida",
+        "quantity": 100,
+        "user_id": null,
+        "notes": "Saída errada - deveria ser entrada",
+        "created_at": "2025-04-09T01:37:35.926805+00:00",
+        "employee_id": null,
+        "deleted": false
+      },
+      {
+        "id": "407d5e4c-8f97-4f09-b348-13287011712c",
+        "product_id": "1afc88f3-4628-4ec0-81d0-60534d121805",
+        "type": "entrada",
+        "quantity": 100,
+        "user_id": null,
+        "notes": "Compensação de tipo errado",
+        "created_at": "2025-04-09T01:37:36.803977+00:00",
+        "employee_id": null,
+        "deleted": false
+      },
+      {
+        "id": "1b49430f-bd65-41f7-b926-3abcfbd181da",
+        "product_id": "1afc88f3-4628-4ec0-81d0-60534d121805",
+        "type": "entrada",
+        "quantity": 100,
+        "user_id": null,
+        "notes": "Entrada correta após compensação",
+        "created_at": "2025-04-09T01:37:37.017221+00:00",
+        "employee_id": null,
+        "deleted": false
+      },
+      {
+        "id": "c4d1535d-0f22-4983-b95c-8304dbe9f02c",
+        "product_id": "1afc88f3-4628-4ec0-81d0-60534d121805",
+        "type": "saida",
+        "quantity": 50,
+        "user_id": null,
+        "notes": "Ajuste manual de estoque: Ajuste após inventário - estoque real menor que o sistema",
+        "created_at": "2025-04-09T01:37:37.560904+00:00",
+        "employee_id": null,
+        "deleted": false
+      }
+    ]
+  },
+  "operacoes": {
+    "produtos": [
+      {
+        "id": "a6774e59-22cc-4038-bb82-489531a51b2c",
+        "nome": "Areia (1744162654706)",
+        "codigo": "ARE4706",
+        "unidade": "kg",
+        "quantidade_inicial": 2000,
+        "timestamp": "2025-04-09T01:37:35.004Z"
+      },
+      {
+        "id": "1afc88f3-4628-4ec0-81d0-60534d121805",
+        "nome": "Óleo (1744162654706)",
+        "codigo": "OLE4706",
+        "unidade": "l",
+        "quantidade_inicial": 500,
+        "timestamp": "2025-04-09T01:37:35.072Z"
+      }
+    ],
+    "movimentacoes": [
+      {
+        "id": "0865e907-cb54-4fdd-9883-faf05b68d1ae",
+        "produto_id": "a6774e59-22cc-4038-bb82-489531a51b2c",
+        "produto_nome": "Areia (1744162654706)",
+        "tipo": "saida",
+        "quantidade": 200,
+        "estoque_anterior": 2000,
+        "estoque_atual": 1800,
+        "observacao": "Saída correta 1",
+        "timestamp": "2025-04-09T01:37:35.253Z"
+      },
+      {
+        "id": "f1ca5dfb-5cae-42dd-a36b-7308c1225589",
+        "produto_id": "1afc88f3-4628-4ec0-81d0-60534d121805",
+        "produto_nome": "Óleo (1744162654706)",
+        "tipo": "entrada",
+        "quantidade": 50,
+        "estoque_anterior": 500,
+        "estoque_atual": 550,
+        "observacao": "Entrada correta 1",
+        "timestamp": "2025-04-09T01:37:35.415Z"
+      },
+      {
+        "id": "c9303476-7857-4089-8134-b71084ff927d",
+        "produto_id": "a6774e59-22cc-4038-bb82-489531a51b2c",
+        "produto_nome": "Areia (1744162654706)",
+        "tipo": "saida",
+        "quantidade": 500,
+        "estoque_anterior": 1800,
+        "estoque_atual": 1300,
+        "observacao": "Saída errada - quantidade incorreta",
+        "timestamp": "2025-04-09T01:37:35.710Z"
+      },
+      {
+        "id": "6dfd5dc9-3160-4d79-bfcd-b1cbec9614e1",
+        "produto_id": "1afc88f3-4628-4ec0-81d0-60534d121805",
+        "produto_nome": "Óleo (1744162654706)",
+        "tipo": "saida",
+        "quantidade": 100,
+        "estoque_anterior": 550,
+        "estoque_atual": 450,
+        "observacao": "Saída errada - deveria ser entrada",
+        "timestamp": "2025-04-09T01:37:35.862Z"
+      },
+      {
+        "id": "34c5b716-64e5-4846-bb54-59d9dcc00226",
+        "produto_id": "a6774e59-22cc-4038-bb82-489531a51b2c",
+        "produto_nome": "Areia (1744162654706)",
+        "tipo": "saida",
+        "quantidade": 300,
+        "estoque_anterior": 1800,
+        "estoque_atual": 1500,
+        "observacao": "Saída correta após compensação",
+        "timestamp": "2025-04-09T01:37:36.482Z"
+      },
+      {
+        "id": "1b49430f-bd65-41f7-b926-3abcfbd181da",
+        "produto_id": "1afc88f3-4628-4ec0-81d0-60534d121805",
+        "produto_nome": "Óleo (1744162654706)",
+        "tipo": "entrada",
+        "quantidade": 100,
+        "estoque_anterior": 550,
+        "estoque_atual": 650,
+        "observacao": "Entrada correta após compensação",
+        "timestamp": "2025-04-09T01:37:36.985Z"
+      },
+      {
+        "id": "79d836e0-9e02-4ecd-9331-47ce38aab251",
+        "produto_id": "a6774e59-22cc-4038-bb82-489531a51b2c",
+        "produto_nome": "Areia (1744162654706)",
+        "tipo": "entrada",
+        "quantidade": 500,
+        "estoque_anterior": 1500,
+        "estoque_atual": 2000,
+        "observacao": "Ajuste manual de estoque: Ajuste após inventário - estoque real maior que o sistema",
+        "timestamp": "2025-04-09T01:37:37.244Z"
+      },
+      {
+        "id": "c4d1535d-0f22-4983-b95c-8304dbe9f02c",
+        "produto_id": "1afc88f3-4628-4ec0-81d0-60534d121805",
+        "produto_nome": "Óleo (1744162654706)",
+        "tipo": "saida",
+        "quantidade": 50,
+        "estoque_anterior": 650,
+        "estoque_atual": 600,
+        "observacao": "Ajuste manual de estoque: Ajuste após inventário - estoque real menor que o sistema",
+        "timestamp": "2025-04-09T01:37:37.492Z"
+      }
+    ],
+    "compensacoes": [
+      {
+        "id": "d453f85f-5ee2-4000-b9b6-baf0f75adcbf",
+        "produto_id": "a6774e59-22cc-4038-bb82-489531a51b2c",
+        "produto_nome": "Areia (1744162654706)",
+        "tipo": "entrada",
+        "quantidade": 500,
+        "estoque_anterior": 1300,
+        "estoque_atual": 1800,
+        "observacao": "Compensação de quantidade errada",
+        "timestamp": "2025-04-09T01:37:36.224Z"
+      },
+      {
+        "id": "407d5e4c-8f97-4f09-b348-13287011712c",
+        "produto_id": "1afc88f3-4628-4ec0-81d0-60534d121805",
+        "produto_nome": "Óleo (1744162654706)",
+        "tipo": "entrada",
+        "quantidade": 100,
+        "estoque_anterior": 450,
+        "estoque_atual": 550,
+        "observacao": "Compensação de tipo errado",
+        "timestamp": "2025-04-09T01:37:36.747Z"
+      }
+    ],
+    "ajustes": [
+      {
+        "id": "79d836e0-9e02-4ecd-9331-47ce38aab251",
+        "produto_id": "a6774e59-22cc-4038-bb82-489531a51b2c",
+        "produto_nome": "Areia (1744162654706)",
+        "tipo_ajuste": "entrada",
+        "quantidade_ajuste": 500,
+        "estoque_anterior": 1500,
+        "estoque_atual": 2000,
+        "justificativa": "Ajuste após inventário - estoque real maior que o sistema",
+        "timestamp": "2025-04-09T01:37:37.244Z"
+      },
+      {
+        "id": "c4d1535d-0f22-4983-b95c-8304dbe9f02c",
+        "produto_id": "1afc88f3-4628-4ec0-81d0-60534d121805",
+        "produto_nome": "Óleo (1744162654706)",
+        "tipo_ajuste": "saida",
+        "quantidade_ajuste": 50,
+        "estoque_anterior": 650,
+        "estoque_atual": 600,
+        "justificativa": "Ajuste após inventário - estoque real menor que o sistema",
+        "timestamp": "2025-04-09T01:37:37.492Z"
+      }
+    ],
+    "erros": []
+  }
+}
