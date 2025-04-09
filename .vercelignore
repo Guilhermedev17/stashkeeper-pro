@@ -1,0 +1,21 @@
+# Scripts de teste
+scripts/
+*.test.js
+*.test.ts
+*.test.tsx
+*.spec.js
+*.spec.ts
+*.spec.tsx
+
+# Arquivos de resultados de teste
+test-results/
+coverage/
+*.test.json
+*_test_*.json
+
+# Arquivos de log
+*.log
+
+# Arquivos específicos
+run_test_with_env.js
+jest.config.js
