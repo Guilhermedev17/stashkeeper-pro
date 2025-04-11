@@ -1,0 +1,17 @@
+{
+  "name": "stashkeeper-supabase-tests",
+  "version": "1.0.0",
+  "description": "Testes integrados de Supabase para o sistema StashKeeper",
+  "main": "run_all_supabase_tests.js",
+  "type": "module",
+  "scripts": {
+    "test": "node run_all_supabase_tests.js",
+    "test:compensation": "node test_supabase_compensation.js",
+    "test:conversions": "node test_supabase_multiple_conversions.js",
+    "test:scenarios": "node test_supabase_compensation_scenarios.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.29.0",
+    "dotenv": "^16.3.1"
+  }
+} 
