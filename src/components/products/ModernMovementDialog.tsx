@@ -309,11 +309,8 @@ export function ModernMovementDialog({
                 // Atualizar o input de quantidade formatado
                 setQuantityInput(movementToEdit.quantity.toString().replace('.', ','));
             } else {
-                // Preservar o valor da quantidade se já existir, caso contrário limpar
-                const currentQuantity = quantityInput;
-                if (!currentQuantity || currentQuantity === '') {
-                    setQuantityInput('');
-                }
+                // Sempre limpar o campo de quantidade quando abrir um novo formulário que não seja edição
+                setQuantityInput('');
             }
 
             form.reset(defaultValues);
@@ -327,11 +324,16 @@ export function ModernMovementDialog({
                 setUnitOptions(options);
                 setSelectedConversionFactor(options[0]?.conversionFactor || 1);
 
-                // Preservar o valor da quantidade no formulário, se existir
-                const numericValue = quantityInput.replace(',', '.');
-                const parsedValue = parseFloat(numericValue);
-                if (!isNaN(parsedValue)) {
-                    form.setValue('quantity', parsedValue);
+                // Atualizar o valor da quantidade no formulário apenas se estiver em modo de edição
+                if (editMode && movementToEdit) {
+                    const numericValue = quantityInput.replace(',', '.');
+                    const parsedValue = parseFloat(numericValue);
+                    if (!isNaN(parsedValue)) {
+                        form.setValue('quantity', parsedValue);
+                    }
+                } else {
+                    // Para novas movimentações, garantir que o campo quantidade esteja vazio
+                    form.setValue('quantity', null);
                 }
             }
         }
@@ -416,176 +418,82 @@ export function ModernMovementDialog({
         setIsSubmitting(true);
 
         try {
-            // Converter o valor inserido para a unidade base do produto, se necessário
-            let finalQuantity = parsedValue; // Manter valor original sem limitação de casas
-            
-            if (form.watch('unitType') !== 'default') {
-                // Unidade selecionada no formulário
-                const selectedUnitType = form.watch('unitType');
-                
-                // Converter para unidade do produto usando conversão exata
-                finalQuantity = convertQuantityExact(
-                    parsedValue,
-                    selectedUnitType,
-                    product.unit
-                );
-            }
-
-            // Buscar o produto atual para obter a quantidade atualizada
+            // Busca o produto atual para validar o estoque e fornecer logs mais detalhados
             const { data: productData, error: productFetchError } = await supabase
                 .from('products')
-                .select('quantity')
+                .select('quantity, unit')
                 .eq('id', product.id)
                 .single();
 
             if (productFetchError) throw productFetchError;
 
-            let currentQuantity = productData.quantity || 0;
-            let newQuantity = currentQuantity;
+            const currentQuantity = productData.quantity;
+            console.log('[ModernMovementDialog] Quantidade atual em estoque:', currentQuantity);
+            
+            // Capturar a unidade selecionada no formulário (ou default para usar a do produto)
+            const selectedUnitType = form.watch('unitType');
+            // Se for 'default', usar a unidade do produto, senão usar a selecionada
+            const unitToUse = selectedUnitType === 'default' ? product.unit : selectedUnitType;
+            
+            console.log('[ModernMovementDialog] Unidade sendo usada:', unitToUse);
 
-            // Se estiver editando uma movimentação existente
             if (editMode && movementToEdit) {
-                // Log para depuração de edição
-                console.log('[TESTE-EDIÇÃO] Iniciando teste de edição de movimentação', {
+                console.log('[ModernMovementDialog] Modo de edição de movimentação:', {
                     movimentoId: movementToEdit.id,
                     tipoOriginal: movementToEdit.type,
                     quantidadeOriginal: movementToEdit.quantity,
                     tipoNovo: type,
-                    quantidadeNova: finalQuantity,
+                    quantidadeNova: finalValues.quantity,
+                    unidade: unitToUse,
                     estoqueAtual: currentQuantity
                 });
 
-                // 1. Primeiro reverter a movimentação antiga
-                if (movementToEdit.type === 'entrada') {
-                    // Se a entrada original for revertida, diminuir do estoque
-                    newQuantity = currentQuantity - movementToEdit.quantity;
-                    console.log('[TESTE-EDIÇÃO] Revertendo entrada:', { 
-                        quantidadeRevertida: movementToEdit.quantity,
-                        novoEstoqueAposReversao: newQuantity
-                    });
-                } else {
-                    // Se a saída original for revertida, adicionar ao estoque
-                    newQuantity = currentQuantity + movementToEdit.quantity;
-                    console.log('[TESTE-EDIÇÃO] Revertendo saída:', { 
-                        quantidadeRevertida: movementToEdit.quantity,
-                        novoEstoqueAposReversao: newQuantity
-                    });
+                // Atualizar a movimentação - NÃO atualizar manualmente o produto
+                const { error: updateMovementError } = await supabase
+                    .from('movements')
+                    .update({
+                        type,
+                        quantity: finalValues.quantity,
+                        notes: finalValues.notes || null,
+                        employee_id: type === 'saida' ? finalValues.employee_id : null,
+                        unit: unitToUse // Incluir a unidade de medida
+                    })
+                    .eq('id', movementToEdit.id);
+
+                if (updateMovementError) {
+                    console.error('[ModernMovementDialog] Erro ao atualizar movimentação:', updateMovementError);
+                    throw updateMovementError;
                 }
-
-                // 2. Verifica se podemos continuar após a reversão
-                if (newQuantity < 0) {
-                    console.error('[TESTE-EDIÇÃO] Erro: A reversão causaria estoque negativo');
-                    throw new Error('Não é possível reverter a movimentação original, pois deixaria o estoque negativo.');
-                }
-
-                // 3. Agora aplicar a nova movimentação
-                const estoqueIntermediario = newQuantity;
-                newQuantity = type === 'entrada'
-                    ? newQuantity + finalQuantity
-                    : newQuantity - finalQuantity;
-                    
-                console.log('[TESTE-EDIÇÃO] Aplicando nova movimentação:', { 
-                    tipo: type,
-                    quantidade: finalQuantity,
-                    estoqueIntermediario,
-                    novoEstoqueFinal: newQuantity
-                });
-
-                // 4. Verificar se há quantidade suficiente para a nova saída
-                if (newQuantity < 0) {
-                    console.error('[TESTE-EDIÇÃO] Erro: A nova quantidade causaria estoque negativo');
-                    throw new Error('Quantidade insuficiente em estoque para a nova saída');
-                }
-
-                // 5. Implementar uma transação manual
-                try {
-                    // Iniciar transação desativando o autocommit (configuração isolada)
-                    console.log('[TESTE-EDIÇÃO] Iniciando transação manual');
-                    
-                    // 5.1 Atualizar a movimentação
-                    const { error: updateMovementError } = await supabase
-                        .from('movements')
-                        .update({
-                            type,
-                            quantity: finalQuantity,
-                            notes: finalValues.notes || null,
-                            employee_id: type === 'saida' ? finalValues.employee_id : null,
-                        })
-                        .eq('id', movementToEdit.id);
-
-                    if (updateMovementError) throw updateMovementError;
-                    
-                    // 5.2 Atualizar o produto
-                    const { error: updateProductError } = await supabase
-                        .from('products')
-                        .update({ quantity: newQuantity })
-                        .eq('id', product.id);
-                    
-                    if (updateProductError) throw updateProductError;
-                    
-                    console.log('[TESTE-EDIÇÃO] Transação manual de edição concluída com sucesso');
-                } catch (txError) {
-                    console.error('[TESTE-EDIÇÃO] Erro na transação manual:', txError);
-                    // Se qualquer operação falhar, a exceção será propagada
-                    throw new Error(`Erro ao editar movimentação: ${txError instanceof Error ? txError.message : 'Erro desconhecido'}`);
-                }
+                
+                console.log('[ModernMovementDialog] Movimentação atualizada com sucesso');
             } else {
                 // Fluxo para nova movimentação
-                console.log('[TESTE-NOVO] Iniciando teste de nova movimentação', {
+                console.log('[ModernMovementDialog] Registrando nova movimentação:', {
                     produtoId: product.id,
                     tipo: type,
-                    quantidade: finalQuantity,
+                    quantidade: finalValues.quantity,
+                    unidade: unitToUse,
                     estoqueAtual: currentQuantity
                 });
                 
-                // 1. Calcular a nova quantidade
-                newQuantity = type === 'entrada'
-                    ? currentQuantity + finalQuantity
-                    : currentQuantity - finalQuantity;
+                // Registrar movimentação - Trigger vai atualizar o produto automaticamente
+                const { error: movementError } = await supabase
+                    .from('movements')
+                    .insert({
+                        product_id: product.id,
+                        type: type,
+                        quantity: finalValues.quantity,
+                        notes: finalValues.notes || null,
+                        employee_id: type === 'saida' ? finalValues.employee_id : null,
+                        unit: unitToUse // Incluir a unidade de medida
+                    });
 
-                console.log('[TESTE-NOVO] Quantidade calculada:', {
-                    tipo: type,
-                    quantidadeMovimento: finalQuantity,
-                    estoqueAnterior: currentQuantity,
-                    novoEstoque: newQuantity
-                });
-
-                // Verifica se há quantidade suficiente para saída
-                if (type === 'saida' && newQuantity < 0) {
-                    console.error('[TESTE-NOVO] Erro: Quantidade insuficiente para saída');
-                    throw new Error('Quantidade insuficiente em estoque');
+                if (movementError) {
+                    console.error('[ModernMovementDialog] Erro ao registrar movimentação:', movementError);
+                    throw movementError;
                 }
-
-                // 2. Implementar uma transação manual para nova movimentação
-                try {
-                    console.log('[TESTE-NOVO] Iniciando transação manual para nova movimentação');
-                    
-                    // 2.1 Registrar a nova movimentação
-                    const { error: movementError } = await supabase
-                        .from('movements')
-                        .insert({
-                            product_id: product.id,
-                            type: type,
-                            quantity: finalQuantity,
-                            notes: finalValues.notes || null,
-                            employee_id: type === 'saida' ? finalValues.employee_id : null,
-                        });
-
-                    if (movementError) throw movementError;
-                    
-                    // 2.2 Atualizar o estoque do produto
-                    const { error: updateError } = await supabase
-                        .from('products')
-                        .update({ quantity: newQuantity })
-                        .eq('id', product.id);
-
-                    if (updateError) throw updateError;
-                    
-                    console.log('[TESTE-NOVO] Transação manual para nova movimentação concluída com sucesso');
-                } catch (txError) {
-                    console.error('[TESTE-NOVO] Erro na transação manual (nova movimentação):', txError);
-                    throw new Error(`Erro ao registrar movimentação: ${txError instanceof Error ? txError.message : 'Erro desconhecido'}`);
-                }
+                
+                console.log('[ModernMovementDialog] Movimentação registrada com sucesso');
             }
 
             // Atualizar dados
@@ -603,7 +511,7 @@ export function ModernMovementDialog({
                 duration: 3000
             });
         } catch (error) {
-            console.error('Erro ao processar movimentação:', error);
+            console.error('[ModernMovementDialog] Erro ao processar movimentação:', error);
             toast({
                 title: "Erro",
                 description: error instanceof Error ? error.message : "Ocorreu um erro ao processar a movimentação.",
